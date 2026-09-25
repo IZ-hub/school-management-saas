@@ -132,18 +132,22 @@ export default function DashboardLayout() {
       {isMobile && (
         <AppBar
           position="fixed"
-          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          elevation={1}
+          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: '#fff', color: '#111' }}
         >
-          <Toolbar>
+          <Toolbar sx={{ minHeight: { xs: 56 } }}>
             <IconButton
               color="inherit"
               edge="start"
               onClick={() => setMobileOpen(!mobileOpen)}
-              sx={{ mr: 2 }}
+              sx={{ mr: 1.5 }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap>
+            <Avatar sx={{ bgcolor: '#8bc34a', width: 28, height: 28, mr: 1 }}>
+              <SchoolIcon sx={{ fontSize: 16 }} />
+            </Avatar>
+            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700 }}>
               Schoolful LMS
             </Typography>
           </Toolbar>
@@ -172,8 +176,9 @@ export default function DashboardLayout() {
         sx={{
           flexGrow: 1,
           bgcolor: 'background.default',
-          mt: isMobile ? '64px' : 0,
+          mt: isMobile ? '56px' : 0,
           overflow: 'auto',
+          width: isMobile ? '100%' : `calc(100% - ${DRAWER_WIDTH}px)`,
         }}
       >
         <Outlet />

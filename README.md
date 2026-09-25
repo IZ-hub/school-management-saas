@@ -1,3 +1,4 @@
+x<<<<<<< HEAD
 # AI-Powered School Management System (SaaS)
 
 A comprehensive, multi-tenant school management platform built with modern technologies and AI capabilities.
@@ -161,3 +162,6 @@ GitHub Actions workflow configured for automated deployment.
 ## 📝 License
 
 Proprietary - All rights reserved
+=======
+# school-management-saas
+>>>>>>> 34dd516e237254bd88c09b25a6b1d82358b74c11

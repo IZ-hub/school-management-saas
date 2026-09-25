@@ -88,14 +88,14 @@ export default function Dashboard() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Typography variant="h4" sx={{ mb: 0.5 }}>
         Dashboard
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Welcome back, {user?.firstName} {user?.lastName}
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
         <Typography variant="body2" color="text.secondary">
           School ID:
         </Typography>
@@ -103,7 +103,7 @@ export default function Dashboard() {
           label={user?.schoolId}
           size="small"
           variant="outlined"
-          sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+          sx={{ fontFamily: 'monospace', fontSize: '0.8rem', maxWidth: '100%' }}
         />
         <Tooltip title="Copy School ID">
           <IconButton size="small" onClick={copySchoolId}>
@@ -118,30 +118,31 @@ export default function Dashboard() {
         message="School ID copied to clipboard"
       />
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 1.5, sm: 2.5 }}>
         {cards.map((card) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={card.path}>
+          <Grid item xs={6} sm={6} md={4} lg={3} key={card.path}>
             <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
               <CardActionArea onClick={() => navigate(card.path)}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
                   <Box
                     sx={{
-                      width: 56,
-                      height: 56,
+                      width: { xs: 44, sm: 56 },
+                      height: { xs: 44, sm: 56 },
                       borderRadius: 2,
                       bgcolor: card.color,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
                     {card.icon}
                   </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} noWrap>
                       {card.label}
                     </Typography>
-                    <Typography variant="h5" fontWeight={700}>
+                    <Typography variant="h5" fontWeight={700} sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
                       {card.value ?? 0}
                     </Typography>
                   </Box>

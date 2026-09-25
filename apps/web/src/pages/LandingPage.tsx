@@ -18,6 +18,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemText,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -37,6 +44,8 @@ import {
   EventAvailable as AttendIcon,
   ExpandMore as ExpandMoreIcon,
   Videocam as VideocamIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material'
 
 /* ─── Personas ─── */
@@ -168,11 +177,22 @@ const faqs = [
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
   const [demoStep, setDemoStep] = useState(0)
   const [pricingPeriod, setPricingPeriod] = useState<'monthly' | 'termly' | 'annual'>('monthly')
   const [contactForm, setContactForm] = useState({ name: '', email: '', school: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
+
+  const navLinks = [
+    { label: 'Features', href: '#features' },
+    { label: 'Demo', href: '#demo' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'About', href: '#about' },
+    { label: 'Contact', href: '#contact' },
+  ]
 
   const currentPlans = pricingData[pricingPeriod]
 
@@ -193,11 +213,9 @@ export default function LandingPage() {
             </Box>
 
             <Stack direction="row" spacing={0.5} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href="#features">Features</Button>
-              <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href="#demo">Demo</Button>
-              <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href="#pricing">Pricing</Button>
-              <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href="#about">About</Button>
-              <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href="#contact">Contact</Button>
+              {navLinks.map((link) => (
+                <Button key={link.label} sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} href={link.href}>{link.label}</Button>
+              ))}
               <Button sx={{ color: '#555', textTransform: 'none', fontWeight: 500 }} onClick={() => navigate('/login')}>Sign In</Button>
               <Button variant="contained" onClick={() => navigate('/register')}
                 sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 600, px: 2.5, '&:hover': { bgcolor: '#333' } }}>
@@ -205,16 +223,48 @@ export default function LandingPage() {
               </Button>
             </Stack>
 
-            <Stack direction="row" spacing={1} sx={{ display: { xs: 'flex', md: 'none' } }}>
-              <Button size="small" sx={{ color: '#555', textTransform: 'none' }} onClick={() => navigate('/login')}>Sign In</Button>
-              <Button variant="contained" size="small" onClick={() => navigate('/register')}
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ display: { xs: 'flex', md: 'none' } }}>
+              <Button size="small" variant="contained" onClick={() => navigate('/register')}
                 sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, '&:hover': { bgcolor: '#333' } }}>
                 Get Started
               </Button>
+              <IconButton onClick={() => setMobileMenuOpen(true)} sx={{ color: '#111' }}>
+                <MenuIcon />
+              </IconButton>
             </Stack>
           </Stack>
         </Container>
       </Box>
+
+      {/* Mobile navigation drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        sx={{ display: { md: 'none' }, '& .MuiDrawer-paper': { width: 280 } }}
+      >
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: '#111' }}>Menu</Typography>
+          <IconButton onClick={() => setMobileMenuOpen(false)}><CloseIcon /></IconButton>
+        </Box>
+        <Divider />
+        <List>
+          {navLinks.map((link) => (
+            <ListItemButton key={link.label} component="a" href={link.href} onClick={() => setMobileMenuOpen(false)}>
+              <ListItemText primary={link.label} />
+            </ListItemButton>
+          ))}
+          <ListItemButton onClick={() => { setMobileMenuOpen(false); navigate('/login') }}>
+            <ListItemText primary="Sign In" />
+          </ListItemButton>
+        </List>
+        <Box sx={{ p: 2 }}>
+          <Button fullWidth variant="contained" onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
+            sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 600, '&:hover': { bgcolor: '#333' } }}>
+            Get Started
+          </Button>
+        </Box>
+      </Drawer>
 
       {/* ══════════════ Hero Banner ══════════════ */}
       <Box sx={{ position: 'relative', overflow: 'hidden', bgcolor: '#0d3b2e', color: '#fff' }}>
@@ -409,10 +459,13 @@ export default function LandingPage() {
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}
-            centered
+            centered={!isMobile}
+            variant={isMobile ? 'scrollable' : 'standard'}
+            scrollButtons={isMobile ? 'auto' : false}
+            allowScrollButtonsMobile
             sx={{
-              mb: 6,
-              '& .MuiTab-root': { textTransform: 'uppercase', fontWeight: 700, letterSpacing: 2, color: '#999', fontSize: '0.85rem' },
+              mb: { xs: 4, md: 6 },
+              '& .MuiTab-root': { textTransform: 'uppercase', fontWeight: 700, letterSpacing: 2, color: '#999', fontSize: { xs: '0.75rem', sm: '0.85rem' }, minWidth: { xs: 'auto', sm: 90 } },
               '& .Mui-selected': { color: '#111' },
               '& .MuiTabs-indicator': { bgcolor: '#111', height: 3 },
             }}
@@ -519,14 +572,14 @@ export default function LandingPage() {
           </Box>
 
           {/* Period toggle */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, px: { xs: 1, sm: 0 } }}>
             <ToggleButtonGroup
               value={pricingPeriod}
               exclusive
               onChange={(_, v) => v && setPricingPeriod(v)}
               sx={{
-                bgcolor: '#f5f5f5', borderRadius: 2,
-                '& .MuiToggleButton-root': { textTransform: 'none', fontWeight: 600, px: 3, py: 0.75, border: 'none', borderRadius: '8px !important', color: '#666' },
+                bgcolor: '#f5f5f5', borderRadius: 2, flexWrap: { xs: 'wrap', sm: 'nowrap' }, justifyContent: 'center',
+                '& .MuiToggleButton-root': { textTransform: 'none', fontWeight: 600, px: { xs: 2, sm: 3 }, py: 0.75, border: 'none', borderRadius: '8px !important', color: '#666', fontSize: { xs: '0.8rem', sm: '0.875rem' } },
                 '& .Mui-selected': { bgcolor: '#111 !important', color: '#fff !important' },
               }}
             >
@@ -547,9 +600,9 @@ export default function LandingPage() {
             {currentPlans.map((plan, idx) => (
               <Grid item xs={12} sm={6} md={3} key={plan.name}>
                 <Box sx={{
-                  p: 3, height: '100%', display: 'flex', flexDirection: 'column',
+                  p: { xs: 2.5, sm: 3 }, height: '100%', display: 'flex', flexDirection: 'column',
                   borderRight: idx < 3 ? { md: '1px solid #e0e0e0' } : 'none',
-                  borderBottom: { xs: '1px solid #e0e0e0', md: 'none' },
+                  borderBottom: { xs: idx < currentPlans.length - 1 ? '1px solid #e0e0e0' : 'none', sm: idx < 2 ? 'none' : '1px solid #e0e0e0', md: 'none' },
                   position: 'relative',
                   ...(plan.highlighted ? { border: '2px solid #2e7d32', borderRadius: 0, m: '-1px', zIndex: 1 } : {}),
                 }}>
@@ -660,7 +713,7 @@ export default function LandingPage() {
           </Box>
 
           {/* Step pills */}
-          <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 4 }}>
+          <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 4, flexWrap: 'wrap', gap: 1 }}>
             {['Register', 'Classes', 'Students', 'Live'].map((label, i) => (
               <Chip key={label} label={label} onClick={() => setDemoStep(i)}
                 sx={{

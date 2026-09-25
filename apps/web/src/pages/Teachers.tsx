@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
   TableHead,
   TableBody,
   TableRow,
@@ -13,7 +12,6 @@ import {
   TextField,
   InputAdornment,
   Chip,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -30,6 +28,9 @@ import {
   Delete as DeleteIcon,
   FileUpload as ImportIcon,
 } from '@mui/icons-material'
+import PageHeader from '../components/PageHeader'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsiveDialog from '../components/ResponsiveDialog'
 import { api } from '../lib/api'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 
@@ -182,11 +183,8 @@ export default function Teachers() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Teachers
-        </Typography>
+    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+      <PageHeader title="Teachers">
         <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)}
           sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' } }}>
           Import CSV
@@ -194,7 +192,7 @@ export default function Teachers() {
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
           Add Teacher
         </Button>
-      </Stack>
+      </PageHeader>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <TextField
@@ -228,7 +226,7 @@ export default function Teachers() {
             <Typography color="text.secondary">No teachers found.</Typography>
           </Box>
         ) : (
-          <Table>
+          <ResponsiveTable>
             <TableHead>
               <TableRow>
                 <TableCell>Employee #</TableCell>
@@ -272,11 +270,11 @@ export default function Teachers() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </ResponsiveTable>
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <ResponsiveDialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
         <DialogContent>
           {formError && (
@@ -414,7 +412,7 @@ export default function Teachers() {
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
 
       <BulkImportDialog
         open={importOpen}

@@ -177,7 +177,12 @@ export default function RegisterSchool() {
             height: 'fit-content',
           }}
         >
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 3, flexWrap: 'wrap', gap: 1 }}
+          >
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar sx={{ bgcolor: '#1b5e20', width: 40, height: 40 }}>
                 <SchoolIcon sx={{ fontSize: 22, color: '#fff' }} />
@@ -524,7 +529,12 @@ export default function RegisterSchool() {
                   />
                 </Box>
 
-                <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3, px: 3 }}>
+                <Stack
+                  direction={{ xs: 'column-reverse', sm: 'row' }}
+                  spacing={2}
+                  justifyContent="space-between"
+                  sx={{ mt: 3, px: 3 }}
+                >
                   <Button
                     variant="outlined"
                     size="large"

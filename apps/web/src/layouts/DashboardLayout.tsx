@@ -159,11 +159,14 @@ export default function DashboardLayout() {
         variant={isMobile ? 'temporary' : 'permanent'}
         open={isMobile ? mobileOpen : true}
         onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
-          width: DRAWER_WIDTH,
+          width: isMobile ? 'auto' : DRAWER_WIDTH,
           flexShrink: 0,
+          zIndex: (theme) => (isMobile ? theme.zIndex.drawer + 2 : theme.zIndex.drawer),
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
+            maxWidth: '85vw',
             boxSizing: 'border-box',
           },
         }}
@@ -175,6 +178,7 @@ export default function DashboardLayout() {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           bgcolor: 'background.default',
           mt: isMobile ? '56px' : 0,
           overflow: 'auto',

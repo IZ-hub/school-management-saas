@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import {
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -26,6 +25,7 @@ import {
 } from '@mui/icons-material'
 import Papa from 'papaparse'
 import { api } from '../lib/api'
+import ResponsiveDialog from './ResponsiveDialog'
 
 export interface ColumnDef {
   key: string
@@ -151,7 +151,7 @@ export default function BulkImportDialog({
   const previewRows = rows.slice(0, 5)
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <ResponsiveDialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
         {title}
       </DialogTitle>
@@ -312,6 +312,6 @@ export default function BulkImportDialog({
           </Button>
         )}
       </DialogActions>
-    </Dialog>
+    </ResponsiveDialog>
   )
 }

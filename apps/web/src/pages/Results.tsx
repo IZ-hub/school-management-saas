@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Box,
-  Typography,
   Paper,
-  Table,
   TableHead,
   TableBody,
   TableRow,
@@ -12,7 +10,6 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -27,6 +24,9 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material'
+import PageHeader from '../components/PageHeader'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsiveDialog from '../components/ResponsiveDialog'
 import type { Result } from '@shared-types/index'
 import { listResults, createResult, updateResult, deleteResult } from '../lib/resultsApi'
 
@@ -128,15 +128,12 @@ export default function Results() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Results
-        </Typography>
+    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+      <PageHeader title="Results">
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
           Add Result
         </Button>
-      </Stack>
+      </PageHeader>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <TextField
@@ -165,7 +162,7 @@ export default function Results() {
             <CircularProgress />
           </Box>
         ) : (
-          <Table>
+          <ResponsiveTable>
             <TableHead>
               <TableRow>
                 <TableCell>Student ID</TableCell>
@@ -206,11 +203,11 @@ export default function Results() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </ResponsiveTable>
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <ResponsiveDialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? 'Edit Result' : 'Add Result'}</DialogTitle>
         <DialogContent>
           {formError && (
@@ -274,7 +271,7 @@ export default function Results() {
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
     </Box>
   )
 }

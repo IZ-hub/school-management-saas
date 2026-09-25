@@ -38,6 +38,14 @@ const theme = createTheme({
             maxHeight: 'calc(100% - 32px)',
           },
         },
+        paperFullScreen: {
+          '@media (max-width:600px)': {
+            margin: 0,
+            width: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
+          },
+        },
       },
     },
     MuiTableContainer: {

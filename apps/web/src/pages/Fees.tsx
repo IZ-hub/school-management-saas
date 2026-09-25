@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Box,
-  Typography,
   Paper,
-  Table,
   TableHead,
   TableBody,
   TableRow,
@@ -13,7 +11,6 @@ import {
   TextField,
   InputAdornment,
   Chip,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -30,6 +27,9 @@ import {
   Delete as DeleteIcon,
   Payment as PaymentIcon,
 } from '@mui/icons-material'
+import PageHeader from '../components/PageHeader'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsiveDialog from '../components/ResponsiveDialog'
 import type { Fee } from '@shared-types/index'
 import { listFees, createFee, updateFee, deleteFee } from '../lib/feesApi'
 import { createPayment } from '../lib/paymentsApi'
@@ -183,15 +183,12 @@ export default function Fees() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Fees
-        </Typography>
+    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+      <PageHeader title="Fees">
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
           Add Fee
         </Button>
-      </Stack>
+      </PageHeader>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <TextField
@@ -220,7 +217,7 @@ export default function Fees() {
             <CircularProgress />
           </Box>
         ) : (
-          <Table>
+          <ResponsiveTable>
             <TableHead>
               <TableRow>
                 <TableCell>Student ID</TableCell>
@@ -275,11 +272,11 @@ export default function Fees() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </ResponsiveTable>
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <ResponsiveDialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? 'Edit Fee' : 'Add Fee'}</DialogTitle>
         <DialogContent>
           {formError && (
@@ -363,9 +360,9 @@ export default function Fees() {
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
 
-      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} maxWidth="xs" fullWidth>
+      <ResponsiveDialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Record Payment</DialogTitle>
         <DialogContent>
           {paymentError && (
@@ -416,7 +413,7 @@ export default function Fees() {
             {payingSaving ? 'Saving...' : 'Record Payment'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
     </Box>
   )
 }

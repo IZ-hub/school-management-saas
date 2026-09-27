@@ -6,34 +6,41 @@ import {
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { getJwtSecret } from '../../common/jwt-secret';
 import { LoginDto } from './dto/login.dto';
 import { RegisterSchoolDto } from './dto/register-school.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly firebase: FirebaseService) {
+    // Fail at startup rather than on the first login.
+    getJwtSecret();
+  }
 
   private get db() {
     return this.firebase.firestore;
   }
 
   private generateAccessToken(payload: Record<string, any>): string {
-    const secret: jwt.Secret = process.env.JWT_SECRET || 'default_jwt_secret';
-    return jwt.sign(payload, secret, {
+    return jwt.sign(payload, getJwtSecret(), {
       expiresIn: 900, // 15 minutes in seconds
     } as jwt.SignOptions);
   }
 
   async login(dto: LoginDto) {
-    const usersSnap = await this.db
-      .collection('users')
-      .where('schoolId', '==', dto.schoolId)
-      .where('email', '==', dto.email)
-      .limit(1)
-      .get();
+    let query: FirebaseFirestore.Query = this.db.collection('users').where('email', '==', dto.email);
+    if (dto.schoolId) query = query.where('schoolId', '==', dto.schoolId);
+    // Fetch two so we can tell when an email is shared across schools.
+    const usersSnap = await query.limit(2).get();
 
     if (usersSnap.empty) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+    if (usersSnap.size > 1) {
+      throw new BadRequestException({
+        code: 'SCHOOL_ID_REQUIRED',
+        message: 'This email is registered at more than one school. Enter your School ID to continue.',
+      });
     }
 
     const userDoc = usersSnap.docs[0];
@@ -111,6 +118,10 @@ export class AuthService {
       domain: null,
       logo: null,
       address: dto.address || '',
+      city: dto.city || null,
+      state: dto.state || null,
+      country: dto.country || null,
+      schoolType: dto.schoolType || null,
       phone: dto.phone || '',
       email: dto.schoolEmail,
       website: null,

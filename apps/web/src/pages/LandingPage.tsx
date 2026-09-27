@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
+  GlobalStyles,
   Box,
   Typography,
   Button,
@@ -113,11 +114,14 @@ const featureTabs = [
 
 /* ─── System features ─── */
 const systemFeatures = [
-  { code: 'SYS-01', icon: <PeopleIcon sx={{ fontSize: 28, color: '#111' }} />, title: 'Student Management', desc: 'Profiles, enrollment, class rosters, and student lists imported from Excel.' },
-  { code: 'SYS-02', icon: <CreditIcon sx={{ fontSize: 28, color: '#111' }} />, title: 'Fee Collection', desc: 'Fee types, termly invoices, and payments you can see the moment they clear.' },
-  { code: 'SYS-03', icon: <ReportIcon sx={{ fontSize: 28, color: '#111' }} />, title: 'Report Cards', desc: 'Generated from grades, downloaded as PDF. Per student, per class, per term.' },
-  { code: 'SYS-04', icon: <AttendIcon sx={{ fontSize: 28, color: '#111' }} />, title: 'Attendance', desc: 'Mark attendance daily. Track patterns per student and per class.' },
+  { code: 'SYS-01', icon: <PeopleIcon sx={{ fontSize: 28 }} />, title: 'Student Management', desc: 'Profiles, enrollment, class rosters, and student lists imported from Excel.' },
+  { code: 'SYS-02', icon: <CreditIcon sx={{ fontSize: 28 }} />, title: 'Fee Collection', desc: 'Fee types, termly invoices, and payments you can see the moment they clear.' },
+  { code: 'SYS-03', icon: <ReportIcon sx={{ fontSize: 28 }} />, title: 'Report Cards', desc: 'Generated from grades, downloaded as PDF. Per student, per class, per term.' },
+  { code: 'SYS-04', icon: <AttendIcon sx={{ fontSize: 28 }} />, title: 'Attendance', desc: 'Mark attendance daily. Track patterns per student and per class.' },
 ]
+
+/* Offset for in-page anchors so the sticky navbar doesn't cover section headings */
+const anchorOffset = { scrollMarginTop: { xs: '72px', md: '80px' } }
 
 /* ─── Pricing data ─── */
 const pricingData = {
@@ -185,6 +189,26 @@ export default function LandingPage() {
   const [pricingPeriod, setPricingPeriod] = useState<'monthly' | 'termly' | 'annual'>('monthly')
   const [contactForm, setContactForm] = useState({ name: '', email: '', school: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
+  const [planIndex, setPlanIndex] = useState(0)
+  const plansRef = useRef<HTMLDivElement>(null)
+
+  /* On phones the plans are a swipeable row; track which card is in view for the dots */
+  const planCards = () => Array.from(plansRef.current?.children ?? []) as HTMLElement[]
+  const handlePlanScroll = () => {
+    const el = plansRef.current
+    const cards = planCards()
+    if (!el || cards.length === 0) return
+    const start = cards[0].offsetLeft
+    let closest = 0
+    cards.forEach((c, i) => {
+      if (Math.abs(c.offsetLeft - start - el.scrollLeft) < Math.abs(cards[closest].offsetLeft - start - el.scrollLeft)) closest = i
+    })
+    setPlanIndex(closest)
+  }
+  const scrollToPlan = (i: number) => {
+    const cards = planCards()
+    plansRef.current?.scrollTo({ left: cards[i].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' })
+  }
 
   const navLinks = [
     { label: 'Features', href: '#features' },
@@ -197,12 +221,15 @@ export default function LandingPage() {
   const currentPlans = pricingData[pricingPeriod]
 
   return (
-    <Box sx={{ width: '100%', overflow: 'hidden', bgcolor: '#fff' }}>
+    // overflowX 'clip' (not 'hidden') keeps decorative shapes from widening the page
+    // without turning this box into a scroll container, which would break the sticky navbar.
+    <Box sx={{ width: '100%', overflowX: 'clip', bgcolor: '#fff' }}>
+      <GlobalStyles styles={{ html: { scrollBehavior: 'smooth' } }} />
 
       {/* ══════════════ Navbar ══════════════ */}
-      <Box component="nav" sx={{ position: 'sticky', top: 0, zIndex: 1100, bgcolor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #eee' }}>
+      <Box component="nav" sx={{ position: 'sticky', top: 0, zIndex: 1100, bgcolor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #eee' }}>
         <Container maxWidth="lg">
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ py: 1.5 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ py: { xs: 1, md: 1.5 } }}>
             <Box sx={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#111', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
                 Schoolful LMS
@@ -224,11 +251,11 @@ export default function LandingPage() {
             </Stack>
 
             <Stack direction="row" spacing={0.5} alignItems="center" sx={{ display: { xs: 'flex', md: 'none' } }}>
-              <Button size="small" variant="contained" onClick={() => navigate('/register')}
-                sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, '&:hover': { bgcolor: '#333' } }}>
+              <Button variant="contained" onClick={() => navigate('/register')}
+                sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 600, minHeight: 40, px: 2, boxShadow: 'none', '&:hover': { bgcolor: '#333' } }}>
                 Get Started
               </Button>
-              <IconButton onClick={() => setMobileMenuOpen(true)} sx={{ color: '#111' }}>
+              <IconButton aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} sx={{ color: '#111', width: 44, height: 44 }}>
                 <MenuIcon />
               </IconButton>
             </Stack>
@@ -241,29 +268,34 @@ export default function LandingPage() {
         anchor="right"
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        sx={{ display: { md: 'none' }, '& .MuiDrawer-paper': { width: 280 } }}
+        sx={{ display: { md: 'none' }, '& .MuiDrawer-paper': { width: '86%', maxWidth: 340, display: 'flex', flexDirection: 'column' } }}
       >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: '#111' }}>Menu</Typography>
-          <IconButton onClick={() => setMobileMenuOpen(false)}><CloseIcon /></IconButton>
+        <Box sx={{ px: 2.5, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#0d3b2e', color: '#fff' }}>
+          <Box>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.2 }}>Schoolful LMS</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)' }}>Everything School. One Platform.</Typography>
+          </Box>
+          <IconButton aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} sx={{ color: '#fff', width: 44, height: 44 }}><CloseIcon /></IconButton>
         </Box>
-        <Divider />
-        <List>
+        <List sx={{ px: 1.5, py: 1.5, flex: 1 }}>
           {navLinks.map((link) => (
-            <ListItemButton key={link.label} component="a" href={link.href} onClick={() => setMobileMenuOpen(false)}>
-              <ListItemText primary={link.label} />
+            <ListItemButton key={link.label} component="a" href={link.href} onClick={() => setMobileMenuOpen(false)}
+              sx={{ borderRadius: 2, minHeight: 52 }}>
+              <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: 600, fontSize: '1.05rem', color: '#111' }} />
+              <ArrowIcon sx={{ fontSize: 18, color: '#bbb' }} />
             </ListItemButton>
           ))}
-          <ListItemButton onClick={() => { setMobileMenuOpen(false); navigate('/login') }}>
-            <ListItemText primary="Sign In" />
-          </ListItemButton>
         </List>
-        <Box sx={{ p: 2 }}>
-          <Button fullWidth variant="contained" onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
-            sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 600, '&:hover': { bgcolor: '#333' } }}>
-            Get Started
+        <Stack spacing={1.25} sx={{ p: 2.5, borderTop: '1px solid #eee' }}>
+          <Button fullWidth variant="contained" size="large" onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
+            sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 700, py: 1.4, boxShadow: 'none', '&:hover': { bgcolor: '#7cb342' } }}>
+            Start free 30-day pilot
           </Button>
-        </Box>
+          <Button fullWidth variant="outlined" size="large" onClick={() => { setMobileMenuOpen(false); navigate('/login') }}
+            sx={{ borderColor: '#ddd', color: '#111', textTransform: 'none', borderRadius: 2, fontWeight: 600, py: 1.4 }}>
+            Sign In
+          </Button>
+        </Stack>
       </Drawer>
 
       {/* ══════════════ Hero Banner ══════════════ */}
@@ -271,19 +303,20 @@ export default function LandingPage() {
         {/* Background shapes */}
         <Box sx={{ position: 'absolute', top: -120, right: -80, width: 420, height: 420, borderRadius: '50%', bgcolor: 'rgba(139,195,74,0.12)', zIndex: 0 }} />
         <Box sx={{ position: 'absolute', bottom: -100, left: -60, width: 320, height: 320, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.04)', zIndex: 0 }} />
-        <Box sx={{ position: 'absolute', top: '40%',nleft: '60%', width: 160, height: 160, borderRadius: '50%', bgcolor: 'rgba(139,195,74,0.2)', zIndex: 0 }} />
+        <Box sx={{ position: 'absolute', top: '40%', left: '60%', width: 160, height: 160, borderRadius: '50%', bgcolor: 'rgba(139,195,74,0.2)', zIndex: 0, display: { xs: 'none', md: 'block' } }} />
 
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, pt: { xs: 5, md: 10 }, pb: { xs: 6, md: 10 } }}>
           <Grid container spacing={{ xs: 4, md: 8 }} alignItems="center">
             <Grid item xs={12} md={5}>
               <Chip label="Everything School. One Platform." size="small" sx={{ mb: 2, bgcolor: 'rgba(139,195,74,0.2)', color: '#dcedc8', fontWeight: 600, border: '1px solid rgba(139,195,74,0.3)' }} />
-              <Typography variant="h1" sx={{ fontWeight: 800, fontSize: { xs: '2.2rem', sm: '3rem', md: '3.6rem' }, lineHeight: 1.1, letterSpacing: '-1.5px', mb: 3 }}>
-                Online School Management Software
+              <Typography variant="h1" sx={{ fontWeight: 800, fontSize: { xs: '2.35rem', sm: '3rem', md: '3.6rem' }, lineHeight: 1.08, letterSpacing: { xs: '-1px', md: '-1.5px' }, mb: { xs: 2, md: 3 } }}>
+                Online School Management{' '}
+                <Box component="span" sx={{ color: '#aed581' }}>Software</Box>
               </Typography>
-              <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '1rem', md: '1.1rem' }, lineHeight: 1.8, mb: 4, maxWidth: 440 }}>
+              <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: '1rem', md: '1.1rem' }, lineHeight: { xs: 1.65, md: 1.8 }, mb: { xs: 3, md: 4 }, maxWidth: 440 }}>
                 Run your entire school from one beautiful dashboard. Fees, attendance, gradebooks, parent communication, and timetables — all connected.
               </Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.25, sm: 2 }} sx={{ mb: 3 }}>
                 <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />}
                   sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 700, px: 4, py: 1.5, fontSize: '1rem', '&:hover': { bgcolor: '#7cb342' } }}>
                   Sign up for free
@@ -293,7 +326,7 @@ export default function LandingPage() {
                   Watch demo
                 </Button>
               </Stack>
-              <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
+              <Stack direction="row" sx={{ flexWrap: 'wrap', columnGap: 2, rowGap: 1 }}>
                 {['No credit card', 'Setup in 15 minutes', 'Free 30-day pilot'].map((b) => (
                   <Stack direction="row" spacing={0.5} alignItems="center" key={b}>
                     <CheckIcon sx={{ fontSize: 16, color: '#8bc34a' }} />
@@ -370,20 +403,29 @@ export default function LandingPage() {
               Everything your school needs to run smoothly
             </Typography>
           </Box>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 1.5, sm: 3 }}>
             {[
-              { icon: <ReportIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Gradebook & Reports', desc: 'Customizable gradebook software and automatic report card generation.' },
-              { icon: <AttendIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Attendance Tracking', desc: 'Classroom and attendance management with real-time notifications.' },
-              { icon: <CreditIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Fees & Payments', desc: 'Online payments, invoices, receipts, and outstanding balance tracking.' },
-              { icon: <PeopleIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Student Information', desc: 'Powerful SIS for student records, admissions, and parent portals.' },
-              { icon: <NotifIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Parent Communication', desc: 'WhatsApp and SMS alerts to keep parents informed instantly.' },
-              { icon: <LockIcon sx={{ fontSize: 28, color: '#8bc34a' }} />, title: 'Secure & Private', desc: 'Role-based access and NDPR-aligned data protection for every school.' },
+              { icon: <ReportIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Gradebook & Reports', desc: 'Customizable gradebook software and automatic report card generation.' },
+              { icon: <AttendIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Attendance Tracking', desc: 'Classroom and attendance management with real-time notifications.' },
+              { icon: <CreditIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Fees & Payments', desc: 'Online payments, invoices, receipts, and outstanding balance tracking.' },
+              { icon: <PeopleIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Student Information', desc: 'Powerful SIS for student records, admissions, and parent portals.' },
+              { icon: <NotifIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Parent Communication', desc: 'WhatsApp and SMS alerts to keep parents informed instantly.' },
+              { icon: <LockIcon sx={{ fontSize: 24, color: '#689f38' }} />, title: 'Secure & Private', desc: 'Role-based access and NDPR-aligned data protection for every school.' },
             ].map((f) => (
               <Grid item xs={12} sm={6} md={4} key={f.title}>
-                <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: 3, border: '1px solid #e0e0e0', bgcolor: '#fff' }}>
-                  <Box sx={{ mb: 1.5 }}>{f.icon}</Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#2d3748', mb: 0.75, fontSize: '1.05rem' }}>{f.title}</Typography>
-                  <Typography variant="body2" sx={{ color: '#718096', lineHeight: 1.6 }}>{f.desc}</Typography>
+                <Paper elevation={0} sx={{
+                  p: { xs: 2, sm: 3 }, height: '100%', borderRadius: 3, border: '1px solid #e6e8e3', bgcolor: '#fff',
+                  display: { xs: 'flex', sm: 'block' }, gap: 2, alignItems: 'flex-start',
+                  transition: 'box-shadow 0.2s, transform 0.2s',
+                  '&:hover': { boxShadow: '0 8px 24px rgba(13,59,46,0.08)', transform: { md: 'translateY(-2px)' } },
+                }}>
+                  <Box sx={{ width: 44, height: 44, flexShrink: 0, borderRadius: 2.5, bgcolor: '#f1f8e9', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: { xs: 0, sm: 2 } }}>
+                    {f.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#2d3748', mb: 0.5, fontSize: { xs: '1rem', sm: '1.05rem' } }}>{f.title}</Typography>
+                    <Typography variant="body2" sx={{ color: '#718096', lineHeight: 1.6 }}>{f.desc}</Typography>
+                  </Box>
                 </Paper>
               </Grid>
             ))}
@@ -394,7 +436,7 @@ export default function LandingPage() {
       {/* ══════════════ Trust badges ══════════════ */}
       <Box sx={{ py: 3, borderBottom: '1px solid #eee', bgcolor: '#fff' }}>
         <Container maxWidth="lg">
-          <Stack direction="row" spacing={{ xs: 2, md: 4 }} justifyContent="center" flexWrap="wrap" sx={{ gap: 1.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, auto)' }, justifyContent: { md: 'center' }, columnGap: { xs: 1.5, md: 4 }, rowGap: 1.5 }}>
             {[
               { icon: <FlagIcon sx={{ fontSize: 16, color: '#8bc34a' }} />, label: 'Built for Nigerian schools' },
               { icon: <PaymentIcon sx={{ fontSize: 16, color: '#8bc34a' }} />, label: 'Online payments' },
@@ -403,41 +445,46 @@ export default function LandingPage() {
             ].map((badge) => (
               <Stack key={badge.label} direction="row" spacing={0.75} alignItems="center">
                 <Box>{badge.icon}</Box>
-                <Typography variant="body2" sx={{ color: '#666', fontWeight: 500, fontSize: { xs: '0.75rem', md: '0.85rem' } }}>{badge.label}</Typography>
+                <Typography variant="body2" sx={{ color: '#666', fontWeight: 500, fontSize: { xs: '0.78rem', md: '0.85rem' } }}>{badge.label}</Typography>
               </Stack>
             ))}
-          </Stack>
+          </Box>
         </Container>
       </Box>
 
       {/* ══════════════ Meet Your Team (Personas) ══════════════ */}
-      <Box sx={{ py: { xs: 8, md: 12 } }}>
+      <Box sx={{ py: { xs: 7, md: 12 } }}>
         <Container maxWidth="md">
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: { xs: 1.5, md: 2 }, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
             Every school runs on these three people
           </Typography>
-          <Typography variant="body1" sx={{ color: '#888', textAlign: 'center', mb: 8, maxWidth: 500, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: '#888', textAlign: 'center', mb: { xs: 4, md: 8 }, maxWidth: 500, mx: 'auto' }}>
             Meet your team — and the problems they face every single term.
           </Typography>
 
-          <Stack spacing={10}>
+          <Stack spacing={{ xs: 2, md: 10 }}>
             {personas.map((p) => (
-              <Box key={p.role}>
-                <Typography variant="overline" sx={{ color: '#999', letterSpacing: 3, fontWeight: 600, display: 'block', mb: 1.5 }}>
+              <Box key={p.role} sx={{
+                p: { xs: 2.5, md: 0 },
+                borderRadius: { xs: 3, md: 0 },
+                bgcolor: { xs: '#f7f8f5', md: 'transparent' },
+                borderLeft: { xs: '4px solid #8bc34a', md: 'none' },
+              }}>
+                <Typography variant="overline" sx={{ color: { xs: '#689f38', md: '#999' }, letterSpacing: 3, fontWeight: 700, display: 'block', mb: { xs: 0.75, md: 1.5 }, lineHeight: 1.6 }}>
                   {p.role}
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#111', mb: 3, fontSize: { xs: '1.4rem', md: '1.85rem' }, lineHeight: 1.3, maxWidth: 550 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#111', mb: { xs: 2, md: 3 }, fontSize: { xs: '1.2rem', md: '1.85rem' }, lineHeight: 1.35, maxWidth: 550 }}>
                   {p.quote}
                 </Typography>
-                <Stack spacing={1.5}>
+                <Stack spacing={{ xs: 1, md: 1.5 }}>
                   {p.pains.map((pain) => (
                     <Stack direction="row" spacing={1.5} key={pain} alignItems="flex-start">
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ccc', mt: 1, flexShrink: 0 }} />
-                      <Typography variant="body1" sx={{ color: '#666', lineHeight: 1.6 }}>{pain}</Typography>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: { xs: '#aed581', md: '#ccc' }, mt: 1, flexShrink: 0 }} />
+                      <Typography variant="body1" sx={{ color: '#666', lineHeight: 1.6, fontSize: { xs: '0.92rem', md: '1rem' } }}>{pain}</Typography>
                     </Stack>
                   ))}
                 </Stack>
-                <Divider sx={{ mt: 5 }} />
+                <Divider sx={{ mt: 5, display: { xs: 'none', md: 'block' } }} />
               </Box>
             ))}
           </Stack>
@@ -445,27 +492,26 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ Transition statement ══════════════ */}
-      <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: '#fafafa' }}>
+      <Box sx={{ py: { xs: 5, md: 10 }, bgcolor: '#fafafa' }}>
         <Container maxWidth="md">
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', fontSize: { xs: '1.5rem', md: '2.25rem' }, letterSpacing: '-1px' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', fontSize: { xs: '1.4rem', md: '2.25rem' }, letterSpacing: '-0.5px' }}>
             Schoolful LMS gives each of them a system that works.
           </Typography>
         </Container>
       </Box>
 
       {/* ══════════════ Features (Tabbed) ══════════════ */}
-      <Box id="features" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="features" sx={{ py: { xs: 7, md: 12 }, ...anchorOffset }}>
         <Container maxWidth="lg">
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}
             centered={!isMobile}
-            variant={isMobile ? 'scrollable' : 'standard'}
-            scrollButtons={isMobile ? 'auto' : false}
-            allowScrollButtonsMobile
+            variant={isMobile ? 'fullWidth' : 'standard'}
             sx={{
-              mb: { xs: 4, md: 6 },
-              '& .MuiTab-root': { textTransform: 'uppercase', fontWeight: 700, letterSpacing: 2, color: '#999', fontSize: { xs: '0.75rem', sm: '0.85rem' }, minWidth: { xs: 'auto', sm: 90 } },
+              mb: { xs: 3, md: 6 },
+              borderBottom: { xs: '1px solid #eee', md: 'none' },
+              '& .MuiTab-root': { textTransform: 'uppercase', fontWeight: 700, letterSpacing: { xs: 1, sm: 2 }, color: '#999', fontSize: { xs: '0.72rem', sm: '0.85rem' }, minWidth: { xs: 0, sm: 90 }, px: { xs: 0.5, sm: 2 }, minHeight: 48 },
               '& .Mui-selected': { color: '#111' },
               '& .MuiTabs-indicator': { bgcolor: '#111', height: 3 },
             }}
@@ -475,9 +521,9 @@ export default function LandingPage() {
             ))}
           </Tabs>
 
-          <Grid container spacing={6} alignItems="center">
-            {/* Feature mockup */}
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={{ xs: 0, md: 6 }} alignItems="center">
+            {/* Feature mockup — repeats the text beside it, so it's hidden on phones */}
+            <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
               <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid #eee' }}>
                 <Box sx={{ px: 2, py: 0.75, bgcolor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', display: 'flex', gap: 0.5 }}>
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ff5f57' }} />
@@ -503,7 +549,7 @@ export default function LandingPage() {
 
             {/* Feature description */}
             <Grid item xs={12} md={6}>
-              <Typography variant="overline" sx={{ color: '#1976d2', fontWeight: 700, letterSpacing: 2 }}>
+              <Typography variant="overline" sx={{ color: '#689f38', fontWeight: 700, letterSpacing: 2 }}>
                 {featureTabs[activeTab].step} {featureTabs[activeTab].label}
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#111', mt: 1, mb: 2, fontSize: { xs: '1.5rem', md: '2rem' }, letterSpacing: '-0.5px' }}>
@@ -526,44 +572,46 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ Everything your school runs on ══════════════ */}
-      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#fafafa' }}>
+      <Box sx={{ py: { xs: 7, md: 12 }, bgcolor: '#fafafa' }}>
         <Container maxWidth="lg">
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: 6, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: { xs: 4, md: 6 }, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
             Everything your school runs on
           </Typography>
-          <Grid container spacing={0}>
+          {/* 1px gaps over a grey background draw even hairlines between tiles at every width */}
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+            gap: '1px', bgcolor: '#e0e0e0', border: '1px solid #e0e0e0',
+            borderRadius: { xs: 3, md: 0 }, overflow: 'hidden',
+          }}>
             {systemFeatures.map((sf, idx) => (
-              <Grid item xs={12} sm={6} md={3} key={sf.code}>
-                <Box
-                  sx={{
-                    p: 3.5,
-                    height: '100%',
-                    border: '1px solid #e0e0e0',
-                    borderRight: idx < 3 ? { md: 'none' } : '1px solid #e0e0e0',
-                    bgcolor: idx === 3 ? '#111' : '#fff',
-                    transition: 'background-color 0.3s',
-                    '&:hover': { bgcolor: idx === 3 ? '#222' : '#f5f5f5' },
-                  }}
-                >
-                  <Typography variant="caption" sx={{ color: idx === 3 ? 'rgba(255,255,255,0.5)' : '#999', letterSpacing: 2, fontWeight: 600, display: 'block', mb: 2 }}>
-                    {sf.code}
-                  </Typography>
-                  <Box sx={{ mb: 2, color: idx === 3 ? '#fff' : '#111' }}>{sf.icon}</Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: idx === 3 ? '#fff' : '#111', mb: 1 }}>
-                    {sf.title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: idx === 3 ? 'rgba(255,255,255,0.7)' : '#666', lineHeight: 1.6 }}>
-                    {sf.desc}
-                  </Typography>
-                </Box>
-              </Grid>
+              <Box
+                key={sf.code}
+                sx={{
+                  p: { xs: 2, sm: 3.5 },
+                  bgcolor: idx === 3 ? '#111' : '#fff',
+                  transition: 'background-color 0.3s',
+                  '&:hover': { bgcolor: idx === 3 ? '#222' : '#f5f5f5' },
+                }}
+              >
+                <Typography variant="caption" sx={{ color: idx === 3 ? 'rgba(255,255,255,0.5)' : '#999', letterSpacing: 2, fontWeight: 600, display: 'block', mb: { xs: 1.25, sm: 2 }, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                  {sf.code}
+                </Typography>
+                <Box sx={{ mb: { xs: 1.25, sm: 2 }, color: idx === 3 ? '#aed581' : '#111', display: 'flex' }}>{sf.icon}</Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: idx === 3 ? '#fff' : '#111', mb: 0.75, fontSize: { xs: '0.95rem', sm: '1rem' }, lineHeight: 1.3 }}>
+                  {sf.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: idx === 3 ? 'rgba(255,255,255,0.7)' : '#666', lineHeight: 1.55, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                  {sf.desc}
+                </Typography>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         </Container>
       </Box>
 
       {/* ══════════════ Pricing ══════════════ */}
-      <Box id="pricing" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="pricing" sx={{ py: { xs: 7, md: 12 }, ...anchorOffset }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', mb: 1.5, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
@@ -591,20 +639,56 @@ export default function LandingPage() {
             </ToggleButtonGroup>
           </Box>
 
-          <Typography variant="body2" sx={{ textAlign: 'center', color: '#888', mb: 5 }}>
+          <Typography variant="body2" sx={{ textAlign: 'center', color: '#888', mb: { xs: 3, sm: 5 } }}>
             First 50 schools: 50% off your first term, any plan.
           </Typography>
 
-          {/* Plan cards */}
-          <Grid container spacing={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
+          {/* Plan cards: a swipeable row on phones, a bordered grid from tablet up */}
+          <Box
+            ref={plansRef}
+            onScroll={handlePlanScroll}
+            sx={{
+              display: 'flex',
+              flexWrap: { xs: 'nowrap', sm: 'wrap' },
+              gap: { xs: 1.5, sm: 0 },
+              overflowX: { xs: 'auto', sm: 'visible' },
+              scrollSnapType: { xs: 'x mandatory', sm: 'none' },
+              scrollPaddingLeft: { xs: 16, sm: 0 },
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+              // Bleed to the screen edges on phones so the next card peeks in
+              mx: { xs: -2, sm: 0 },
+              px: { xs: 2, sm: 0 },
+              pt: { xs: 1.5, sm: 0 },
+              pb: { xs: 1, sm: 0 },
+              border: { sm: '1px solid #e0e0e0' },
+              borderRadius: { sm: 2 },
+            }}
+          >
             {currentPlans.map((plan, idx) => (
-              <Grid item xs={12} sm={6} md={3} key={plan.name}>
+              <Box key={plan.name} sx={{
+                flex: { xs: '0 0 84%', sm: '0 0 50%', md: '0 0 25%' },
+                maxWidth: { xs: 340, sm: 'none' },
+                scrollSnapAlign: 'start',
+                display: 'flex',
+              }}>
                 <Box sx={{
-                  p: { xs: 2.5, sm: 3 }, height: '100%', display: 'flex', flexDirection: 'column',
-                  borderRight: idx < 3 ? { md: '1px solid #e0e0e0' } : 'none',
-                  borderBottom: { xs: idx < currentPlans.length - 1 ? '1px solid #e0e0e0' : 'none', sm: idx < 2 ? 'none' : '1px solid #e0e0e0', md: 'none' },
-                  position: 'relative',
-                  ...(plan.highlighted ? { border: '2px solid #2e7d32', borderRadius: 0, m: '-1px', zIndex: 1 } : {}),
+                  p: { xs: 2.5, sm: 3 }, width: '100%', display: 'flex', flexDirection: 'column',
+                  position: 'relative', bgcolor: '#fff',
+                  // Phones: separate rounded cards
+                  border: { xs: '1px solid #e0e0e0', sm: 'none' },
+                  borderRadius: { xs: 3, sm: 0 },
+                  // Tablet/desktop: dividers between cells of the grid
+                  borderRight: { sm: idx % 2 === 0 ? '1px solid #e0e0e0' : 'none', md: idx < 3 ? '1px solid #e0e0e0' : 'none' },
+                  borderBottom: { sm: idx < 2 ? '1px solid #e0e0e0' : 'none', md: 'none' },
+                  ...(plan.highlighted ? {
+                    border: '2px solid #2e7d32',
+                    borderRadius: { xs: 3, sm: 0 },
+                    m: { sm: '-1px' },
+                    zIndex: 1,
+                    boxShadow: { xs: '0 10px 30px rgba(46,125,50,0.15)', sm: 'none' },
+                  } : {}),
                 }}>
                   {plan.highlighted && (
                     <Chip label="Most Popular" size="small" sx={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%) translateY(-50%)', bgcolor: '#2e7d32', color: '#fff', fontWeight: 700, fontSize: '0.7rem' }} />
@@ -634,9 +718,22 @@ export default function LandingPage() {
                     Start 30-Day Pilot
                   </Button>
                 </Box>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
+
+          {/* Swipe position dots (phones only) */}
+          <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.5} sx={{ display: { xs: 'flex', sm: 'none' }, mt: 1.5 }}>
+            {currentPlans.map((plan, i) => (
+              <Box key={plan.name} component="button" type="button" aria-label={`Show ${plan.name} plan`} onClick={() => scrollToPlan(i)}
+                sx={{ p: 0, border: 0, bgcolor: 'transparent', cursor: 'pointer', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ width: planIndex === i ? 22 : 8, height: 8, borderRadius: 4, bgcolor: planIndex === i ? '#111' : '#d0d0d0', transition: 'all 0.25s' }} />
+              </Box>
+            ))}
+          </Stack>
+          <Typography variant="caption" sx={{ display: { xs: 'block', sm: 'none' }, textAlign: 'center', color: '#999' }}>
+            Swipe to compare plans
+          </Typography>
 
           {/* Enterprise section */}
           <Paper elevation={0} sx={{ mt: 4, p: { xs: 3, md: 5 }, bgcolor: '#111', borderRadius: 3, color: '#fff' }}>
@@ -660,7 +757,7 @@ export default function LandingPage() {
               </Grid>
               <Grid item xs={12} md={3} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
                 <Button variant="outlined" size="large" onClick={() => navigate('/register')}
-                  sx={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, fontWeight: 600, '&:hover': { borderColor: '#fff' } }}>
+                  sx={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, py: 1.25, fontWeight: 600, width: { xs: '100%', md: 'auto' }, '&:hover': { borderColor: '#fff' } }}>
                   Talk to Sales
                 </Button>
               </Grid>
@@ -679,15 +776,15 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ Built for Nigerian schools ══════════════ */}
-      <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#111' }}>
+      <Box sx={{ py: { xs: 7, md: 10 }, bgcolor: '#111' }}>
         <Container maxWidth="lg">
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#fff', textAlign: 'center', mb: 6, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: '#fff', textAlign: 'center', mb: { xs: 4, md: 6 }, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
             Built for how Nigerian schools actually work
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             {nigerianValues.map((v, idx) => (
               <Grid item xs={12} sm={6} md={idx < 3 ? 4 : 6} key={v.title}>
-                <Box sx={{ p: 3, borderRadius: 2, border: '1px solid rgba(255,255,255,0.15)', height: '100%', borderLeft: '3px solid rgba(255,255,255,0.3)' }}>
+                <Box sx={{ p: { xs: 2.25, sm: 3 }, borderRadius: 2, border: '1px solid rgba(255,255,255,0.15)', height: '100%', borderLeft: '3px solid #8bc34a' }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>{v.title}</Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>{v.desc}</Typography>
                 </Box>
@@ -698,9 +795,9 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ Demo — Interactive Setup ══════════════ */}
-      <Box id="demo" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="demo" sx={{ py: { xs: 7, md: 12 }, ...anchorOffset }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 3.5, md: 5 } }}>
             <Typography variant="overline" sx={{ color: '#999', letterSpacing: 3, fontWeight: 600 }}>
               INTERACTIVE DEMO
             </Typography>
@@ -712,19 +809,25 @@ export default function LandingPage() {
             </Typography>
           </Box>
 
-          {/* Step pills */}
-          <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 4, flexWrap: 'wrap', gap: 1 }}>
+          {/* Step pills: one segmented row on phones, separate chips from tablet up */}
+          <Box sx={{
+            display: 'grid', gridTemplateColumns: { xs: 'repeat(4, 1fr)', sm: 'repeat(4, auto)' }, justifyContent: 'center',
+            gap: { xs: 0.5, sm: 1 }, mb: 4, mx: 'auto', maxWidth: { xs: 420, sm: 'none' },
+            p: { xs: 0.5, sm: 0 }, bgcolor: { xs: '#f3f3f3', sm: 'transparent' }, borderRadius: { xs: 3, sm: 0 },
+          }}>
             {['Register', 'Classes', 'Students', 'Live'].map((label, i) => (
-              <Chip key={label} label={label} onClick={() => setDemoStep(i)}
+              <Chip key={label} label={isMobile ? `${i + 1}. ${label}` : label} onClick={() => setDemoStep(i)}
                 sx={{
-                  fontWeight: 600, fontSize: '0.82rem', px: 1, cursor: 'pointer',
-                  bgcolor: demoStep === i ? '#111' : '#fff', color: demoStep === i ? '#fff' : '#555',
-                  border: demoStep === i ? 'none' : '1px solid #ddd',
-                  '&:hover': { bgcolor: demoStep === i ? '#333' : '#f5f5f5' },
+                  fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.82rem' }, px: { xs: 0, sm: 1 }, height: { xs: 38, sm: 32 }, cursor: 'pointer',
+                  borderRadius: { xs: 2.5, sm: 4 },
+                  '& .MuiChip-label': { px: { xs: 0.5, sm: 1.5 } },
+                  bgcolor: demoStep === i ? '#111' : { xs: 'transparent', sm: '#fff' }, color: demoStep === i ? '#fff' : '#555',
+                  border: demoStep === i ? 'none' : { xs: 'none', sm: '1px solid #ddd' },
+                  '&:hover': { bgcolor: demoStep === i ? '#333' : '#e9e9e9' },
                 }}
               />
             ))}
-          </Stack>
+          </Box>
 
           <Grid container spacing={4}>
             {/* Left: description */}
@@ -755,11 +858,11 @@ export default function LandingPage() {
                     ))}
                   </Stack>
                   <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
-                    {i > 0 && <Button variant="outlined" size="small" onClick={() => setDemoStep(i - 1)} sx={{ borderColor: '#ccc', color: '#555', textTransform: 'none', borderRadius: 2 }}>Back</Button>}
+                    {i > 0 && <Button variant="outlined" onClick={() => setDemoStep(i - 1)} sx={{ borderColor: '#ccc', color: '#555', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, flex: { xs: 1, sm: 'none' } }}>Back</Button>}
                     {i < 3 ? (
-                      <Button variant="contained" size="small" onClick={() => setDemoStep(i + 1)} sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, '&:hover': { bgcolor: '#333' } }}>Next Step</Button>
+                      <Button variant="contained" onClick={() => setDemoStep(i + 1)} endIcon={<ArrowIcon />} sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, boxShadow: 'none', flex: { xs: 2, sm: 'none' }, '&:hover': { bgcolor: '#333' } }}>Next Step</Button>
                     ) : (
-                      <Button variant="contained" size="small" onClick={() => navigate('/register')} endIcon={<ArrowIcon />} sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, '&:hover': { bgcolor: '#333' } }}>Start Your Pilot</Button>
+                      <Button variant="contained" onClick={() => navigate('/register')} endIcon={<ArrowIcon />} sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, fontWeight: 700, boxShadow: 'none', flex: { xs: 2, sm: 'none' }, '&:hover': { bgcolor: '#7cb342' } }}>Start Your Pilot</Button>
                     )}
                   </Stack>
                 </Box>
@@ -947,7 +1050,7 @@ export default function LandingPage() {
               </Grid>
               <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
                 <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />}
-                  sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, fontWeight: 600, '&:hover': { bgcolor: '#333' } }}>
+                  sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, py: 1.25, fontWeight: 600, width: { xs: '100%', md: 'auto' }, '&:hover': { bgcolor: '#333' } }}>
                   Book a Walkthrough
                 </Button>
               </Grid>
@@ -957,9 +1060,9 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ About ══════════════ */}
-      <Box id="about" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="about" sx={{ py: { xs: 7, md: 12 }, ...anchorOffset }}>
         <Container maxWidth="md">
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
             <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
               We're building the operating system for African schools
             </Typography>
@@ -967,7 +1070,7 @@ export default function LandingPage() {
               Schoolful LMS was born from a simple observation: schools spend too much time on paperwork and not enough on education. We're a team of educators and engineers building the most intuitive, affordable school management platform for schools across Africa.
             </Typography>
           </Box>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 1.5, md: 3 }}>
             {[
               { num: '500+', label: 'Schools onboarded', sub: 'Across Nigeria and growing' },
               { num: '10hrs', label: 'Saved per week', sub: 'On average, per school admin' },
@@ -975,8 +1078,8 @@ export default function LandingPage() {
               { num: '15min', label: 'Average setup time', sub: 'From signup to first student' },
             ].map((stat) => (
               <Grid item xs={6} md={3} key={stat.label}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 800, color: '#111', mb: 0.5 }}>{stat.num}</Typography>
+                <Box sx={{ textAlign: 'center', height: '100%', p: { xs: 2, md: 0 }, borderRadius: 3, bgcolor: { xs: '#f7f8f5', md: 'transparent' } }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: { xs: '#0d3b2e', md: '#111' }, mb: 0.5 }}>{stat.num}</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#444', mb: 0.25 }}>{stat.label}</Typography>
                   <Typography variant="caption" sx={{ color: '#999' }}>{stat.sub}</Typography>
                 </Box>
@@ -987,16 +1090,16 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ FAQ ══════════════ */}
-      <Box id="faq" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#fafafa' }}>
+      <Box id="faq" sx={{ py: { xs: 7, md: 12 }, bgcolor: '#fafafa', ...anchorOffset }}>
         <Container maxWidth="md">
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: 6, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', mb: { xs: 3, md: 6 }, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
             Questions
           </Typography>
           {faqs.map((faq) => (
             <Accordion key={faq.q} elevation={0} disableGutters
               sx={{ bgcolor: 'transparent', borderBottom: '1px solid #e0e0e0', '&:before': { display: 'none' }, '&.Mui-expanded': { margin: 0 } }}>
               <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#999' }} />} sx={{ px: 0, py: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: 600, color: '#111' }}>{faq.q}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600, color: '#111', fontSize: { xs: '0.95rem', md: '1rem' }, pr: 1 }}>{faq.q}</Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0, pb: 2.5 }}>
                 <Typography variant="body2" sx={{ color: '#666', lineHeight: 1.7 }}>{faq.a}</Typography>
@@ -1007,9 +1110,9 @@ export default function LandingPage() {
       </Box>
 
       {/* ══════════════ Contact ══════════════ */}
-      <Box id="contact" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="contact" sx={{ py: { xs: 7, md: 12 }, ...anchorOffset }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
             <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', mb: 1.5, fontSize: { xs: '1.75rem', md: '2.5rem' }, letterSpacing: '-1px' }}>
               Get in touch
             </Typography>
@@ -1019,24 +1122,32 @@ export default function LandingPage() {
           </Box>
           <Grid container spacing={4}>
             <Grid item xs={12} md={5}>
-              <Stack spacing={3}>
+              <Stack spacing={{ xs: 1.5, md: 3 }}>
                 {[
-                  { icon: <EmailIcon sx={{ fontSize: 20 }} />, title: 'Email', lines: ['hello@schoolful.app', 'support@schoolful.app'] },
-                  { icon: <PhoneIcon sx={{ fontSize: 20 }} />, title: 'Phone', lines: ['0706 110 2797', 'Mon - Fri, 8am - 6pm WAT'] },
-                  { icon: <LocationIcon sx={{ fontSize: 20 }} />, title: 'Office', lines: ['Lagos, Nigeria', 'Serving schools across Africa'] },
+                  { icon: <EmailIcon sx={{ fontSize: 20 }} />, title: 'Email', lines: [{ text: 'hello@schoolful.app', href: 'mailto:hello@schoolful.app' }, { text: 'support@schoolful.app', href: 'mailto:support@schoolful.app' }] },
+                  { icon: <PhoneIcon sx={{ fontSize: 20 }} />, title: 'Phone', lines: [{ text: '0706 110 2797', href: 'tel:+2347061102797' }, { text: 'Mon - Fri, 8am - 6pm WAT' }] },
+                  { icon: <LocationIcon sx={{ fontSize: 20 }} />, title: 'Office', lines: [{ text: 'Lagos, Nigeria' }, { text: 'Serving schools across Africa' }] },
                 ].map((c) => (
-                  <Stack direction="row" spacing={2} key={c.title} alignItems="flex-start">
-                    <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>{c.icon}</Box>
+                  <Stack direction="row" spacing={2} key={c.title} alignItems="flex-start"
+                    sx={{ p: { xs: 2, md: 0 }, borderRadius: 3, border: { xs: '1px solid #eee', md: 'none' } }}>
+                    <Box sx={{ width: 40, height: 40, flexShrink: 0, borderRadius: 2, bgcolor: '#f1f8e9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#558b2f' }}>{c.icon}</Box>
                     <Box>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#111' }}>{c.title}</Typography>
-                      {c.lines.map((l) => <Typography key={l} variant="body2" sx={{ color: '#888' }}>{l}</Typography>)}
+                      {c.lines.map((l) => l.href ? (
+                        <Typography key={l.text} variant="body2" component="a" href={l.href}
+                          sx={{ display: 'block', color: '#2e7d32', fontWeight: 500, textDecoration: 'none', py: { xs: 0.25, md: 0 }, '&:hover': { textDecoration: 'underline' } }}>
+                          {l.text}
+                        </Typography>
+                      ) : (
+                        <Typography key={l.text} variant="body2" sx={{ color: '#888' }}>{l.text}</Typography>
+                      ))}
                     </Box>
                   </Stack>
                 ))}
               </Stack>
             </Grid>
             <Grid item xs={12} md={7}>
-              <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3, border: '1px solid #e0e0e0', bgcolor: '#fff' }}>
+              <Paper elevation={0} sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 3, border: '1px solid #e0e0e0', bgcolor: '#fff' }}>
                 {contactSent && <Alert severity="success" sx={{ mb: 2 }}>Thank you! We'll get back to you within 24 hours.</Alert>}
                 <Box component="form" onSubmit={(e: React.FormEvent) => { e.preventDefault(); setContactSent(true); setContactForm({ name: '', email: '', school: '', message: '' }) }}>
                   <Grid container spacing={2}>
@@ -1054,7 +1165,7 @@ export default function LandingPage() {
                     </Grid>
                     <Grid item xs={12}>
                       <Button type="submit" variant="contained" size="large" endIcon={<SendIcon />}
-                        sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, fontWeight: 600, '&:hover': { bgcolor: '#333' } }}>
+                        sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, py: 1.25, fontWeight: 600, width: { xs: '100%', sm: 'auto' }, '&:hover': { bgcolor: '#333' } }}>
                         Send Message
                       </Button>
                     </Grid>
@@ -1088,7 +1199,7 @@ export default function LandingPage() {
             Join schools already using Schoolful LMS to save time, reduce errors, and focus on education.
           </Typography>
           <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />}
-            sx={{ bgcolor: '#fff', color: '#111', textTransform: 'none', px: 5, py: 1.5, fontWeight: 700, borderRadius: 2, '&:hover': { bgcolor: '#f5f5f5' } }}>
+            sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', px: 5, py: 1.5, fontWeight: 700, borderRadius: 2, width: { xs: '100%', sm: 'auto' }, boxShadow: 'none', '&:hover': { bgcolor: '#7cb342' } }}>
             Start 30-Day Pilot
           </Button>
           <Typography variant="caption" sx={{ display: 'block', mt: 2, opacity: 0.5 }}>No card required. Set up in under 10 minutes.</Typography>
@@ -1107,33 +1218,33 @@ export default function LandingPage() {
             </Grid>
             <Grid item xs={6} sm={3} md={2}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>Product</Typography>
-              <Stack spacing={0.5}>
+              <Stack spacing={{ xs: 0, md: 0.5 }}>
                 {[{ label: 'Features', href: '#features' }, { label: 'Demo', href: '#demo' }, { label: 'Pricing', href: '#pricing' }, { label: 'FAQ', href: '#faq' }].map((l) => (
-                  <Typography key={l.label} variant="body2" component="a" href={l.href} sx={{ textDecoration: 'none', color: 'rgba(255,255,255,0.5)', '&:hover': { color: '#fff' } }}>{l.label}</Typography>
+                  <Typography key={l.label} variant="body2" component="a" href={l.href} sx={{ textDecoration: 'none', color: 'rgba(255,255,255,0.5)', py: { xs: 1, md: 0 }, '&:hover': { color: '#fff' } }}>{l.label}</Typography>
                 ))}
               </Stack>
             </Grid>
             <Grid item xs={6} sm={3} md={2}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>Company</Typography>
-              <Stack spacing={0.5}>
+              <Stack spacing={{ xs: 0, md: 0.5 }}>
                 {[{ label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' }, { label: 'Blog', href: '#' }, { label: 'Careers', href: '#' }].map((l) => (
-                  <Typography key={l.label} variant="body2" component="a" href={l.href} sx={{ textDecoration: 'none', color: 'rgba(255,255,255,0.5)', '&:hover': { color: '#fff' } }}>{l.label}</Typography>
+                  <Typography key={l.label} variant="body2" component="a" href={l.href} sx={{ textDecoration: 'none', color: 'rgba(255,255,255,0.5)', py: { xs: 1, md: 0 }, '&:hover': { color: '#fff' } }}>{l.label}</Typography>
                 ))}
               </Stack>
             </Grid>
             <Grid item xs={6} sm={3} md={2}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>Legal</Typography>
-              <Stack spacing={0.5}>
+              <Stack spacing={{ xs: 0, md: 0.5 }}>
                 {['Privacy Policy', 'Terms of Service', 'NDPR Compliance'].map((l) => (
-                  <Typography key={l} variant="body2" sx={{ '&:hover': { color: '#fff' }, cursor: 'pointer' }}>{l}</Typography>
+                  <Typography key={l} variant="body2" sx={{ py: { xs: 1, md: 0 }, '&:hover': { color: '#fff' }, cursor: 'pointer' }}>{l}</Typography>
                 ))}
               </Stack>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>Get Started</Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>Register your school today.</Typography>
-              <Button variant="outlined" size="small" onClick={() => navigate('/register')}
-                sx={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff', textTransform: 'none', borderRadius: 2, '&:hover': { borderColor: '#fff' } }}>
+              <Button variant="outlined" onClick={() => navigate('/register')}
+                sx={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, '&:hover': { borderColor: '#fff' } }}>
                 Register Now
               </Button>
             </Grid>

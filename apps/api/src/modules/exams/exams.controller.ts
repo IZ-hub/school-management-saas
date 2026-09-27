@@ -6,9 +6,12 @@ import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, ACADEMIC_ROLES } from '../../common/roles';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...ACADEMIC_ROLES)
 @Controller('exams')
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
@@ -35,20 +38,20 @@ export class ExamsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const data = await this.service.findOne(id);
+  async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.findOne(user.schoolId, id);
     return { data };
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateExamDto) {
-    const data = await this.service.update(id, dto);
+  async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateExamDto) {
+    const data = await this.service.update(user.schoolId, id, dto);
     return { data };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const data = await this.service.remove(id);
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.remove(user.schoolId, id);
     return { data };
   }
 }

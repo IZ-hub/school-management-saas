@@ -6,9 +6,12 @@ import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, ACADEMIC_ROLES } from '../../common/roles';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...ACADEMIC_ROLES)
 @Controller('attendance')
 export class AttendanceController {
   constructor(private readonly service: AttendanceService) {}
@@ -39,14 +42,14 @@ export class AttendanceController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateAttendanceDto) {
-    const data = await this.service.update(id, dto);
+  async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateAttendanceDto) {
+    const data = await this.service.update(user.schoolId, id, dto);
     return { data };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const data = await this.service.remove(id);
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.remove(user.schoolId, id);
     return { data };
   }
 }

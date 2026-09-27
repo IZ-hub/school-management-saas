@@ -6,9 +6,12 @@ import { ResultsService } from './results.service';
 import { CreateResultDto } from './dto/create-result.dto';
 import { UpdateResultDto } from './dto/update-result.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, ACADEMIC_ROLES } from '../../common/roles';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...ACADEMIC_ROLES)
 @Controller('results')
 export class ResultsController {
   constructor(private readonly service: ResultsService) {}
@@ -33,20 +36,20 @@ export class ResultsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const data = await this.service.findOne(id);
+  async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.findOne(user.schoolId, id);
     return { data };
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateResultDto) {
-    const data = await this.service.update(id, dto);
+  async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateResultDto) {
+    const data = await this.service.update(user.schoolId, id, dto);
     return { data };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const data = await this.service.remove(id);
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.remove(user.schoolId, id);
     return { data };
   }
 }

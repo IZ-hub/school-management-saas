@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { getOwnedDoc } from '../../common/tenant';
 import { CreateFeeDto } from './dto/create-fee.dto';
 import { UpdateFeeDto } from './dto/update-fee.dto';
 
@@ -35,23 +36,20 @@ export class FeesService {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async findOne(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Fee not found');
+  async findOne(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Fee not found');
     return { id: doc.id, ...doc.data() };
   }
 
-  async update(id: string, dto: UpdateFeeDto) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Fee not found');
-    await this.col.doc(id).update({ ...dto, updatedAt: new Date() });
+  async update(schoolId: string, id: string, dto: UpdateFeeDto) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Fee not found');
+    await doc.ref.update({ ...dto, updatedAt: new Date() });
     return { id, ...doc.data(), ...dto };
   }
 
-  async remove(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Fee not found');
-    await this.col.doc(id).delete();
+  async remove(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Fee not found');
+    await doc.ref.delete();
     return { message: 'Fee deleted' };
   }
 

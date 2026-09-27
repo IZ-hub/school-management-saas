@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../../../common/jwt-secret';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -19,10 +20,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'default_jwt_secret',
-      );
+      const decoded = jwt.verify(token, getJwtSecret());
       request.user = decoded;
       return true;
     } catch {

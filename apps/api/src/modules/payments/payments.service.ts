@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { getOwnedDoc } from '../../common/tenant';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 
@@ -13,6 +14,14 @@ export class PaymentsService {
 
   async create(schoolId: string, dto: CreatePaymentDto) {
     const now = new Date();
+    // The fee must belong to this school; otherwise a payment could mark another school's fee as paid.
+    const feeDoc = await getOwnedDoc(
+      this.firebase.firestore.collection('fees'),
+      dto.feeId,
+      schoolId,
+      'Fee not found',
+    );
+
     const docRef = await this.col.add({
       schoolId,
       ...dto,
@@ -22,19 +31,8 @@ export class PaymentsService {
     });
 
     // Update fee status to PAID if full payment
-    try {
-      const feeDoc = await this.firebase.firestore
-        .collection('fees')
-        .doc(dto.feeId)
-        .get();
-      if (feeDoc.exists) {
-        const feeData = feeDoc.data()!;
-        if (dto.amountPaid >= feeData.amount) {
-          await feeDoc.ref.update({ status: 'PAID', updatedAt: now });
-        }
-      }
-    } catch {
-      // Non-critical: fee status update failed
+    if (dto.amountPaid >= feeDoc.data()!.amount) {
+      await feeDoc.ref.update({ status: 'PAID', updatedAt: now });
     }
 
     return { id: docRef.id, schoolId, ...dto };
@@ -51,23 +49,20 @@ export class PaymentsService {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async findOne(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Payment not found');
+  async findOne(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Payment not found');
     return { id: doc.id, ...doc.data() };
   }
 
-  async update(id: string, dto: UpdatePaymentDto) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Payment not found');
-    await this.col.doc(id).update({ ...dto, updatedAt: new Date() });
+  async update(schoolId: string, id: string, dto: UpdatePaymentDto) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Payment not found');
+    await doc.ref.update({ ...dto, updatedAt: new Date() });
     return { id, ...doc.data(), ...dto };
   }
 
-  async remove(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Payment not found');
-    await this.col.doc(id).delete();
+  async remove(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Payment not found');
+    await doc.ref.delete();
     return { message: 'Payment deleted' };
   }
 

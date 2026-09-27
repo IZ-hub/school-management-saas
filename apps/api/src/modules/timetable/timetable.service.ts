@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { getOwnedDoc } from '../../common/tenant';
 import { CreateTimetableDto } from './dto/create-timetable.dto';
 import { UpdateTimetableDto } from './dto/update-timetable.dto';
 import { QueryTimetableDto } from './dto/query-timetable.dto';
@@ -38,8 +39,9 @@ export class TimetableService {
     }));
   }
 
-  async updateTimetable(id: string, body: UpdateTimetableDto) {
-    await this.collection.doc(id).update({
+  async updateTimetable(schoolId: string, id: string, body: UpdateTimetableDto) {
+    const doc = await getOwnedDoc(this.collection, id, schoolId, 'Timetable entry not found');
+    await doc.ref.update({
       ...body,
       updatedAt: new Date(),
     });
@@ -51,8 +53,9 @@ export class TimetableService {
     };
   }
 
-  async deleteTimetable(id: string) {
-    await this.collection.doc(id).delete();
+  async deleteTimetable(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.collection, id, schoolId, 'Timetable entry not found');
+    await doc.ref.delete();
 
     return {
       message: 'Timetable deleted successfully',

@@ -1,5 +1,7 @@
+import { IsOptional, IsString } from 'class-validator';
+
 export class QueryTimetableDto {
-  classId?: string;
-  teacherId?: string;
-  day?: string;
+  @IsOptional() @IsString() classId?: string;
+  @IsOptional() @IsString() teacherId?: string;
+  @IsOptional() @IsString() day?: string;
 }

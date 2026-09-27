@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { getOwnedDoc } from '../../common/tenant';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 
@@ -47,23 +48,20 @@ export class TeachersService {
     return results;
   }
 
-  async findOne(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Teacher not found');
+  async findOne(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Teacher not found');
     return { id: doc.id, ...doc.data() };
   }
 
-  async update(id: string, dto: UpdateTeacherDto) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Teacher not found');
-    await this.col.doc(id).update({ ...dto, updatedAt: new Date() });
+  async update(schoolId: string, id: string, dto: UpdateTeacherDto) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Teacher not found');
+    await doc.ref.update({ ...dto, updatedAt: new Date() });
     return { id, ...doc.data(), ...dto };
   }
 
-  async remove(id: string) {
-    const doc = await this.col.doc(id).get();
-    if (!doc.exists) throw new NotFoundException('Teacher not found');
-    await this.col.doc(id).update({ status: 'INACTIVE', updatedAt: new Date() });
+  async remove(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Teacher not found');
+    await doc.ref.update({ status: 'INACTIVE', updatedAt: new Date() });
     return { message: 'Teacher deactivated' };
   }
 

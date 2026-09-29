@@ -1,52 +1,102 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
+  Avatar,
   Box,
   Drawer,
-  AppBar,
-  Toolbar,
-  Typography,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  Avatar,
-  Divider,
-  Button,
+  Stack,
+  Tooltip,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
 import {
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  School as SchoolIcon,
-  Class as ClassIcon,
-  MenuBook as SubjectsIcon,
-  EventNote as AttendanceIcon,
-  Assignment as ExamsIcon,
-  Assessment as ResultsIcon,
-  Payment as FeesIcon,
-  Receipt as PaymentsIcon,
+  SpaceDashboardOutlined as DashboardIcon,
+  PeopleOutlined as PeopleIcon,
+  SchoolOutlined as SchoolIcon,
+  ClassOutlined as ClassIcon,
+  MenuBookOutlined as SubjectsIcon,
+  EventAvailableOutlined as AttendanceIcon,
+  AssignmentOutlined as ExamsIcon,
+  InsightsOutlined as ResultsIcon,
+  RequestQuoteOutlined as FeesIcon,
+  ReceiptLongOutlined as PaymentsIcon,
+  HelpOutlineOutlined as HelpIcon,
+  LogoutOutlined as LogoutIcon,
   Menu as MenuIcon,
-  Logout as LogoutIcon,
+  School as LogoIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
+import { brand } from '../theme'
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 248
 
-const navItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-  { label: 'Students', path: '/students', icon: <PeopleIcon /> },
-  { label: 'Teachers', path: '/teachers', icon: <SchoolIcon /> },
-  { label: 'Classes', path: '/classes', icon: <ClassIcon /> },
-  { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon /> },
-  { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon /> },
-  { label: 'Exams', path: '/exams', icon: <ExamsIcon /> },
-  { label: 'Results', path: '/results', icon: <ResultsIcon /> },
-  { label: 'Fees', path: '/fees', icon: <FeesIcon /> },
-  { label: 'Payments', path: '/payments', icon: <PaymentsIcon /> },
+const navSections = [
+  {
+    heading: null,
+    items: [{ label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> }],
+  },
+  {
+    heading: 'People',
+    items: [
+      { label: 'Students', path: '/students', icon: <PeopleIcon /> },
+      { label: 'Teachers', path: '/teachers', icon: <SchoolIcon /> },
+    ],
+  },
+  {
+    heading: 'Academics',
+    items: [
+      { label: 'Classes', path: '/classes', icon: <ClassIcon /> },
+      { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon /> },
+      { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon /> },
+      { label: 'Exams', path: '/exams', icon: <ExamsIcon /> },
+      { label: 'Results', path: '/results', icon: <ResultsIcon /> },
+    ],
+  },
+  {
+    heading: 'Finance',
+    items: [
+      { label: 'Fees', path: '/fees', icon: <FeesIcon /> },
+      { label: 'Payments', path: '/payments', icon: <PaymentsIcon /> },
+    ],
+  },
 ]
+
+const itemSx = {
+  borderRadius: '10px',
+  minHeight: 40,
+  px: 1.5,
+  mb: '2px',
+  color: '#3d433d',
+  '& .MuiListItemIcon-root': { minWidth: 34, color: brand.subtle, '& svg': { fontSize: 20 } },
+  '&:hover': { bgcolor: '#f4f3ee' },
+  '&.Mui-selected': {
+    bgcolor: brand.greenSoft,
+    color: brand.green,
+    '& .MuiListItemIcon-root': { color: brand.green },
+    '& .MuiListItemText-primary': { fontWeight: 600 },
+    '&:hover': { bgcolor: '#e6eee3' },
+  },
+}
+
+const initials = (first?: string, last?: string) => `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase() || '?'
+const roleLabel = (role?: string) => (role ? role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, ' ') : '')
+
+function Logo() {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Avatar sx={{ bgcolor: '#1b5e20', width: 32, height: 32 }}>
+        <LogoIcon sx={{ fontSize: 18, color: '#fff' }} />
+      </Avatar>
+      <Typography sx={{ fontWeight: 800, fontSize: '17px', color: brand.green, letterSpacing: '-0.2px' }}>Schoolful LMS</Typography>
+    </Stack>
+  )
+}
 
 export default function DashboardLayout() {
   const theme = useTheme()
@@ -57,114 +107,127 @@ export default function DashboardLayout() {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
 
+  const go = (path: string) => {
+    navigate(path)
+    if (isMobile) setMobileOpen(false)
+  }
+
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
+  const openSupport = () => {
+    if (isMobile) setMobileOpen(false)
+    window.dispatchEvent(new Event('schoolful:open-support'))
+  }
+
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ bgcolor: '#8bc34a', width: 36, height: 36 }}>
-          <SchoolIcon fontSize="small" />
-        </Avatar>
-        <Box>
-          <Typography variant="subtitle1" fontWeight={700} noWrap>
-            Schoolful LMS
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#8bc34a', fontSize: '0.65rem', display: 'block' }}>
-            Everything School
-          </Typography>
-        </Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: brand.surface }}>
+      <Box sx={{ px: 2.5, height: 64, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <Logo />
       </Box>
-      <Divider />
-      <List sx={{ flex: 1, px: 1, py: 0.5 }}>
-        {navItems.map((item) => (
-          <ListItemButton
-            key={item.path}
-            selected={location.pathname === item.path}
-            onClick={() => {
-              navigate(item.path)
-              if (isMobile) setMobileOpen(false)
-            }}
-            sx={{
-              borderRadius: 1.5,
-              mb: 0.25,
-              '&.Mui-selected': {
-                bgcolor: '#8bc34a',
-                color: '#fff',
-                '& .MuiListItemIcon-root': { color: '#fff' },
-                '&:hover': { bgcolor: '#7cb342' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
-            <ListItemText
-              primary={item.label}
-              primaryTypographyProps={{ fontSize: '0.875rem' }}
-            />
-          </ListItemButton>
+
+      <Box component="nav" aria-label="Main" sx={{ flex: 1, overflowY: 'auto', px: 1.5, pb: 2 }}>
+        {navSections.map((section) => (
+          <Box key={section.heading ?? 'main'} sx={{ mt: section.heading ? 2.5 : 1 }}>
+            {section.heading && (
+              <Typography sx={{ px: 1.5, mb: 0.75, fontSize: '11px', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase', color: brand.subtle }}>
+                {section.heading}
+              </Typography>
+            )}
+            <List disablePadding>
+              {section.items.map((item) => (
+                <ListItemButton
+                  key={item.path}
+                  selected={location.pathname === item.path}
+                  aria-current={location.pathname === item.path ? 'page' : undefined}
+                  onClick={() => go(item.path)}
+                  sx={itemSx}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
+                </ListItemButton>
+              ))}
+            </List>
+          </Box>
         ))}
-      </List>
-      <Divider />
-      <Box sx={{ p: 2 }}>
-        <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-          {user?.firstName} {user?.lastName}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', mb: 1 }}>
-          {user?.role?.replace('_', ' ')}
-        </Typography>
-        <Button
-          fullWidth
-          size="small"
-          variant="outlined"
-          startIcon={<LogoutIcon />}
-          onClick={handleLogout}
-        >
-          Logout
-        </Button>
+      </Box>
+
+      <Box sx={{ px: 1.5, pt: 1, pb: 1.5, borderTop: `1px solid ${brand.border}`, flexShrink: 0 }}>
+        <ListItemButton onClick={openSupport} sx={itemSx}>
+          <ListItemIcon><HelpIcon /></ListItemIcon>
+          <ListItemText primary="Help & support" primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
+        </ListItemButton>
+        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ px: 1, pt: 1.25 }}>
+          <Avatar sx={{ width: 34, height: 34, bgcolor: brand.greenSoft, color: brand.green, fontSize: '13px', fontWeight: 700 }}>
+            {initials(user?.firstName, user?.lastName)}
+          </Avatar>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography noWrap sx={{ fontSize: '13.5px', fontWeight: 600, color: brand.text, lineHeight: 1.3 }}>
+              {user?.firstName} {user?.lastName}
+            </Typography>
+            <Typography noWrap sx={{ fontSize: '12px', color: brand.subtle, lineHeight: 1.3 }}>
+              {roleLabel(user?.role)}
+            </Typography>
+          </Box>
+          <Tooltip title="Sign out">
+            <IconButton aria-label="Sign out" onClick={handleLogout} size="small" sx={{ color: brand.subtle, '&:hover': { color: brand.text } }}>
+              <LogoutIcon sx={{ fontSize: 19 }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Box>
     </Box>
   )
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        width: '100%',
+        bgcolor: brand.page,
+        // Same typeface as the sign-in pages throughout the app.
+        '& .MuiTypography-root, & .MuiButton-root, & .MuiInputBase-root, & .MuiTableCell-root, & .MuiChip-root, & .MuiTab-root, & .MuiMenuItem-root, & .MuiFormLabel-root':
+          { fontFamily: brand.font },
+        // Page titles on every screen match the dashboard heading.
+        '& main .MuiTypography-h4': { fontWeight: 800, letterSpacing: '-0.6px', color: brand.text, fontSize: { xs: '24px', sm: '28px' } },
+      }}
+    >
       {isMobile && (
-        <AppBar
-          position="fixed"
-          elevation={1}
-          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: '#fff', color: '#111' }}
+        <Box
+          component="header"
+          sx={{
+            position: 'fixed', top: 0, left: 0, right: 0, height: 56, zIndex: (t) => t.zIndex.drawer + 1,
+            bgcolor: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderBottom: `1px solid ${brand.border}`,
+            display: 'flex', alignItems: 'center', px: 1, gap: 0.5,
+          }}
         >
-          <Toolbar sx={{ minHeight: { xs: 56 } }}>
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              sx={{ mr: 1.5 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Avatar sx={{ bgcolor: '#8bc34a', width: 28, height: 28, mr: 1 }}>
-              <SchoolIcon sx={{ fontSize: 16 }} />
-            </Avatar>
-            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700 }}>
-              Schoolful LMS
-            </Typography>
-          </Toolbar>
-        </AppBar>
+          <IconButton aria-label="Open menu" onClick={() => setMobileOpen(true)} sx={{ color: brand.text }}>
+            <MenuIcon />
+          </IconButton>
+          <Box sx={{ flex: 1 }}><Logo /></Box>
+          <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: brand.greenSoft, color: brand.green, fontSize: '12.5px', fontWeight: 700 }}>
+            {initials(user?.firstName, user?.lastName)}
+          </Avatar>
+        </Box>
       )}
 
-      {/* Mobile drawer */}
       <Drawer
         variant={isMobile ? 'temporary' : 'permanent'}
         open={isMobile ? mobileOpen : true}
         onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
           width: DRAWER_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
+            borderRight: `1px solid ${brand.border}`,
+            fontFamily: brand.font,
+            '& .MuiTypography-root, & .MuiListItemText-primary': { fontFamily: brand.font },
           },
         }}
       >
@@ -175,9 +238,8 @@ export default function DashboardLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          bgcolor: 'background.default',
           mt: isMobile ? '56px' : 0,
-          overflow: 'auto',
+          minWidth: 0,
           width: isMobile ? '100%' : `calc(100% - ${DRAWER_WIDTH}px)`,
         }}
       >

@@ -1,20 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Box, Typography, Grid, Card, CardContent, CardActionArea, CircularProgress, Chip, Tooltip, IconButton, Snackbar } from '@mui/material'
+import { ReactNode, useEffect, useState } from 'react'
+import { Box, ButtonBase, Grid, IconButton, LinearProgress, Skeleton, Snackbar, Stack, Tooltip, Typography } from '@mui/material'
 import {
-  People as PeopleIcon,
-  School as SchoolIcon,
-  Class as ClassIcon,
-  MenuBook as SubjectsIcon,
-  EventNote as AttendanceIcon,
-  Assignment as ExamsIcon,
-  Assessment as ResultsIcon,
-  Payment as FeesIcon,
-  Receipt as PaymentsIcon,
-  ContentCopy as CopyIcon,
+  PeopleOutlined as PeopleIcon,
+  SchoolOutlined as SchoolIcon,
+  ClassOutlined as ClassIcon,
+  EventAvailableOutlined as AttendanceIcon,
+  ChevronRight as ChevronIcon,
+  CheckCircle as DoneIcon,
+  RadioButtonUnchecked as TodoIcon,
+  ContentCopyOutlined as CopyIcon,
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
+import { brand } from '../theme'
 
 interface DashboardStats {
   totalStudents: number
@@ -28,130 +27,222 @@ interface DashboardStats {
   totalPayments: number
 }
 
+const card = {
+  bgcolor: brand.surface,
+  border: `1px solid ${brand.border}`,
+  borderRadius: '14px',
+}
+
+const greeting = () => {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+}
+
+const fmt = (n: number) => n.toLocaleString('en-NG')
+
+function StatTile({ label, value, icon, to, footer }: { label: string; value: ReactNode; icon: ReactNode; to: string; footer?: ReactNode }) {
+  const navigate = useNavigate()
+  return (
+    <ButtonBase
+      onClick={() => navigate(to)}
+      sx={{
+        ...card, width: '100%', height: '100%', display: 'block', textAlign: 'left', p: { xs: 2, sm: 2.5 },
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        '&:hover': { borderColor: '#d6d3c9', boxShadow: '0 2px 10px rgba(20,26,21,0.04)' },
+        '&:focus-visible': { outline: `2px solid ${brand.green}`, outlineOffset: 2 },
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: brand.muted }}>{label}</Typography>
+        <Box sx={{ color: brand.subtle, display: 'flex', '& svg': { fontSize: 19 } }}>{icon}</Box>
+      </Stack>
+      <Typography sx={{ fontSize: { xs: '26px', sm: '30px' }, fontWeight: 700, color: brand.text, letterSpacing: '-0.6px', mt: 1, lineHeight: 1.15 }}>
+        {value}
+      </Typography>
+      <Box sx={{ mt: 1.25, minHeight: 18 }}>{footer}</Box>
+    </ButtonBase>
+  )
+}
+
+function ListCard({ title, rows }: { title: string; rows: { label: string; value: number; to: string; hint?: string }[] }) {
+  const navigate = useNavigate()
+  return (
+    <Box sx={{ ...card, height: '100%' }}>
+      <Typography sx={{ px: 2.5, pt: 2.25, pb: 1, fontSize: '15px', fontWeight: 700, color: brand.text }}>{title}</Typography>
+      {rows.map((r, i) => (
+        <ButtonBase
+          key={r.label}
+          onClick={() => navigate(r.to)}
+          sx={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 2, px: 2.5, py: 1.5, textAlign: 'left',
+            borderTop: i === 0 ? 'none' : `1px solid ${brand.border}`,
+            '&:hover': { bgcolor: '#fbfaf7' },
+            '&:last-of-type': { borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px' },
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: '14px', fontWeight: 500, color: brand.text }}>{r.label}</Typography>
+            {r.hint && <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{r.hint}</Typography>}
+          </Box>
+          <Typography sx={{ fontSize: '15px', fontWeight: 700, color: brand.text }}>{fmt(r.value)}</Typography>
+          <ChevronIcon sx={{ fontSize: 18, color: brand.subtle }} />
+        </ButtonBase>
+      ))}
+    </Box>
+  )
+}
+
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const copySchoolId = () => {
-    if (user?.schoolId) {
-      navigator.clipboard.writeText(user.schoolId)
-      setCopied(true)
-    }
-  }
-
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/dashboard/stats')
-        setStats(response.data.data)
-      } catch {
-        // Fallback to zeros if API fails
-        setStats({
-          totalStudents: 0,
-          totalTeachers: 0,
-          totalClasses: 0,
-          totalSubjects: 0,
-          attendanceRate: 0,
-          totalExams: 0,
-          totalResults: 0,
-          totalFees: 0,
-          totalPayments: 0,
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchStats()
+    api
+      .get('/dashboard/stats')
+      .then((res) => setStats(res.data.data))
+      .catch(() => setFailed(true))
   }, [])
 
-  const cards = [
-    { label: 'Students', value: stats?.totalStudents, path: '/students', icon: <PeopleIcon sx={{ fontSize: 40, color: '#8bc34a' }} />, color: '#f1f8e9' },
-    { label: 'Teachers', value: stats?.totalTeachers, path: '/teachers', icon: <SchoolIcon sx={{ fontSize: 40, color: '#7cb342' }} />, color: '#e8f5e9' },
-    { label: 'Classes', value: stats?.totalClasses, path: '/classes', icon: <ClassIcon sx={{ fontSize: 40, color: '#689f38' }} />, color: '#f1f8e9' },
-    { label: 'Subjects', value: stats?.totalSubjects, path: '/subjects', icon: <SubjectsIcon sx={{ fontSize: 40, color: '#9c27b0' }} />, color: '#f3e5f5' },
-    { label: 'Attendance', value: stats ? `${stats.attendanceRate}%` : '—', path: '/attendance', icon: <AttendanceIcon sx={{ fontSize: 40, color: '#558b2f' }} />, color: '#f1f8e9' },
-    { label: 'Exams', value: stats?.totalExams, path: '/exams', icon: <ExamsIcon sx={{ fontSize: 40, color: '#d32f2f' }} />, color: '#ffebee' },
-    { label: 'Results', value: stats?.totalResults, path: '/results', icon: <ResultsIcon sx={{ fontSize: 40, color: '#33691e' }} />, color: '#f1f8e9' },
-    { label: 'Fees', value: stats?.totalFees, path: '/fees', icon: <FeesIcon sx={{ fontSize: 40, color: '#f57c00' }} />, color: '#fff8e1' },
-    { label: 'Payments', value: stats?.totalPayments, path: '/payments', icon: <PaymentsIcon sx={{ fontSize: 40, color: '#5c6bc0' }} />, color: '#e8eaf6' },
-  ]
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    )
+  const copySchoolId = () => {
+    if (!user?.schoolId) return
+    navigator.clipboard?.writeText(user.schoolId).then(() => setCopied(true)).catch(() => {})
   }
 
-  return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" sx={{ mb: 0.5 }}>
-        Dashboard
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Welcome back, {user?.firstName} {user?.lastName}
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-        <Typography variant="body2" color="text.secondary">
-          School ID:
-        </Typography>
-        <Chip
-          label={user?.schoolId}
-          size="small"
-          variant="outlined"
-          sx={{ fontFamily: 'monospace', fontSize: '0.8rem', maxWidth: '100%' }}
-        />
-        <Tooltip title="Copy School ID">
-          <IconButton size="small" onClick={copySchoolId}>
-            <CopyIcon sx={{ fontSize: 16 }} />
-          </IconButton>
-        </Tooltip>
-      </Box>
-      <Snackbar
-        open={copied}
-        autoHideDuration={2000}
-        onClose={() => setCopied(false)}
-        message="School ID copied to clipboard"
-      />
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-      <Grid container spacing={{ xs: 1.5, sm: 2.5 }}>
-        {cards.map((card) => (
-          <Grid item xs={6} sm={6} md={4} lg={3} key={card.path}>
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <CardActionArea onClick={() => navigate(card.path)}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
-                  <Box
-                    sx={{
-                      width: { xs: 44, sm: 56 },
-                      height: { xs: 44, sm: 56 },
-                      borderRadius: 2,
-                      bgcolor: card.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {card.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} noWrap>
-                      {card.label}
-                    </Typography>
-                    <Typography variant="h5" fontWeight={700} sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
-                      {card.value ?? 0}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Grid>
-        ))}
+  const setupSteps = stats
+    ? [
+        { label: 'Create your classes', done: stats.totalClasses > 0, to: '/classes' },
+        { label: 'Add subjects', done: stats.totalSubjects > 0, to: '/subjects' },
+        { label: 'Add teachers', done: stats.totalTeachers > 0, to: '/teachers' },
+        { label: 'Enrol students', done: stats.totalStudents > 0, to: '/students' },
+        { label: 'Take attendance', done: stats.attendanceRate > 0, to: '/attendance' },
+        { label: 'Set up fees', done: stats.totalFees > 0, to: '/fees' },
+      ]
+    : []
+  const doneCount = setupSteps.filter((s) => s.done).length
+  const setupComplete = setupSteps.length > 0 && doneCount === setupSteps.length
+
+  return (
+    <Box sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
+      {/* Header */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1.5} sx={{ mb: { xs: 3, md: 4 } }}>
+        <Box>
+          <Typography sx={{ fontSize: '13px', color: brand.subtle, mb: 0.5 }}>{today}</Typography>
+          <Typography component="h1" sx={{ fontSize: { xs: '24px', sm: '28px' }, fontWeight: 800, letterSpacing: '-0.6px', color: brand.text }}>
+            {greeting()}, {user?.firstName}
+          </Typography>
+          <Typography sx={{ fontSize: '14.5px', color: brand.muted, mt: 0.5 }}>Here's how your school is doing today.</Typography>
+        </Box>
+        {user?.schoolId && (
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: brand.subtle }}>
+            <Typography sx={{ fontSize: '12.5px' }}>School ID</Typography>
+            <Typography sx={{ fontSize: '12.5px', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace !important', color: brand.muted, maxWidth: 180 }} noWrap>
+              {user.schoolId}
+            </Typography>
+            <Tooltip title="Copy School ID">
+              <IconButton size="small" aria-label="Copy School ID" onClick={copySchoolId} sx={{ color: brand.subtle }}>
+                <CopyIcon sx={{ fontSize: 15 }} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        )}
+      </Stack>
+
+      {failed && (
+        <Box sx={{ ...card, p: 2, mb: 3, borderColor: '#f1c2bd', bgcolor: '#fdf6f5' }}>
+          <Typography sx={{ fontSize: '14px', color: '#8c1d18' }}>
+            We couldn't load your school's numbers right now. Check your connection and refresh the page.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Key numbers */}
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+        {!stats && !failed
+          ? [0, 1, 2, 3].map((i) => (
+              <Grid item xs={6} md={3} key={i}>
+                <Box sx={{ ...card, p: 2.5 }}>
+                  <Skeleton width="45%" height={18} />
+                  <Skeleton width="35%" height={40} sx={{ mt: 1 }} />
+                  <Skeleton width="60%" height={16} sx={{ mt: 1 }} />
+                </Box>
+              </Grid>
+            ))
+          : stats && [
+              <StatTile key="s" label="Students" value={fmt(stats.totalStudents)} icon={<PeopleIcon />} to="/students"
+                footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>Active enrolments</Typography>} />,
+              <StatTile key="t" label="Teachers" value={fmt(stats.totalTeachers)} icon={<SchoolIcon />} to="/teachers"
+                footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>On staff</Typography>} />,
+              <StatTile key="c" label="Classes" value={fmt(stats.totalClasses)} icon={<ClassIcon />} to="/classes"
+                footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{stats.totalSubjects} subjects offered</Typography>} />,
+              <StatTile key="a" label="Attendance" value={`${stats.attendanceRate}%`} icon={<AttendanceIcon />} to="/attendance"
+                footer={
+                  <LinearProgress variant="determinate" value={Math.min(100, stats.attendanceRate)} aria-label="Attendance rate"
+                    sx={{ height: 5, borderRadius: 3, mt: 0.75, bgcolor: '#efeee8', '& .MuiLinearProgress-bar': { bgcolor: brand.accent, borderRadius: 3 } }} />
+                } />,
+            ].map((tile) => (
+              <Grid item xs={6} md={3} key={tile.key}>
+                {tile}
+              </Grid>
+            ))}
       </Grid>
+
+      {stats && (
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 0, sm: 0.5 } }}>
+          {/* Setup checklist, only until the basics are in place */}
+          {!setupComplete && (
+            <Grid item xs={12}>
+              <Box sx={{ ...card, p: { xs: 2, sm: 2.5 } }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontSize: '15px', fontWeight: 700, color: brand.text }}>Finish setting up your school</Typography>
+                  <Typography sx={{ fontSize: '13px', color: brand.muted }}>{doneCount} of {setupSteps.length} done</Typography>
+                </Stack>
+                <LinearProgress variant="determinate" value={(doneCount / setupSteps.length) * 100}
+                  sx={{ height: 5, borderRadius: 3, mb: 1.5, bgcolor: '#efeee8', '& .MuiLinearProgress-bar': { bgcolor: brand.green, borderRadius: 3 } }} />
+                <Grid container spacing={0.5}>
+                  {setupSteps.map((s) => (
+                    <Grid item xs={12} sm={6} md={4} key={s.label}>
+                      <ButtonBase onClick={() => navigate(s.to)} disabled={s.done}
+                        sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.25, px: 1, py: 1, borderRadius: '10px', '&:hover': { bgcolor: '#f7f6f1' } }}>
+                        {s.done ? <DoneIcon sx={{ fontSize: 19, color: brand.accent }} /> : <TodoIcon sx={{ fontSize: 19, color: '#c9c7bd' }} />}
+                        <Typography sx={{ fontSize: '14px', color: s.done ? brand.subtle : brand.text, textDecoration: s.done ? 'line-through' : 'none' }}>
+                          {s.label}
+                        </Typography>
+                      </ButtonBase>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </Grid>
+          )}
+
+          <Grid item xs={12} md={6}>
+            <ListCard
+              title="Academics"
+              rows={[
+                { label: 'Subjects', value: stats.totalSubjects, to: '/subjects' },
+                { label: 'Exams', value: stats.totalExams, to: '/exams' },
+                { label: 'Results recorded', value: stats.totalResults, to: '/results' },
+              ]}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ListCard
+              title="Finance"
+              rows={[
+                { label: 'Fee records', value: stats.totalFees, to: '/fees', hint: 'Fees set for students this session' },
+                { label: 'Payments recorded', value: stats.totalPayments, to: '/payments' },
+              ]}
+            />
+          </Grid>
+        </Grid>
+      )}
+
+      <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)} message="School ID copied" />
     </Box>
   )
 }

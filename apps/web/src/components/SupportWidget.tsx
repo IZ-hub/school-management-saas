@@ -15,6 +15,7 @@ import { useAuthStore } from '../store/authStore'
 const BRAND = '#0d3b2e'
 const WHATSAPP_NUMBER = '2347061102797'
 const STORAGE_KEY = 'schoolful-support-chat'
+const PUBLIC_PAGES = ['/', '/login', '/register']
 
 type Bubble = {
   id: string
@@ -76,6 +77,14 @@ export default function SupportWidget() {
   useEffect(() => {
     save({ conversationId, name, email, bubbles })
   }, [conversationId, name, email, bubbles])
+
+  // Inside the app the sidebar's "Help & support" opens the chat instead of a floating button.
+  useEffect(() => {
+    const openChat = () => setOpen(true)
+    window.addEventListener('schoolful:open-support', openChat)
+    return () => window.removeEventListener('schoolful:open-support', openChat)
+  }, [])
+  const showLauncher = PUBLIC_PAGES.includes(location.pathname)
 
   useEffect(() => {
     if (open) {
@@ -149,7 +158,7 @@ export default function SupportWidget() {
   return (
     <>
       {/* Launcher */}
-      {!open && (
+      {!open && showLauncher && (
         <ButtonBase
           onClick={() => setOpen(true)}
           aria-label="Open Schoolful LMS support chat"

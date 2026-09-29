@@ -13,7 +13,6 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,6 +22,8 @@ import {
   Stack,
   Tooltip,
   CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -32,6 +33,7 @@ import {
   FileUpload as ImportIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
+import { brand } from '../theme'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 
 interface Student {
@@ -47,6 +49,30 @@ interface Student {
   parentPhone?: string | null
   address?: string | null
   status: string
+}
+
+interface ClassOption {
+  id: string
+  name: string
+}
+
+const titleCase = (v?: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : '—')
+
+// "2012-05-01" -> "1 May 2012"; anything else is shown as entered.
+const formatDate = (v?: string) => {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return v || '—'
+  const d = new Date(`${v}T00:00:00`)
+  return isNaN(d.getTime()) ? v : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const active = status === 'ACTIVE'
+  return (
+    <Box component="span" sx={{ display: 'inline-block', px: 1, py: 0.25, borderRadius: 999, fontSize: '12px', fontWeight: 600,
+      bgcolor: active ? brand.greenSoft : '#f1f0ec', color: active ? brand.green : brand.muted }}>
+      {titleCase(status)}
+    </Box>
+  )
 }
 
 const emptyForm = {
@@ -73,6 +99,16 @@ export default function Students() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [importOpen, setImportOpen] = useState(false)
+  const [classes, setClasses] = useState<ClassOption[]>([])
+  const theme = useTheme()
+  const isPhone = useMediaQuery(theme.breakpoints.down('sm'))
+
+  const classNameById = new Map(classes.map((c) => [c.id, c.name]))
+  const classLabel = (student: Student) => {
+    if (!student.classId) return '—'
+    const name = classNameById.get(student.classId) ?? 'Unknown class'
+    return student.section ? `${name} · ${student.section}` : name
+  }
 
   const studentColumns: ColumnDef[] = [
     { key: 'firstName', label: 'First Name', required: true },
@@ -80,7 +116,7 @@ export default function Students() {
     { key: 'admissionNumber', label: 'Admission Number', required: true },
     { key: 'dateOfBirth', label: 'Date of Birth' },
     { key: 'gender', label: 'Gender' },
-    { key: 'classId', label: 'Class ID' },
+    { key: 'className', label: 'Class' },
     { key: 'section', label: 'Section' },
     { key: 'parentEmail', label: 'Parent Email' },
     { key: 'parentPhone', label: 'Parent Phone' },
@@ -104,6 +140,16 @@ export default function Students() {
 
   useEffect(() => {
     fetchStudents()
+    api
+      .get('/classes')
+      .then((res) =>
+        setClasses(
+          (res.data.data as ClassOption[])
+            .map((c) => ({ id: c.id, name: c.name }))
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
+        ),
+      )
+      .catch(() => setClasses([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -175,14 +221,14 @@ export default function Students() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ flexGrow: 1, maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Students
         </Typography>
         <Stack direction="row" spacing={1}>
           <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)} size="small"
-            sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' }, whiteSpace: 'nowrap' }}>
+            sx={{ borderColor: brand.border, color: brand.text, bgcolor: brand.surface, '&:hover': { borderColor: '#d6d3c9', bgcolor: brand.surface }, whiteSpace: 'nowrap' }}>
             Import CSV
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog} size="small" sx={{ whiteSpace: 'nowrap' }}>
@@ -222,9 +268,38 @@ export default function Students() {
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography color="text.secondary">No students found.</Typography>
           </Box>
+        ) : isPhone ? (
+          // Phones: one card per student instead of a table that scrolls sideways
+          <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+            {students.map((student, i) => (
+              <Box component="li" key={student.id}
+                sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, px: 2, py: 1.75, borderTop: i === 0 ? 'none' : `1px solid ${brand.border}` }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: brand.text }} noWrap>
+                    {student.firstName} {student.lastName}
+                  </Typography>
+                  <Typography sx={{ fontSize: '13px', color: brand.muted }} noWrap>
+                    {student.admissionNumber} · {classLabel(student)}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.75 }}>
+                    <StatusBadge status={student.status} />
+                    <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>
+                      {titleCase(student.gender)} · Born {formatDate(student.dateOfBirth)}
+                    </Typography>
+                  </Stack>
+                </Box>
+                <IconButton aria-label={`Edit ${student.firstName} ${student.lastName}`} onClick={() => openEditDialog(student)} sx={{ color: brand.muted }}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton aria-label={`Deactivate ${student.firstName} ${student.lastName}`} onClick={() => handleDelete(student.id)} sx={{ color: brand.muted }}>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+          </Box>
         ) : (
           <TableContainer>
-          <Table sx={{ minWidth: 650 }}>
+          <Table sx={{ minWidth: 650, '& th': { color: brand.muted, fontWeight: 600, fontSize: '13px' } }}>
             <TableHead>
               <TableRow>
                 <TableCell>Admission #</TableCell>
@@ -239,30 +314,24 @@ export default function Students() {
             <TableBody>
               {students.map((student) => (
                 <TableRow key={student.id} hover>
-                  <TableCell>{student.admissionNumber}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ color: brand.muted }}>{student.admissionNumber}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
                     {student.firstName} {student.lastName}
                   </TableCell>
-                  <TableCell>{student.gender}</TableCell>
-                  <TableCell>{student.dateOfBirth}</TableCell>
+                  <TableCell>{titleCase(student.gender)}</TableCell>
+                  <TableCell>{formatDate(student.dateOfBirth)}</TableCell>
+                  <TableCell>{classLabel(student)}</TableCell>
                   <TableCell>
-                    {student.classId ? `${student.classId}${student.section ? ' - ' + student.section : ''}` : '—'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={student.status}
-                      size="small"
-                      color={student.status === 'ACTIVE' ? 'success' : 'default'}
-                    />
+                    <StatusBadge status={student.status} />
                   </TableCell>
                   <TableCell align="right">
                     <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => openEditDialog(student)}>
+                      <IconButton size="small" aria-label={`Edit ${student.firstName} ${student.lastName}`} onClick={() => openEditDialog(student)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Deactivate">
-                      <IconButton size="small" onClick={() => handleDelete(student.id)}>
+                      <IconButton size="small" aria-label={`Deactivate ${student.firstName} ${student.lastName}`} onClick={() => handleDelete(student.id)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -336,11 +405,22 @@ export default function Students() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               fullWidth
-              label="Class ID"
+              select
+              label="Class"
               value={form.classId}
               onChange={(e) => setForm({ ...form, classId: e.target.value })}
               margin="dense"
-            />
+              helperText={classes.length === 0 ? 'Create classes on the Classes page first' : undefined}
+            >
+              <MenuItem value="">No class yet</MenuItem>
+              {classes.map((c) => (
+                <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+              ))}
+              {/* Keep a student's existing class selectable even if it no longer appears in the list */}
+              {form.classId && !classNameById.has(form.classId) && (
+                <MenuItem value={form.classId}>Unknown class</MenuItem>
+              )}
+            </TextField>
             <TextField
               fullWidth
               label="Section"

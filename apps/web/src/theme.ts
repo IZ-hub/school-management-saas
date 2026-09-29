@@ -1,17 +1,36 @@
 import { createTheme } from '@mui/material/styles'
 
+/** Schoolful LMS brand tokens shared by the app shell and dashboard. */
+export const brand = {
+  green: '#0d3b2e',
+  greenHover: '#14523f',
+  greenSoft: '#eef3ec',
+  accent: '#8bc34a',
+  page: '#f9f8f3',
+  surface: '#ffffff',
+  border: '#e8e6df',
+  text: '#141a15',
+  muted: '#646b64',
+  subtle: '#8c928b',
+  font: '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif',
+}
+
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: brand.green,
     },
     secondary: {
       main: '#dc004e',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: brand.page,
+      paper: brand.surface,
     },
+    divider: brand.border,
+  },
+  shape: {
+    borderRadius: 10,
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -23,9 +42,22 @@ const theme = createTheme({
   },
   components: {
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        // The default raised surface becomes a flat card with a hairline border.
+        elevation1: {
+          boxShadow: 'none',
+          border: `1px solid ${brand.border}`,
         },
       },
     },

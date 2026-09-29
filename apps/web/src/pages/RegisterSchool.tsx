@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Alert, Box, Button, Grid, IconButton, InputAdornment, LinearProgress, Stack, Typography } from '@mui/material'
-import { ArrowBack, Visibility, VisibilityOff } from '@mui/icons-material'
+import { ArrowBack, VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'

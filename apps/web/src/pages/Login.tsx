@@ -1,36 +1,19 @@
 import { useState } from 'react'
-import {
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  InputAdornment,
-  IconButton,
-  Avatar,
-  Stack,
-  Fade,
-  Link as MuiLink,
-} from '@mui/material'
-import {
-  School as SchoolIcon,
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Badge as BadgeIcon,
-  Visibility,
-  VisibilityOff,
-  Login as LoginIcon,
-} from '@mui/icons-material'
-import { Link, useNavigate } from 'react-router-dom'
+import { Alert, Box, Button, IconButton, InputAdornment, Link as MuiLink } from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
+import { AuthCard, AuthField, AuthShell, authColors, describeError, primaryButtonSx } from '../components/auth/AuthShell'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [schoolId, setSchoolId] = useState('')
+  // Only shown when the server says this email exists at more than one school.
+  const [needsSchoolId, setNeedsSchoolId] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; schoolId?: string }>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -38,170 +21,117 @@ export default function Login() {
   const setUser = useAuthStore((state) => state.setUser)
   const setAccessToken = useAuthStore((state) => state.setAccessToken)
 
+  const validate = () => {
+    const errs: typeof fieldErrors = {}
+    if (!email.trim()) errs.email = 'Enter your email address'
+    else if (!/^\S+@\S+\.\S+$/.test(email.trim())) errs.email = 'Enter a valid email address'
+    if (!password) errs.password = 'Enter your password'
+    if (needsSchoolId && !schoolId.trim()) errs.schoolId = 'Enter your School ID'
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!validate()) return
     setLoading(true)
 
     try {
-      const response = await api.post('/auth/login', { email, password, schoolId })
+      const response = await api.post('/auth/login', {
+        email: email.trim(),
+        password,
+        ...(needsSchoolId ? { schoolId: schoolId.trim() } : {}),
+      })
       const { user, accessToken } = response.data.data
-
       setUser(user)
       setAccessToken(accessToken)
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid credentials')
+      if (err.response?.data?.code === 'SCHOOL_ID_REQUIRED') {
+        setNeedsSchoolId(true)
+      }
+      setError(describeError(err, 'Invalid email or password'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        width: '100%',
-        bgcolor: '#f5f5f0',
-        justifyContent: 'center',
-        py: { xs: 3, md: 6 },
-        px: { xs: 2, sm: 4 },
-      }}
+    <AuthShell
+      title="Log in to Schoolful LMS"
+      subtitle="Log in to your Schoolful LMS school."
+      topLinkPrompt="Need an account?"
+      topLinkLabel="Start free trial"
+      topLinkTo="/register"
     >
-      <Fade in timeout={500}>
-        <Paper
-          elevation={0}
-          sx={{
-            width: '100%',
-            maxWidth: 520,
-            p: { xs: 3, sm: 5 },
-            borderRadius: 3,
-            border: '1px solid #e0e0e0',
-            bgcolor: '#fff',
-            height: 'fit-content',
-          }}
-        >
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar sx={{ bgcolor: '#1b5e20', width: 40, height: 40 }}>
-                <SchoolIcon sx={{ fontSize: 22, color: '#fff' }} />
-              </Avatar>
-              <Typography variant="h6" fontWeight={700} color="#1b5e20">Schoolful LMS</Typography>
-            </Stack>
-          </Stack>
+      {error && (
+        <Alert severity="error" role="alert" sx={{ mb: 2.5, borderRadius: 2.5, border: '1px solid #f1c2bd' }}>
+          {error}
+        </Alert>
+      )}
 
-          <Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 0.75 }}>
-            Sign in to your school
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Enter your credentials to access your dashboard
-          </Typography>
-
-          <Fade in={!!error}>
-            <Box sx={{ mb: error ? 2 : 0 }}>
-              {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
-            </Box>
-          </Fade>
-
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              fullWidth
+      <AuthCard>
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <AuthField
+            id="login-email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={fieldErrors.email}
+          />
+          <AuthField
+            id="login-password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((show) => !show)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          {needsSchoolId && (
+            <AuthField
+              id="login-school-id"
               label="School ID"
-              placeholder="e.g. GFA-2026-001"
               value={schoolId}
               onChange={(e) => setSchoolId(e.target.value)}
-              margin="normal"
-              required
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#fafafa' } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BadgeIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
+              error={fieldErrors.schoolId}
+              helperText="Your school administrator can give you this."
             />
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              placeholder="e.g. adesua.okafor@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              margin="normal"
-              required
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#fafafa' } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              margin="normal"
-              required
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#fafafa' } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword((show) => !show)}
-                      edge="end"
-                      size="small"
-                    >
-                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          )}
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              endIcon={<LoginIcon />}
-              disabled={loading}
-              sx={{
-                mt: 4,
-                mb: 1,
-                py: 1.5,
-                borderRadius: 2.5,
-                bgcolor: '#1b5e20',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '1rem',
-                '&:hover': { bgcolor: '#2e7d32' },
-              }}
+          <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ ...primaryButtonSx, mt: 1 }}>
+            {loading ? 'Logging in…' : 'Log in'}
+          </Button>
+
+          <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+            <MuiLink
+              href="mailto:support@schoolful.app?subject=Password%20reset%20request"
+              underline="hover"
+              sx={{ color: authColors.muted, fontSize: '0.9rem' }}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </Box>
-
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
-            Don't have a school yet?{' '}
-            <MuiLink component={Link} to="/register" underline="hover" sx={{ color: '#1b5e20', fontWeight: 600 }}>
-              Register your school
+              Forgot password?
             </MuiLink>
-          </Typography>
-        </Paper>
-      </Fade>
-    </Box>
+          </Box>
+        </Box>
+      </AuthCard>
+    </AuthShell>
   )
 }

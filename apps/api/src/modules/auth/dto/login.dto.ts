@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -8,7 +8,8 @@ export class LoginDto {
   @IsString()
   password: string;
 
-  @IsNotEmpty()
+  /** Only needed when the same email belongs to users at more than one school. */
+  @IsOptional()
   @IsString()
-  schoolId: string;
+  schoolId?: string;
 }

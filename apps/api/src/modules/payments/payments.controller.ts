@@ -6,9 +6,12 @@ import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, FINANCE_ROLES } from '../../common/roles';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(...FINANCE_ROLES)
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly service: PaymentsService) {}
@@ -35,20 +38,20 @@ export class PaymentsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const data = await this.service.findOne(id);
+  async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.findOne(user.schoolId, id);
     return { data };
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdatePaymentDto) {
-    const data = await this.service.update(id, dto);
+  async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdatePaymentDto) {
+    const data = await this.service.update(user.schoolId, id, dto);
     return { data };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const data = await this.service.remove(id);
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.remove(user.schoolId, id);
     return { data };
   }
 }

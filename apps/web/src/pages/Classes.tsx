@@ -8,6 +8,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  TableContainer,
   Button,
   IconButton,
   TextField,
@@ -136,18 +137,20 @@ export default function Classes() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Classes
         </Typography>
-        <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)}
-          sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' } }}>
-          Import CSV
-        </Button>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
-          Add Class
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)} size="small"
+            sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' }, whiteSpace: 'nowrap' }}>
+            Import CSV
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog} size="small" sx={{ whiteSpace: 'nowrap' }}>
+            Add Class
+          </Button>
+        </Stack>
       </Stack>
 
       <Paper sx={{ p: 2, mb: 2 }}>
@@ -177,7 +180,8 @@ export default function Classes() {
             <CircularProgress />
           </Box>
         ) : (
-          <Table>
+          <TableContainer>
+          <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
@@ -225,6 +229,7 @@ export default function Classes() {
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
         )}
       </Paper>
 

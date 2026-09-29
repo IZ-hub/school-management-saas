@@ -13,10 +13,10 @@ build/
 .next/
 out/
 
-# Environment
+# Environment (any .env variant, e.g. .env.backup, .env.production; only examples are committed)
 .env
-.env*.local
-.env.production
+.env.*
+!.env.example
 
 # Logs
 logs/

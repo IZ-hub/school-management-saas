@@ -13,6 +13,7 @@ import Results from './pages/Results'
 import Fees from './pages/Fees'
 import Payments from './pages/Payments'
 import DashboardLayout from './layouts/DashboardLayout'
+import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/payments" element={<Payments />} />
         </Route>
       </Routes>
+      <SupportWidget />
     </Router>
   )
 }

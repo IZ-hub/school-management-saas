@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Alert, Box, Button, IconButton, InputAdornment, Link as MuiLink } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
@@ -66,7 +66,7 @@ export default function Login() {
       topLinkTo="/register"
     >
       {error && (
-        <Alert severity="error" role="alert" sx={{ mb: 2.5, borderRadius: 2.5, border: '1px solid #f1c2bd' }}>
+        <Alert severity="error" role="alert" sx={{ mb: '16px', borderRadius: '12px', border: '1px solid #f1c2bd' }}>
           {error}
         </Alert>
       )}
@@ -117,15 +117,15 @@ export default function Login() {
             />
           )}
 
-          <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ ...primaryButtonSx, mt: 1 }}>
+          <Button type="submit" fullWidth variant="contained" disabled={loading} sx={primaryButtonSx}>
             {loading ? 'Logging in…' : 'Log in'}
           </Button>
 
-          <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+          <Box sx={{ textAlign: 'center', mt: '16px', lineHeight: '20px' }}>
             <MuiLink
               href="mailto:support@schoolful.app?subject=Password%20reset%20request"
               underline="hover"
-              sx={{ color: authColors.muted, fontSize: '0.9rem' }}
+              sx={{ color: authColors.muted, fontSize: '14px' }}
             >
               Forgot password?
             </MuiLink>

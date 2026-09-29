@@ -1,27 +1,30 @@
 import { ReactNode } from 'react'
-import { Avatar, Box, Link as MuiLink, Stack, TextField, TextFieldProps, Typography } from '@mui/material'
+import { Avatar, Box, Stack, TextField, TextFieldProps, Typography } from '@mui/material'
 import { School as SchoolIcon } from '@mui/icons-material'
 import { Link } from 'react-router-dom'
 
 export const authColors = {
-  page: '#f6f6f1',
-  card: '#fbfbf8',
-  border: '#e5e5dc',
-  input: '#f0f0ea',
+  page: '#f9f8f3',
+  card: '#ffffff',
+  border: '#dfddd5',
+  input: '#f9f8f3',
+  text: '#0f1511',
+  muted: '#5b615b',
   brand: '#0d3b2e',
   brandHover: '#14523f',
   logo: '#1b5e20',
-  muted: '#6b7064',
 }
+
+const authFont = '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif'
 
 /** Schoolful LMS logo mark and name. */
 export function BrandLogo() {
   return (
-    <Stack component={Link} to="/" direction="row" spacing={1.25} alignItems="center" sx={{ textDecoration: 'none' }}>
-      <Avatar sx={{ bgcolor: authColors.logo, width: 38, height: 38 }}>
-        <SchoolIcon sx={{ fontSize: 21, color: '#fff' }} />
+    <Stack component={Link} to="/" direction="row" spacing={1} alignItems="center" sx={{ textDecoration: 'none' }}>
+      <Avatar sx={{ bgcolor: authColors.logo, width: 36, height: 36 }}>
+        <SchoolIcon sx={{ fontSize: 20, color: '#fff' }} />
       </Avatar>
-      <Typography sx={{ fontWeight: 800, fontSize: '1.15rem', color: '#111', letterSpacing: '-0.3px' }}>
+      <Typography sx={{ fontWeight: 800, fontSize: '20px', color: authColors.brand, letterSpacing: '-0.2px' }}>
         Schoolful LMS
       </Typography>
     </Stack>
@@ -37,32 +40,44 @@ interface AuthShellProps {
   children: ReactNode
 }
 
+// Content column: 1160px wide with 60px side margins on desktop, 20px on phones.
+const column = { maxWidth: 1280, mx: 'auto', px: { xs: '20px', sm: '40px', md: '60px' } }
+
 /** Full-page layout for sign-in and registration: top bar with logo, then a title and the form. */
 export function AuthShell({ title, subtitle, topLinkPrompt, topLinkLabel, topLinkTo, children }: AuthShellProps) {
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: authColors.page }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: authColors.page,
+        color: authColors.text,
+        fontFamily: authFont,
+        // MUI components set their own font; point them all at the auth font.
+        '& .MuiTypography-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiAlert-message, & .MuiFormHelperText-root': {
+          fontFamily: authFont,
+        },
+      }}
+    >
       <Box component="header" sx={{ borderBottom: `1px solid ${authColors.border}` }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ maxWidth: 1040, mx: 'auto', px: { xs: 2, sm: 4 }, py: { xs: 1.5, sm: 2 }, gap: 2 }}
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ ...column, height: 64, gap: 2 }}>
           <BrandLogo />
-          <Typography variant="body2" sx={{ color: authColors.muted, textAlign: 'right' }}>
+          <Typography
+            component={Link}
+            to={topLinkTo}
+            sx={{ fontSize: '14px', fontWeight: 500, color: authColors.muted, textDecoration: 'none', '&:hover': { color: authColors.text } }}
+          >
+            {/* The prompt doesn't fit beside the longer brand name on phones */}
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{topLinkPrompt} </Box>
-            <MuiLink component={Link} to={topLinkTo} underline="hover" sx={{ color: authColors.brand, fontWeight: 600 }}>
-              {topLinkLabel}
-            </MuiLink>
+            {topLinkLabel}
           </Typography>
         </Stack>
       </Box>
 
-      <Box component="main" sx={{ maxWidth: 1040, mx: 'auto', px: { xs: 2, sm: 4 }, pt: { xs: 4, sm: 6 }, pb: 8 }}>
-        <Typography variant="h1" sx={{ fontWeight: 800, fontSize: { xs: '1.75rem', sm: '2.2rem' }, letterSpacing: '-0.8px', color: '#1a1d17', mb: 0.75 }}>
+      <Box component="main" sx={{ ...column, pt: '48px', pb: 8 }}>
+        <Typography component="h1" sx={{ fontWeight: 800, fontSize: '30px', lineHeight: '36px', letterSpacing: '-0.6px', color: authColors.text }}>
           {title}
         </Typography>
-        <Typography component="div" variant="body1" sx={{ color: authColors.muted, mb: { xs: 3, sm: 4 } }}>
+        <Typography component="div" sx={{ fontSize: '16px', lineHeight: '24px', color: authColors.muted, mt: '8px', mb: '24px' }}>
           {subtitle}
         </Typography>
         {children}
@@ -71,10 +86,10 @@ export function AuthShell({ title, subtitle, topLinkPrompt, topLinkLabel, topLin
   )
 }
 
-/** Bordered card that holds the form fields. */
+/** White bordered card that holds the form fields. */
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <Box sx={{ bgcolor: authColors.card, border: `1px solid ${authColors.border}`, borderRadius: 3, p: { xs: 2.5, sm: 4 } }}>
+    <Box sx={{ bgcolor: authColors.card, border: `1px solid ${authColors.border}`, borderRadius: '16px', p: '24px' }}>
       {children}
     </Box>
   )
@@ -86,11 +101,11 @@ type AuthFieldProps = Omit<TextFieldProps, 'label' | 'error'> & {
   error?: string
 }
 
-/** Text field with its label above the input, as in the sign-in design. */
+/** Text field with its label above the input. */
 export function AuthField({ id, label, error, helperText, required, ...props }: AuthFieldProps) {
   return (
-    <Box sx={{ mb: 2.5 }}>
-      <Typography component="label" htmlFor={id} sx={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: '#2b2f27', mb: 0.75 }}>
+    <Box sx={{ mb: '16px' }}>
+      <Typography component="label" htmlFor={id} sx={{ display: 'block', fontWeight: 500, fontSize: '14px', lineHeight: '20px', color: authColors.text, mb: '6px' }}>
         {label}
         {required && <Box component="span" sx={{ color: '#b3261e', ml: 0.25 }} aria-hidden>*</Box>}
       </Typography>
@@ -104,15 +119,18 @@ export function AuthField({ id, label, error, helperText, required, ...props }: 
         sx={{
           '& .MuiOutlinedInput-root': {
             bgcolor: authColors.input,
-            borderRadius: 2.5,
-            fontSize: '1rem', // 16px keeps iOS from zooming on focus
+            borderRadius: '12px',
+            minHeight: 44,
+            // 16px on phones stops iOS zooming in on focus; 14px from tablet up
+            fontSize: { xs: '16px', sm: '14px' },
             '& fieldset': { borderColor: authColors.border },
-            '&:hover fieldset': { borderColor: '#c9c9bd' },
-            '&.Mui-focused fieldset': { borderColor: authColors.brand, borderWidth: 2 },
+            '&:hover fieldset': { borderColor: '#c8c6bc' },
+            '&.Mui-focused fieldset': { borderColor: authColors.brand, borderWidth: '1.5px' },
             '&.Mui-error fieldset': { borderColor: '#b3261e' },
           },
-          '& .MuiOutlinedInput-input': { py: 1.6 },
-          '& .MuiFormHelperText-root': { mx: 0.25 },
+          '& .MuiOutlinedInput-input': { py: '11px', px: '12px' },
+          '& .MuiInputAdornment-root .MuiIconButton-root': { color: authColors.muted },
+          '& .MuiFormHelperText-root': { mx: 0.25, fontSize: '12.5px' },
           ...props.sx,
         }}
       />
@@ -122,12 +140,12 @@ export function AuthField({ id, label, error, helperText, required, ...props }: 
 
 export const primaryButtonSx = {
   bgcolor: authColors.brand,
-  color: '#fff',
+  color: '#fbfaf5',
   textTransform: 'none',
-  fontWeight: 700,
-  fontSize: '1rem',
-  borderRadius: 2.5,
-  py: 1.5,
+  fontWeight: 600,
+  fontSize: '14px',
+  borderRadius: '12px',
+  height: 44,
   boxShadow: 'none',
   '&:hover': { bgcolor: authColors.brandHover, boxShadow: 'none' },
   '&.Mui-disabled': { bgcolor: '#6f8a80', color: '#fff' },

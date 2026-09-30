@@ -21,7 +21,17 @@ async function getServer() {
         transform: true,
       }),
     );
-    app.enableCors({ origin: true, credentials: true });
+    const helmet = require('helmet');
+    app.use((helmet.default ?? helmet)());
+    // The site calls the API through Firebase Hosting on the same origin; only our own domains may call it cross-origin.
+    app.enableCors({
+      origin: [
+        'https://school-management-1f070.web.app',
+        'https://school-management-1f070.firebaseapp.com',
+        ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o: string) => o.trim()) : []),
+      ],
+      credentials: true,
+    });
     await app.init();
     server = expressApp;
   }

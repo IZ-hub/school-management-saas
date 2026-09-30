@@ -32,6 +32,7 @@ import {
   School as LogoIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
+import { signOut } from '../lib/api'
 import { brand } from '../theme'
 
 const DRAWER_WIDTH = 248
@@ -105,15 +106,14 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
-  const logout = useAuthStore((state) => state.logout)
 
   const go = (path: string) => {
     navigate(path)
     if (isMobile) setMobileOpen(false)
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await signOut()
     navigate('/login')
   }
 

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Alert, Box, Button, IconButton, InputAdornment, Link as MuiLink } from '@mui/material'
 import { VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
 import { AuthCard, AuthField, AuthShell, authColors, describeError, primaryButtonSx } from '../components/auth/AuthShell'
@@ -17,7 +16,6 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
   const setAccessToken = useAuthStore((state) => state.setAccessToken)
 
@@ -44,9 +42,9 @@ export default function Login() {
         ...(needsSchoolId ? { schoolId: schoolId.trim() } : {}),
       })
       const { user, accessToken } = response.data.data
-      setUser(user)
       setAccessToken(accessToken)
-      navigate('/dashboard')
+      // Marking the user signed in re-renders /login as <AfterSignIn />, which picks the destination.
+      setUser(user)
     } catch (err: any) {
       if (err.response?.data?.code === 'SCHOOL_ID_REQUIRED') {
         setNeedsSchoolId(true)

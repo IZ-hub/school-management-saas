@@ -4,11 +4,19 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getJwtSecret } from '../../common/jwt-secret';
 import { LoginDto } from './dto/login.dto';
 import { RegisterSchoolDto } from './dto/register-school.dto';
+import { SESSION_DAYS } from './session-cookie';
+
+// Two tabs may renew with the same token at the same moment; allow the second within this window.
+const ROTATION_GRACE_MS = 60 * 1000;
+
+const toMillis = (v: any): number => v?.toMillis?.() ?? v?.getTime?.() ?? new Date(v).getTime();
+const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
 @Injectable()
 export class AuthService {
@@ -25,6 +33,75 @@ export class AuthService {
     return jwt.sign(payload, getJwtSecret(), {
       expiresIn: 900, // 15 minutes in seconds
     } as jwt.SignOptions);
+  }
+
+  private get refreshTokens() {
+    return this.db.collection('refreshTokens');
+  }
+
+  /** Stores only a hash of the secret; the browser holds "<id>.<secret>" in an httpOnly cookie. */
+  private async createRefreshToken(userId: string, schoolId: string): Promise<string> {
+    const secret = crypto.randomBytes(32).toString('base64url');
+    const now = new Date();
+    const ref = await this.refreshTokens.add({
+      userId,
+      schoolId,
+      hash: sha256(secret),
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000),
+      rotatedAt: null,
+    });
+    return `${ref.id}.${secret}`;
+  }
+
+  /** Short-lived access token plus a long-lived refresh token for this user. */
+  private async createSession(userId: string, u: Record<string, any>) {
+    const user = { id: userId, email: u.email, firstName: u.firstName, lastName: u.lastName, role: u.role, schoolId: u.schoolId };
+    const accessToken = this.generateAccessToken({ sub: userId, email: u.email, role: u.role, schoolId: u.schoolId });
+    const refreshToken = await this.createRefreshToken(userId, u.schoolId);
+    return { user, accessToken, refreshToken };
+  }
+
+  /** Finds the stored refresh token for a cookie value, or null if it doesn't match. */
+  private async findRefreshToken(cookieValue?: string) {
+    const [id, secret] = (cookieValue ?? '').split('.');
+    if (!id || !secret || id.includes('/')) return null;
+    const doc = await this.refreshTokens.doc(id).get();
+    if (!doc.exists) return null;
+    const expected = Buffer.from(doc.data()!.hash, 'hex');
+    const actual = Buffer.from(sha256(secret), 'hex');
+    if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) return null;
+    return doc;
+  }
+
+  /** Swaps a valid refresh token for a new session, retiring the old token. */
+  async refresh(cookieValue?: string) {
+    const expired = () => new UnauthorizedException('Your session has expired. Please sign in again.');
+    const doc = await this.findRefreshToken(cookieValue);
+    if (!doc) throw expired();
+    const t = doc.data()!;
+    const now = Date.now();
+    if (toMillis(t.expiresAt) <= now) {
+      await doc.ref.delete();
+      throw expired();
+    }
+    if (t.rotatedAt && now - toMillis(t.rotatedAt) > ROTATION_GRACE_MS) {
+      await doc.ref.delete();
+      throw expired();
+    }
+    const userDoc = await this.db.collection('users').doc(t.userId).get();
+    if (!userDoc.exists || userDoc.data()!.status !== 'ACTIVE') {
+      await doc.ref.delete();
+      throw expired();
+    }
+    if (!t.rotatedAt) await doc.ref.update({ rotatedAt: new Date() });
+    return this.createSession(userDoc.id, userDoc.data()!);
+  }
+
+  /** Revokes the refresh token behind this cookie, if any. */
+  async logout(cookieValue?: string) {
+    const doc = await this.findRefreshToken(cookieValue);
+    if (doc) await doc.ref.delete();
   }
 
   async login(dto: LoginDto) {
@@ -55,31 +132,10 @@ export class AuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
-    const tokenPayload = {
-      sub: userDoc.id,
-      email: userData.email,
-      role: userData.role,
-      schoolId: userData.schoolId,
-    };
-
-    const accessToken = this.generateAccessToken(tokenPayload);
-
     // Update last login
     await userDoc.ref.update({ lastLogin: new Date() });
 
-    return {
-      data: {
-        user: {
-          id: userDoc.id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role,
-          schoolId: userData.schoolId,
-        },
-        accessToken,
-      },
-    };
+    return this.createSession(userDoc.id, userData);
   }
 
   async registerSchool(dto: RegisterSchoolDto) {
@@ -155,27 +211,12 @@ export class AuthService {
       updatedAt: now,
     });
 
-    const tokenPayload = {
-      sub: userRef.id,
+    return this.createSession(userRef.id, {
       email: dto.ownerEmail,
+      firstName: dto.ownerFirstName,
+      lastName: dto.ownerLastName,
       role: 'SCHOOL_OWNER',
       schoolId: schoolRef.id,
-    };
-
-    const accessToken = this.generateAccessToken(tokenPayload);
-
-    return {
-      data: {
-        user: {
-          id: userRef.id,
-          email: dto.ownerEmail,
-          firstName: dto.ownerFirstName,
-          lastName: dto.ownerLastName,
-          role: 'SCHOOL_OWNER',
-          schoolId: schoolRef.id,
-        },
-        accessToken,
-      },
-    };
+    });
   }
 }

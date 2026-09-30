@@ -3,7 +3,7 @@ import { Alert, Box, Button, Grid, IconButton, InputAdornment, LinearProgress, S
 import { ArrowBack, VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { api } from '../lib/api'
+import { api, clearReturnTo } from '../lib/api'
 import { AuthCard, AuthField, AuthShell, authColors, describeError, primaryButtonSx } from '../components/auth/AuthShell'
 
 const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United Kingdom', 'United States']
@@ -120,8 +120,9 @@ export default function RegisterSchool() {
         ownerPassword: form.ownerPassword,
       })
       const { user, accessToken } = response.data.data
-      setUser(user)
+      clearReturnTo()
       setAccessToken(accessToken)
+      setUser(user)
       navigate('/dashboard')
     } catch (err: any) {
       setError(describeError(err, 'We couldn’t create your school. Please try again.'))

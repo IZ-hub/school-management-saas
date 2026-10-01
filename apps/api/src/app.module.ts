@@ -14,6 +14,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
 import { SupportModule } from './modules/support/support.module';
+import { TeachingAssignmentsModule } from './modules/teaching-assignments/teaching-assignments.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SupportModule } from './modules/support/support.module';
     DashboardModule,
     TimetableModule,
     SupportModule,
+    TeachingAssignmentsModule,
   ],
 })
 export class AppModule {}

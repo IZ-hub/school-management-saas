@@ -59,6 +59,7 @@ export default function Classes() {
   const [formError, setFormError] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [studentCounts, setStudentCounts] = useState<Map<string, number>>(new Map())
+  const [subjectCounts, setSubjectCounts] = useState<Map<string, number>>(new Map())
   const [showDeleted, setShowDeleted] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Class | null>(null)
   const [deleteError, setDeleteError] = useState('')
@@ -85,10 +86,14 @@ export default function Classes() {
     setLoading(true)
     setError('')
     try {
-      const [data, studentsRes] = await Promise.all([
+      const [data, studentsRes, assignmentsRes] = await Promise.all([
         listClasses(searchTerm ? { name: searchTerm } : undefined),
         api.get('/students'),
+        api.get('/teaching-assignments'),
       ])
+      const perClass = new Map<string, number>()
+      for (const a of assignmentsRes.data.data as { classId: string }[]) perClass.set(a.classId, (perClass.get(a.classId) ?? 0) + 1)
+      setSubjectCounts(perClass)
       setClasses(data)
       // Count active students per class from the students themselves (the class's own list isn't kept up to date).
       const counts = new Map<string, number>()
@@ -247,6 +252,7 @@ export default function Classes() {
                 <TableCell>Grade Level</TableCell>
                 <TableCell>Capacity</TableCell>
                 <TableCell>Students</TableCell>
+                <TableCell>Subjects</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -254,7 +260,7 @@ export default function Classes() {
             <TableBody>
               {visibleClasses.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     No classes found
                   </TableCell>
                 </TableRow>
@@ -280,6 +286,13 @@ export default function Classes() {
                         sx={{ minWidth: 0, px: 1, fontWeight: 600, color: count ? brand.green : brand.subtle }}
                         aria-label={`View the ${count} students in ${labels.get(schoolClass.id) ?? schoolClass.name}`}>
                         {count}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button size="small" onClick={() => navigate(`/class-subjects?class=${schoolClass.id}`)}
+                        sx={{ minWidth: 0, px: 1, fontWeight: 600, color: subjectCounts.get(schoolClass.id) ? brand.green : brand.subtle }}
+                        aria-label={`View the subjects ${labels.get(schoolClass.id) ?? schoolClass.name} takes`}>
+                        {subjectCounts.get(schoolClass.id) ?? 0}
                       </Button>
                     </TableCell>
                     <TableCell>

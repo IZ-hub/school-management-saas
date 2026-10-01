@@ -21,6 +21,7 @@ import {
   SchoolOutlined as SchoolIcon,
   ClassOutlined as ClassIcon,
   MenuBookOutlined as SubjectsIcon,
+  LibraryBooksOutlined as ClassSubjectsIcon,
   EventAvailableOutlined as AttendanceIcon,
   AssignmentOutlined as ExamsIcon,
   InsightsOutlined as ResultsIcon,
@@ -54,6 +55,7 @@ const navSections = [
     items: [
       { label: 'Classes', path: '/classes', icon: <ClassIcon /> },
       { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon /> },
+      { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon /> },
       { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon /> },
       { label: 'Exams', path: '/exams', icon: <ExamsIcon /> },
       { label: 'Results', path: '/results', icon: <ResultsIcon /> },

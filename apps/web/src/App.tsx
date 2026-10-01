@@ -9,6 +9,7 @@ import Students from './pages/Students'
 import Teachers from './pages/Teachers'
 import Classes from './pages/Classes'
 import Subjects from './pages/Subjects'
+import ClassSubjects from './pages/ClassSubjects'
 import Attendance from './pages/Attendance'
 import Exams from './pages/Exams'
 import Results from './pages/Results'
@@ -49,6 +50,7 @@ function App() {
           <Route path="/teachers" element={<Teachers />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/subjects" element={<Subjects />} />
+          <Route path="/class-subjects" element={<ClassSubjects />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/results" element={<Results />} />

@@ -10,7 +10,8 @@ export interface SubjectQueryParams {
 export interface SubjectPayload {
   name: string
   code: string
-  teacherId?: string
+  /** "ACTIVE" restores an archived subject. */
+  status?: 'ACTIVE'
 }
 
 export async function listSubjects(params?: SubjectQueryParams): Promise<Subject[]> {

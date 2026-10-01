@@ -163,12 +163,13 @@ export default function BulkImportDialog({
       : undefined
 
   // Rows skipped only because the record is already in the school (not a problem with the file).
-  const isAlreadyThere = (message: string) => /already (belongs to|exists)|is also on row/.test(message)
+  const isAlreadyThere = (message: string) => /already (belongs to|exists|takes|used by)|is also on row/.test(message)
   const nouns: Record<string, [string, string]> = {
     students: ['student', 'students'],
     teachers: ['teacher', 'teachers'],
     classes: ['class', 'classes'],
     subjects: ['subject', 'subjects'],
+    'teaching-assignments': ['class subject', 'class subjects'],
   }
   const [singular, plural] = nouns[thisEntity] ?? ['record', 'records']
   const allAlreadyThere =

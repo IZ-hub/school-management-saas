@@ -64,11 +64,12 @@ export class StudentsService {
 
   /**
    * Resolves an imported class to this school's class ID. Accepts a class name
-   * ("JSS 1A", matched ignoring case and extra spaces) or one of the school's class IDs.
+   * ("JSS 1A", matched ignoring case, spaces, hyphens and dots) or one of the school's class IDs.
    */
   private async classResolver(schoolId: string) {
     const snap = await this.firebase.firestore.collection('classes').where('schoolId', '==', schoolId).get();
-    const norm = (v: string) => v.toLowerCase().replace(/\s+/g, ' ').trim();
+    // "JSS 1A", "JSS1A", "jss-1a" and "J.S.S 1A" are the same class: ignore case, spaces, hyphens and dots.
+    const norm = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
     const ids = new Set<string>();
     const byName = new Map<string, string[]>();
     for (const doc of snap.docs) {

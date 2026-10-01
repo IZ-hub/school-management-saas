@@ -51,6 +51,21 @@ describe('Student CSV import with class names (e2e)', () => {
     expect(classOf('A/3')).toBe('ss2b');
   });
 
+  it('matches names written with or without spaces, hyphens or dots (real report: "JSS 1A" vs class "JSS1A")', async () => {
+    db.seed('classes', 'nospace', { schoolId: 'school-a', name: 'JSS3C', status: 'ACTIVE' });
+    // An inactive class with the same name must not make the match ambiguous
+    db.seed('classes', 'old', { schoolId: 'school-a', name: 'JSS3C', status: 'INACTIVE' });
+    const res = await importRows([
+      student(1, { className: 'JSS 3C' }),
+      student(2, { className: 'jss-3c' }),
+      student(3, { className: 'J.S.S 3C' }),
+      student(4, { className: 'JSS1A' }),
+    ]);
+    expect(res.body.data).toEqual({ imported: 4, errors: [] });
+    expect(['A/1', 'A/2', 'A/3'].map(classOf)).toEqual(['nospace', 'nospace', 'nospace']);
+    expect(classOf('A/4')).toBe('jss1a');
+  });
+
   it('imports students with no class, and still accepts the school’s own class IDs', async () => {
     const res = await importRows([student(1), student(2, { classId: 'ss2b' })]);
     expect(res.body.data.imported).toBe(2);

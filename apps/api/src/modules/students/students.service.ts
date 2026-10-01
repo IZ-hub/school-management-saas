@@ -65,25 +65,38 @@ export class StudentsService {
   /**
    * Resolves an imported class to this school's class ID. Accepts a class name
    * ("JSS 1A", matched ignoring case, spaces, hyphens and dots) or one of the school's class IDs.
+   * When several classes match loosely, a class spelled exactly as written wins.
    */
   private async classResolver(schoolId: string) {
     const snap = await this.firebase.firestore.collection('classes').where('schoolId', '==', schoolId).get();
     // "JSS 1A", "JSS1A", "jss-1a" and "J.S.S 1A" are the same class: ignore case, spaces, hyphens and dots.
-    const norm = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
+    const loose = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
+    const exact = (v: string) => v.toLowerCase().replace(/\s+/g, ' ').trim();
     const ids = new Set<string>();
-    const byName = new Map<string, string[]>();
+    const byName = new Map<string, { id: string; name: string }[]>();
     for (const doc of snap.docs) {
       ids.add(doc.id);
       const { name, status } = doc.data();
       if (!name || status === 'INACTIVE') continue;
-      byName.set(norm(name), [...(byName.get(norm(name)) ?? []), doc.id]);
+      byName.set(loose(name), [...(byName.get(loose(name)) ?? []), { id: doc.id, name }]);
     }
     return (value: string): { classId: string } | { error: string } => {
-      const matches = byName.get(norm(value)) ?? [];
-      if (matches.length === 1) return { classId: matches[0] };
-      if (matches.length > 1) return { error: `More than one class is named "${value.trim()}". Rename one of them, then import again.` };
-      if (ids.has(value.trim())) return { classId: value.trim() };
-      return { error: `Class "${value.trim()}" not found. Create it on the Classes page or check the spelling.` };
+      const wanted = value.trim();
+      const matches = byName.get(loose(wanted)) ?? [];
+      if (matches.length === 1) return { classId: matches[0].id };
+      if (matches.length > 1) {
+        const spelledExactly = matches.filter((m) => exact(m.name) === exact(wanted));
+        if (spelledExactly.length === 1) return { classId: spelledExactly[0].id };
+        const names = [...new Set(matches.map((m) => `"${m.name}"`))];
+        return {
+          error:
+            names.length === 1
+              ? `${matches.length} active classes are named ${names[0]}. Delete the extra one on the Classes page, then import again.`
+              : `More than one class matches "${wanted}": ${names.join(' and ')}. Delete or rename the extra one on the Classes page, then import again.`,
+        };
+      }
+      if (ids.has(wanted)) return { classId: wanted };
+      return { error: `Class "${wanted}" not found. Create it on the Classes page or check the spelling.` };
     };
   }
 
@@ -94,10 +107,29 @@ export class StudentsService {
     const errors: any[] = [];
     const resolveClass = await this.classResolver(schoolId);
 
+    // Skip students who are already in the school (or appear twice in the file), so a file can be re-imported safely.
+    const admissionKey = (v: string) => v.toLowerCase().replace(/\s+/g, '');
+    const existing = new Map<string, string>();
+    const studentsSnap = await this.col.where('schoolId', '==', schoolId).get();
+    for (const doc of studentsSnap.docs) {
+      const d = doc.data();
+      if (d.admissionNumber) existing.set(admissionKey(String(d.admissionNumber)), `${d.firstName ?? ''} ${d.lastName ?? ''}`.trim());
+    }
+    const seenInFile = new Map<string, number>();
+
     for (let i = 0; i < records.length; i++) {
       const r = records[i];
       if (!r.firstName || !r.lastName || !r.admissionNumber) {
         errors.push({ row: i + 1, message: 'Missing required fields: firstName, lastName, admissionNumber' });
+        continue;
+      }
+      const key = admissionKey(String(r.admissionNumber));
+      if (existing.has(key)) {
+        errors.push({ row: i + 1, message: `Admission number ${r.admissionNumber} already belongs to ${existing.get(key) || 'a student'}, so this row was skipped.` });
+        continue;
+      }
+      if (seenInFile.has(key)) {
+        errors.push({ row: i + 1, message: `Admission number ${r.admissionNumber} is also on row ${seenInFile.get(key)} of this file, so this row was skipped.` });
         continue;
       }
       let classId: string | null = null;
@@ -128,6 +160,7 @@ export class StudentsService {
         updatedAt: now,
       });
       created.push({ id: ref.id, ...r, classId });
+      seenInFile.set(key, i + 1);
     }
 
     if (created.length > 0) await batch.commit();

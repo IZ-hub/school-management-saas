@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -34,6 +35,7 @@ import {
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
+import { classLabels } from '../lib/classLabels'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 
 interface Student {
@@ -54,7 +56,11 @@ interface Student {
 interface ClassOption {
   id: string
   name: string
+  status?: string
+  createdAt?: unknown
 }
+
+const NO_CLASS = 'none'
 
 const titleCase = (v?: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : '—')
 
@@ -103,12 +109,33 @@ export default function Students() {
   const theme = useTheme()
   const isPhone = useMediaQuery(theme.breakpoints.down('sm'))
 
-  const classNameById = new Map(classes.map((c) => [c.id, c.name]))
+  // Twin classes with the same name are shown as "JSS2B (copy 1)", "JSS2B (copy 2)".
+  const labels = useMemo(() => classLabels(classes), [classes])
+  const activeClasses = classes
+    .filter((c) => c.status !== 'INACTIVE')
+    .sort((a, b) => (labels.get(a.id) ?? a.name).localeCompare(labels.get(b.id) ?? b.name, undefined, { numeric: true }))
+  const classNameById = new Map(
+    classes.map((c) => [c.id, c.status === 'INACTIVE' ? `${c.name} (deleted)` : labels.get(c.id) ?? c.name]),
+  )
   const classLabel = (student: Student) => {
     if (!student.classId) return '—'
     const name = classNameById.get(student.classId) ?? 'Unknown class'
     return student.section ? `${name} · ${student.section}` : name
   }
+
+  // Class filter lives in the URL (?class=<id>), so the Classes page can link straight to a class's students.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const classFilter = searchParams.get('class') ?? ''
+  const setClassFilter = (value: string) => {
+    const next = new URLSearchParams(searchParams)
+    if (value) next.set('class', value)
+    else next.delete('class')
+    setSearchParams(next, { replace: true })
+  }
+  const shown = students.filter((st) =>
+    !classFilter ? true : classFilter === NO_CLASS ? !st.classId : st.classId === classFilter,
+  )
+  const filterName = classFilter === NO_CLASS ? 'no class' : classNameById.get(classFilter) ?? 'this class'
 
   const studentColumns: ColumnDef[] = [
     { key: 'firstName', label: 'First Name', required: true },
@@ -145,7 +172,7 @@ export default function Students() {
       .then((res) =>
         setClasses(
           (res.data.data as ClassOption[])
-            .map((c) => ({ id: c.id, name: c.name }))
+            .map((c) => ({ id: c.id, name: c.name, status: c.status, createdAt: c.createdAt }))
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
         ),
       )
@@ -237,7 +264,25 @@ export default function Students() {
         </Stack>
       </Stack>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ p: 2, mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
+        <TextField
+          select
+          label="Class"
+          value={classFilter}
+          onChange={(e) => setClassFilter(e.target.value)}
+          sx={{ width: { xs: '100%', sm: 240 }, flexShrink: 0 }}
+          SelectProps={{ displayEmpty: true }}
+          InputLabelProps={{ shrink: true }}
+        >
+          <MenuItem value="">All classes</MenuItem>
+          {activeClasses.map((c) => (
+            <MenuItem key={c.id} value={c.id}>{labels.get(c.id) ?? c.name}</MenuItem>
+          ))}
+          <MenuItem value={NO_CLASS}>No class</MenuItem>
+          {classFilter && classFilter !== NO_CLASS && !activeClasses.some((c) => c.id === classFilter) && (
+            <MenuItem value={classFilter}>{classNameById.get(classFilter) ?? 'Unknown class'}</MenuItem>
+          )}
+        </TextField>
         <TextField
           fullWidth
           placeholder="Search by name or admission number"
@@ -259,19 +304,27 @@ export default function Students() {
         </Alert>
       )}
 
+      {classFilter && !loading && (
+        <Typography sx={{ fontSize: '13.5px', color: brand.muted, mb: 1, ml: 0.5 }}>
+          {shown.length} {shown.length === 1 ? 'student' : 'students'} in {filterName}
+        </Typography>
+      )}
+
       <Paper>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress size={28} />
           </Box>
-        ) : students.length === 0 ? (
+        ) : shown.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">No students found.</Typography>
+            <Typography color="text.secondary">
+              {classFilter ? `No students in ${filterName}${search ? ' match your search' : ''}.` : 'No students found.'}
+            </Typography>
           </Box>
         ) : isPhone ? (
           // Phones: one card per student instead of a table that scrolls sideways
           <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-            {students.map((student, i) => (
+            {shown.map((student, i) => (
               <Box component="li" key={student.id}
                 sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, px: 2, py: 1.75, borderTop: i === 0 ? 'none' : `1px solid ${brand.border}` }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -312,7 +365,7 @@ export default function Students() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {students.map((student) => (
+              {shown.map((student) => (
                 <TableRow key={student.id} hover>
                   <TableCell sx={{ color: brand.muted }}>{student.admissionNumber}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>
@@ -410,15 +463,15 @@ export default function Students() {
               value={form.classId}
               onChange={(e) => setForm({ ...form, classId: e.target.value })}
               margin="dense"
-              helperText={classes.length === 0 ? 'Create classes on the Classes page first' : undefined}
+              helperText={activeClasses.length === 0 ? 'Create classes on the Classes page first' : undefined}
             >
               <MenuItem value="">No class yet</MenuItem>
-              {classes.map((c) => (
-                <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+              {activeClasses.map((c) => (
+                <MenuItem key={c.id} value={c.id}>{labels.get(c.id) ?? c.name}</MenuItem>
               ))}
-              {/* Keep a student's existing class selectable even if it no longer appears in the list */}
-              {form.classId && !classNameById.has(form.classId) && (
-                <MenuItem value={form.classId}>Unknown class</MenuItem>
+              {/* Keep a student's current class selectable even if it was deleted or can't be found */}
+              {form.classId && !activeClasses.some((c) => c.id === form.classId) && (
+                <MenuItem value={form.classId}>{classNameById.get(form.classId) ?? 'Unknown class'}</MenuItem>
               )}
             </TextField>
             <TextField

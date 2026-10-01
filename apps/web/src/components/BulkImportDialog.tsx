@@ -344,13 +344,13 @@ export default function BulkImportDialog({
             ) : (
               <>
                 <ErrorIcon sx={{ fontSize: 48, color: '#d32f2f', mb: 1 }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Import failed</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>No new records imported</Typography>
               </>
             )}
             {result.errors.length > 0 && (
               <Box sx={{ mt: 2, textAlign: 'left' }}>
                 <Alert severity="warning" sx={{ mb: 1 }}>
-                  {result.errors.length} row(s) had errors:
+                  {result.errors.length} {result.errors.length === 1 ? 'row was' : 'rows were'} skipped:
                 </Alert>
                 {result.errors.slice(0, 10).map((e, i) => (
                   <Typography key={i} variant="body2" sx={{ color: '#d32f2f', ml: 1 }}>

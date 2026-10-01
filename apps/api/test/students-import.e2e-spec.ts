@@ -66,6 +66,42 @@ describe('Student CSV import with class names (e2e)', () => {
     expect(classOf('A/4')).toBe('jss1a');
   });
 
+  it('prefers the class spelled exactly as written when spellings collide (real report: "JSS2B" and "JSS 2B")', async () => {
+    db.seed('classes', 'nospace2b', { schoolId: 'school-a', name: 'JSS2B', status: 'ACTIVE' });
+    db.seed('classes', 'space2b', { schoolId: 'school-a', name: 'JSS 2B', status: 'ACTIVE' });
+    const res = await importRows([
+      student(1, { className: 'JSS 2B' }),
+      student(2, { className: 'jss2b' }),
+      student(3, { className: 'JSS-2B' }),
+    ]);
+    expect(res.body.data.imported).toBe(2);
+    expect(classOf('A/1')).toBe('space2b');
+    expect(classOf('A/2')).toBe('nospace2b');
+    expect(res.body.data.errors).toEqual([
+      { row: 3, message: 'More than one class matches "JSS-2B": "JSS2B" and "JSS 2B". Delete or rename the extra one on the Classes page, then import again.' },
+    ]);
+  });
+
+  it('skips students already in the school and repeats within the file, so a file can be re-imported', async () => {
+    db.seed('students', 'existing', { schoolId: 'school-a', firstName: 'Chinedu', lastName: 'Okafor', admissionNumber: 'GFA/2026/102', status: 'ACTIVE' });
+    db.seed('students', 'other-school', { schoolId: 'school-b', firstName: 'X', lastName: 'Y', admissionNumber: 'GFA/2026/200', status: 'ACTIVE' });
+    const res = await importRows([
+      { firstName: 'Chinedu', lastName: 'Okafor', admissionNumber: 'gfa/2026/102' },
+      { firstName: 'Amaka', lastName: 'Eze', admissionNumber: 'GFA/2026/103' },
+      { firstName: 'Amaka', lastName: 'Eze', admissionNumber: 'GFA/2026/103' },
+      { firstName: 'New', lastName: 'Pupil', admissionNumber: 'GFA/2026/200' },
+    ]);
+    expect(res.body.data.imported).toBe(2);
+    expect(res.body.data.errors).toEqual([
+      { row: 1, message: 'Admission number gfa/2026/102 already belongs to Chinedu Okafor, so this row was skipped.' },
+      { row: 3, message: 'Admission number GFA/2026/103 is also on row 2 of this file, so this row was skipped.' },
+    ]);
+
+    // Importing the same file again adds nothing new
+    const again = await importRows([{ firstName: 'Amaka', lastName: 'Eze', admissionNumber: 'GFA/2026/103' }]);
+    expect(again.body.data.imported).toBe(0);
+  });
+
   it('imports students with no class, and still accepts the school’s own class IDs', async () => {
     const res = await importRows([student(1), student(2, { classId: 'ss2b' })]);
     expect(res.body.data.imported).toBe(2);
@@ -83,7 +119,7 @@ describe('Student CSV import with class names (e2e)', () => {
     expect(res.body.data.imported).toBe(1);
     expect(res.body.data.errors).toEqual([
       { row: 1, message: 'Class "JSS 9Z" not found. Create it on the Classes page or check the spelling.' },
-      { row: 2, message: 'More than one class is named "Primary 4". Rename one of them, then import again.' },
+      { row: 2, message: 'More than one class matches "Primary 4": "Primary 4" and "primary 4". Delete or rename the extra one on the Classes page, then import again.' },
       { row: 3, message: 'Class "other" not found. Create it on the Classes page or check the spelling.' },
     ]);
     expect(classOf('A/1')).toBeUndefined();

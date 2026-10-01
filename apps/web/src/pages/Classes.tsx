@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -13,7 +14,6 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,6 +22,9 @@ import {
   Stack,
   Tooltip,
   CircularProgress,
+  FormControlLabel,
+  Snackbar,
+  Switch,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -33,6 +36,9 @@ import {
 import type { Class } from '@shared-types/index'
 import { listClasses, createClass, updateClass, deleteClass } from '../lib/classesApi'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
+import { api } from '../lib/api'
+import { classLabels, duplicateClassGroups } from '../lib/classLabels'
+import { brand } from '../theme'
 
 const emptyForm = {
   name: '',
@@ -52,6 +58,21 @@ export default function Classes() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [importOpen, setImportOpen] = useState(false)
+  const [studentCounts, setStudentCounts] = useState<Map<string, number>>(new Map())
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Class | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [notice, setNotice] = useState('')
+  const navigate = useNavigate()
+
+  const labels = useMemo(() => classLabels(classes), [classes])
+  const duplicates = useMemo(() => duplicateClassGroups(classes), [classes])
+  const deletedCount = classes.filter((c) => c.status === 'INACTIVE').length
+  const visibleClasses = classes
+    .filter((c) => showDeleted || c.status !== 'INACTIVE')
+    .sort((a, b) => (labels.get(a.id) ?? a.name).localeCompare(labels.get(b.id) ?? b.name, undefined, { numeric: true }))
+  const countFor = (id: string) => studentCounts.get(id) ?? 0
 
   const classColumns: ColumnDef[] = [
     { key: 'name', label: 'Class Name', required: true },
@@ -64,8 +85,17 @@ export default function Classes() {
     setLoading(true)
     setError('')
     try {
-      const data = await listClasses(searchTerm ? { name: searchTerm } : undefined)
+      const [data, studentsRes] = await Promise.all([
+        listClasses(searchTerm ? { name: searchTerm } : undefined),
+        api.get('/students'),
+      ])
       setClasses(data)
+      // Count active students per class from the students themselves (the class's own list isn't kept up to date).
+      const counts = new Map<string, number>()
+      for (const st of studentsRes.data.data as { classId?: string | null; status?: string }[]) {
+        if (st.classId && st.status !== 'INACTIVE') counts.set(st.classId, (counts.get(st.classId) ?? 0) + 1)
+      }
+      setStudentCounts(counts)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load classes')
     } finally {
@@ -126,25 +156,36 @@ export default function Classes() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Deactivate this class?')) return
+  const openDelete = (schoolClass: Class) => {
+    setDeleteError('')
+    setDeleteTarget(schoolClass)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError('')
     try {
-      await deleteClass(id)
+      await deleteClass(deleteTarget.id)
+      setNotice(`${labels.get(deleteTarget.id) ?? deleteTarget.name} deleted`)
+      setDeleteTarget(null)
       fetchClasses(search)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete class')
+      setDeleteError(err.response?.data?.message || 'Failed to delete class')
+    } finally {
+      setDeleting(false)
     }
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ flexGrow: 1, maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Classes
         </Typography>
         <Stack direction="row" spacing={1}>
           <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)} size="small"
-            sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' }, whiteSpace: 'nowrap' }}>
+            sx={{ borderColor: brand.border, color: brand.text, bgcolor: brand.surface, '&:hover': { borderColor: '#d6d3c9', bgcolor: brand.surface }, whiteSpace: 'nowrap' }}>
             Import CSV
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog} size="small" sx={{ whiteSpace: 'nowrap' }}>
@@ -168,6 +209,24 @@ export default function Classes() {
           }}
         />
       </Paper>
+
+      {duplicates.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <strong>
+            Some classes share a name:{' '}
+            {duplicates.map((g) => `${g[0].name} (${g.length} copies)`).join(' and ')}.
+          </strong>{' '}
+          Keep one copy of each. Move students out of the extra copy (click its student count), then delete it.
+        </Alert>
+      )}
+
+      {deletedCount > 0 && (
+        <FormControlLabel
+          sx={{ mb: 1, ml: 0.25, '& .MuiFormControlLabel-label': { fontSize: '14px', color: brand.muted } }}
+          control={<Switch size="small" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />}
+          label={`Show deleted classes (${deletedCount})`}
+        />
+      )}
 
       <Paper>
         {error && (
@@ -193,40 +252,61 @@ export default function Classes() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {classes.length === 0 && (
+              {visibleClasses.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     No classes found
                   </TableCell>
                 </TableRow>
               )}
-              {classes.map((schoolClass) => (
-                <TableRow key={schoolClass.id}>
-                  <TableCell>{schoolClass.name}</TableCell>
-                  <TableCell>{schoolClass.gradeLevel}</TableCell>
-                  <TableCell>{schoolClass.capacity ?? '-'}</TableCell>
-                  <TableCell>{schoolClass.studentIds.length}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={schoolClass.status}
-                      color={schoolClass.status === 'ACTIVE' ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => openEditDialog(schoolClass)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Deactivate">
-                      <IconButton size="small" onClick={() => handleDelete(schoolClass.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {visibleClasses.map((schoolClass) => {
+                const deleted = schoolClass.status === 'INACTIVE'
+                const isCopy = (labels.get(schoolClass.id) ?? '') !== schoolClass.name
+                const count = countFor(schoolClass.id)
+                return (
+                  <TableRow key={schoolClass.id} sx={{ opacity: deleted ? 0.55 : 1 }}>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      {labels.get(schoolClass.id) ?? schoolClass.name}
+                      {isCopy && (
+                        <Box component="span" sx={{ ml: 1, px: 0.75, py: 0.1, borderRadius: 999, fontSize: '11px', fontWeight: 600, bgcolor: '#fff4e5', color: '#8a4b00' }}>
+                          Duplicate
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>{schoolClass.gradeLevel}</TableCell>
+                    <TableCell>{schoolClass.capacity ?? '-'}</TableCell>
+                    <TableCell>
+                      <Button size="small" onClick={() => navigate(`/students?class=${schoolClass.id}`)}
+                        sx={{ minWidth: 0, px: 1, fontWeight: 600, color: count ? brand.green : brand.subtle }}
+                        aria-label={`View the ${count} students in ${labels.get(schoolClass.id) ?? schoolClass.name}`}>
+                        {count}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Box component="span" sx={{ px: 1, py: 0.25, borderRadius: 999, fontSize: '12px', fontWeight: 600,
+                        bgcolor: deleted ? '#f1f0ec' : brand.greenSoft, color: deleted ? brand.muted : brand.green }}>
+                        {deleted ? 'Deleted' : 'Active'}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      {!deleted && (
+                        <>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" aria-label={`Edit ${labels.get(schoolClass.id)}`} onClick={() => openEditDialog(schoolClass)}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" aria-label={`Delete ${labels.get(schoolClass.id)}`} onClick={() => openDelete(schoolClass)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
           </TableContainer>
@@ -288,6 +368,45 @@ export default function Classes() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={!!deleteTarget} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="xs" fullWidth>
+        {deleteTarget && (() => {
+          const name = labels.get(deleteTarget.id) ?? deleteTarget.name
+          const count = countFor(deleteTarget.id)
+          return (
+            <>
+              <DialogTitle sx={{ fontWeight: 700 }}>{count > 0 ? `${name} still has students` : `Delete ${name}?`}</DialogTitle>
+              <DialogContent>
+                {count > 0 ? (
+                  <Typography variant="body2" sx={{ color: brand.muted }}>
+                    {count} {count === 1 ? 'student is' : 'students are'} in {name}. Move them to another class
+                    first (open each student and change their Class), then delete this class.
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: brand.muted }}>
+                    {name} will be removed from your class list and from class dropdowns. It has no students.
+                  </Typography>
+                )}
+                {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+                {count > 0 ? (
+                  <Button variant="contained" onClick={() => navigate(`/students?class=${deleteTarget.id}`)}>
+                    View its students
+                  </Button>
+                ) : (
+                  <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleting}>
+                    {deleting ? 'Deleting…' : 'Delete class'}
+                  </Button>
+                )}
+              </DialogActions>
+            </>
+          )
+        })()}
+      </Dialog>
+
+      <Snackbar open={!!notice} autoHideDuration={3000} onClose={() => setNotice('')} message={notice} />
 
       <BulkImportDialog
         open={importOpen}

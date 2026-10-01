@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+
+/** "JSS 2B", "JSS2B" and "jss-2b" are the same class name. */
+const nameKey = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
 
 @Injectable()
 export class ClassesService {
@@ -12,7 +15,26 @@ export class ClassesService {
     return this.firebase.firestore.collection('classes');
   }
 
+  /** Names of this school's active classes, keyed by normalised name. */
+  private async activeNames(schoolId: string, exceptId?: string) {
+    const snap = await this.col.where('schoolId', '==', schoolId).get();
+    const names = new Map<string, string>();
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      if (doc.id !== exceptId && d.status !== 'INACTIVE' && d.name) names.set(nameKey(d.name), d.name);
+    }
+    return names;
+  }
+
+  private async assertNameFree(schoolId: string, name: string, exceptId?: string) {
+    const existing = (await this.activeNames(schoolId, exceptId)).get(nameKey(name));
+    if (existing) {
+      throw new BadRequestException(`A class named "${existing}" already exists. Use a different name.`);
+    }
+  }
+
   async create(schoolId: string, dto: CreateClassDto) {
+    await this.assertNameFree(schoolId, dto.name);
     const now = new Date();
     const docRef = await this.col.add({
       schoolId,
@@ -50,14 +72,31 @@ export class ClassesService {
 
   async update(schoolId: string, id: string, dto: UpdateClassDto) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Class not found');
+    // Only check when the name actually changes, so existing twins can still be edited.
+    if (dto.name && nameKey(dto.name) !== nameKey(doc.data()!.name ?? '')) {
+      await this.assertNameFree(schoolId, dto.name, id);
+    }
     await doc.ref.update({ ...dto, updatedAt: new Date() });
     return { id, ...doc.data(), ...dto };
   }
 
   async remove(schoolId: string, id: string) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Class not found');
+    const students = await this.firebase.firestore
+      .collection('students')
+      .where('schoolId', '==', schoolId)
+      .where('classId', '==', id)
+      .get();
+    const activeStudents = students.docs.filter((d) => d.data().status !== 'INACTIVE').length;
+    if (activeStudents > 0) {
+      throw new BadRequestException({
+        code: 'CLASS_HAS_STUDENTS',
+        count: activeStudents,
+        message: `"${doc.data()!.name}" still has ${activeStudents} ${activeStudents === 1 ? 'student' : 'students'}. Move them to another class first.`,
+      });
+    }
     await doc.ref.update({ status: 'INACTIVE', updatedAt: new Date() });
-    return { message: 'Class deactivated' };
+    return { message: 'Class deleted' };
   }
 
   async bulkCreate(schoolId: string, records: any[]) {
@@ -65,6 +104,7 @@ export class ClassesService {
     const batch = this.firebase.firestore.batch();
     const created: any[] = [];
     const errors: any[] = [];
+    const taken = await this.activeNames(schoolId);
 
     for (let i = 0; i < records.length; i++) {
       const r = records[i];
@@ -72,6 +112,12 @@ export class ClassesService {
         errors.push({ row: i + 1, message: 'Missing required fields: name, gradeLevel' });
         continue;
       }
+      const existing = taken.get(nameKey(String(r.name)));
+      if (existing) {
+        errors.push({ row: i + 1, message: `A class named "${existing}" already exists, so this row was skipped.` });
+        continue;
+      }
+      taken.set(nameKey(String(r.name)), String(r.name));
       const ref = this.col.doc();
       batch.set(ref, {
         schoolId,

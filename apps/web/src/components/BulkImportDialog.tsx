@@ -162,6 +162,18 @@ export default function BulkImportDialog({
         )?.[1]
       : undefined
 
+  // Rows skipped only because the record is already in the school (not a problem with the file).
+  const isAlreadyThere = (message: string) => /already (belongs to|exists)|is also on row/.test(message)
+  const nouns: Record<string, [string, string]> = {
+    students: ['student', 'students'],
+    teachers: ['teacher', 'teachers'],
+    classes: ['class', 'classes'],
+    subjects: ['subject', 'subjects'],
+  }
+  const [singular, plural] = nouns[thisEntity] ?? ['record', 'records']
+  const allAlreadyThere =
+    !!result && result.imported === 0 && result.errors.length > 0 && result.errors.every((e) => isAlreadyThere(e.message))
+
   const canImport = rows.length > 0 && missingHeadings.length === 0 && readyRows.length > 0 && !importing
 
   const handleImport = async () => {
@@ -334,11 +346,21 @@ export default function BulkImportDialog({
         {/* Results */}
         {result && (
           <Box sx={{ textAlign: 'center', py: 3 }}>
-            {result.imported > 0 ? (
+            {allAlreadyThere ? (
+              <>
+                <CheckIcon sx={{ fontSize: 48, color: '#2e7d32', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  {result.errors.length === 1
+                    ? `This ${singular} is already in your list.`
+                    : `All ${result.errors.length} ${plural} are already in your list.`}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">Nothing new to add.</Typography>
+              </>
+            ) : result.imported > 0 ? (
               <>
                 <CheckIcon sx={{ fontSize: 48, color: '#2e7d32', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  {result.imported} records imported successfully!
+                  {result.imported} {result.imported === 1 ? 'record' : 'records'} imported successfully!
                 </Typography>
               </>
             ) : (
@@ -347,13 +369,13 @@ export default function BulkImportDialog({
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>No new records imported</Typography>
               </>
             )}
-            {result.errors.length > 0 && (
+            {result.errors.length > 0 && !allAlreadyThere && (
               <Box sx={{ mt: 2, textAlign: 'left' }}>
                 <Alert severity="warning" sx={{ mb: 1 }}>
                   {result.errors.length} {result.errors.length === 1 ? 'row was' : 'rows were'} skipped:
                 </Alert>
                 {result.errors.slice(0, 10).map((e, i) => (
-                  <Typography key={i} variant="body2" sx={{ color: '#d32f2f', ml: 1 }}>
+                  <Typography key={i} variant="body2" sx={{ color: isAlreadyThere(e.message) ? '#6b7064' : '#d32f2f', ml: 1 }}>
                     Row {e.row}: {e.message}
                   </Typography>
                 ))}
@@ -379,7 +401,7 @@ export default function BulkImportDialog({
             {importing ? 'Importing...' : canImport ? `Import ${readyRows.length} Records` : 'Import'}
           </Button>
         )}
-        {result && result.imported > 0 && (
+        {result && (result.imported > 0 || allAlreadyThere) && (
           <Button variant="contained" onClick={handleClose}>
             Done
           </Button>

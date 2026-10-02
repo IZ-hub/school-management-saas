@@ -142,7 +142,7 @@ export default function DashboardLayout() {
               {section.items.map((item) => (
                 <ListItemButton
                   key={item.path}
-                  selected={location.pathname === item.path}
+                  selected={location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)}
                   aria-current={location.pathname === item.path ? 'page' : undefined}
                   onClick={() => go(item.path)}
                   sx={itemSx}

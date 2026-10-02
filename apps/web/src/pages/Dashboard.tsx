@@ -9,12 +9,15 @@ import {
   CheckCircle as DoneIcon,
   RadioButtonUnchecked as TodoIcon,
   ContentCopyOutlined as CopyIcon,
+  AssignmentOutlined as ExamIcon,
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
 import { brand } from '../theme'
 import StudentsByClass from '../components/StudentsByClass'
+import { countdown } from '../lib/examsApi'
+import { schoolToday } from '../lib/attendanceApi'
 
 interface DashboardStats {
   totalStudents: number
@@ -24,6 +27,7 @@ interface DashboardStats {
   attendanceRate: number
   attendanceToday?: { rate: number | null; classesTaken: number; classesTotal: number }
   attendanceEverTaken?: boolean
+  nextExam?: { id: string; name: string; startDate: string; endDate: string; inProgress: boolean } | null
   totalExams: number
   totalResults: number
   totalFees: number
@@ -232,6 +236,23 @@ export default function Dashboard() {
             </Grid>
           )}
 
+          {stats.nextExam && (
+            <Grid item xs={12}>
+              <ButtonBase
+                onClick={() => navigate(`/exams/${stats.nextExam!.id}`)}
+                sx={{ ...card, width: '100%', justifyContent: 'flex-start', gap: 1.5, px: { xs: 2, sm: 2.5 }, py: 1.5, textAlign: 'left', '&:hover': { borderColor: '#d6d3c9' } }}
+              >
+                <ExamIcon sx={{ fontSize: 20, color: brand.green }} />
+                <Typography sx={{ flex: 1, fontSize: '14px', color: brand.text }}>
+                  <Box component="span" sx={{ color: brand.muted }}>{stats.nextExam.inProgress ? 'Exams in progress' : 'Upcoming exams'} · </Box>
+                  <Box component="span" sx={{ fontWeight: 600 }}>{stats.nextExam.name}</Box>
+                  <Box component="span" sx={{ color: brand.muted }}> · {countdown(stats.nextExam, schoolToday())}</Box>
+                </Typography>
+                <ChevronIcon sx={{ color: brand.subtle }} />
+              </ButtonBase>
+            </Grid>
+          )}
+
           <Grid item xs={12}>
             <StudentsByClass />
           </Grid>
@@ -241,7 +262,7 @@ export default function Dashboard() {
               title="Academics"
               rows={[
                 { label: 'Subjects', value: stats.totalSubjects, to: '/subjects' },
-                { label: 'Exams', value: stats.totalExams, to: '/exams' },
+                { label: 'Exam papers', value: stats.totalExams, to: '/exams' },
                 { label: 'Results recorded', value: stats.totalResults, to: '/results' },
               ]}
             />

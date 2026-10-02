@@ -12,6 +12,7 @@ import Subjects from './pages/Subjects'
 import ClassSubjects from './pages/ClassSubjects'
 import Attendance from './pages/Attendance'
 import Exams from './pages/Exams'
+import ExamSeriesPage from './pages/ExamSeries'
 import Results from './pages/Results'
 import Fees from './pages/Fees'
 import Payments from './pages/Payments'
@@ -53,6 +54,7 @@ function App() {
           <Route path="/class-subjects" element={<ClassSubjects />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/exams" element={<Exams />} />
+          <Route path="/exams/:seriesId" element={<ExamSeriesPage />} />
           <Route path="/results" element={<Results />} />
           <Route path="/fees" element={<Fees />} />
           <Route path="/payments" element={<Payments />} />

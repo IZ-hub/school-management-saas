@@ -170,6 +170,7 @@ export default function BulkImportDialog({
     classes: ['class', 'classes'],
     subjects: ['subject', 'subjects'],
     'teaching-assignments': ['class subject', 'class subjects'],
+    'exam-series': ['paper', 'papers'],
   }
   const [singular, plural] = nouns[thisEntity] ?? ['record', 'records']
   const allAlreadyThere =

@@ -14,6 +14,7 @@ import Attendance from './pages/Attendance'
 import Exams from './pages/Exams'
 import ExamSeriesPage from './pages/ExamSeries'
 import Results from './pages/Results'
+import ReportCards from './pages/ReportCards'
 import Fees from './pages/Fees'
 import Payments from './pages/Payments'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -56,6 +57,7 @@ function App() {
           <Route path="/exams" element={<Exams />} />
           <Route path="/exams/:seriesId" element={<ExamSeriesPage />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/report-cards" element={<ReportCards />} />
           <Route path="/fees" element={<Fees />} />
           <Route path="/payments" element={<Payments />} />
         </Route>

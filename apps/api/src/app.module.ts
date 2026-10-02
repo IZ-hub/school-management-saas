@@ -15,6 +15,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { TimetableModule } from './modules/timetable/timetable.module';
 import { SupportModule } from './modules/support/support.module';
 import { TeachingAssignmentsModule } from './modules/teaching-assignments/teaching-assignments.module';
+import { ReportCardsModule } from './modules/report-cards/report-cards.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TeachingAssignmentsModule } from './modules/teaching-assignments/teachi
     TimetableModule,
     SupportModule,
     TeachingAssignmentsModule,
+    ReportCardsModule,
   ],
 })
 export class AppModule {}

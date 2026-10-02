@@ -85,16 +85,22 @@ export default function StudentsByClass() {
             const over = c.capacity !== null && c.students > c.capacity
             const share = c.capacity ? c.students / c.capacity : c.students / largest
             const percent = c.capacity ? Math.round((c.students / c.capacity) * 100) : null
-            const detail =
-              c.capacity !== null
-                ? `${plural(c.students, 'student', 'students')} · ${plural(c.capacity, 'place', 'places')} · ${percent}% full`
-                : `${plural(c.students, 'student', 'students')} · no capacity set`
+            // e.g. "SS1 — 1 Student · 31 Seats Available · 3% Full"
+            const seats =
+              c.capacity === null
+                ? 'No Capacity Set'
+                : over
+                  ? `${(c.students - c.capacity).toLocaleString('en-NG')} Over Capacity`
+                  : plural(c.capacity - c.students, 'Seat Available', 'Seats Available')
+            const detail = [plural(c.students, 'Student', 'Students'), seats, percent !== null ? `${percent}% Full` : null]
+              .filter(Boolean)
+              .join(' · ')
             return (
               <Box component="li" key={c.id}>
-                <Tooltip title={`${c.name}: ${detail}`} placement="top" arrow>
+                <Tooltip title={`${c.name} — ${detail}`} placement="top" arrow>
                   <ButtonBase
                     onClick={() => navigate(`/students?class=${c.id}`)}
-                    aria-label={`${c.name}: ${detail}${over ? ', over capacity' : ''}. View students.`}
+                    aria-label={`${c.name} — ${detail}. View students.`}
                     sx={{
                       width: '100%', display: 'grid', alignItems: 'center', columnGap: 1.5,
                       gridTemplateColumns: { xs: '76px 1fr auto', sm: '96px 1fr auto' },

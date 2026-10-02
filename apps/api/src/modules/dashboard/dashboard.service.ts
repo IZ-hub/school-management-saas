@@ -66,8 +66,8 @@ export class DashboardService {
       totalResults,
       totalFees,
       totalPayments,
-      attendancePresent,
-      attendanceTotal,
+      attendanceToday,
+      attendanceEverTaken,
     ] = await Promise.all([
       this.students.count(schoolId),
       this.teachers.count(schoolId),
@@ -77,14 +77,12 @@ export class DashboardService {
       this.results.count(schoolId),
       this.fees.count(schoolId),
       this.payments.count(schoolId),
-      this.attendance.countPresent(schoolId),
-      this.attendance.countTotal(schoolId),
+      this.attendance.today(schoolId),
+      this.attendance.everTaken(schoolId),
     ]);
 
-    const attendanceRate =
-      attendanceTotal > 0
-        ? Math.round((attendancePresent / attendanceTotal) * 100)
-        : 0;
+    // Today's attendance (Lagos time); 0 until a register has been taken today.
+    const attendanceRate = attendanceToday.rate ?? 0;
 
     return {
       totalStudents,
@@ -92,6 +90,12 @@ export class DashboardService {
       totalClasses,
       totalSubjects,
       attendanceRate,
+      attendanceToday: {
+        rate: attendanceToday.rate,
+        classesTaken: attendanceToday.classesTaken,
+        classesTotal: attendanceToday.classesTotal,
+      },
+      attendanceEverTaken,
       totalExams,
       totalResults,
       totalFees,

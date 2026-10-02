@@ -85,3 +85,47 @@ describe('Classes: no duplicate names, safe delete (e2e)', () => {
     expect(cls('jss2b-twin')!.status).toBe('INACTIVE');
   });
 });
+
+describe('Dashboard: students by class (e2e)', () => {
+  let app: INestApplication;
+  let db: FakeFirestore;
+  const owner = jwt.sign({ sub: 'u1', email: 'o@a.ng', role: 'SCHOOL_OWNER', schoolId: 'school-a' }, process.env.JWT_SECRET!);
+
+  beforeEach(async () => {
+    db = new FakeFirestore();
+    db.seed('classes', 'c2', { schoolId: 'school-a', name: 'JSS2', capacity: 2, status: 'ACTIVE' });
+    db.seed('classes', 'c10', { schoolId: 'school-a', name: 'JSS10', status: 'ACTIVE' });
+    db.seed('classes', 'c1', { schoolId: 'school-a', name: 'JSS1', capacity: 40, status: 'ACTIVE' });
+    db.seed('classes', 'gone', { schoolId: 'school-a', name: 'Old', capacity: 30, status: 'INACTIVE' });
+    db.seed('classes', 'other', { schoolId: 'school-b', name: 'JSS1', capacity: 40, status: 'ACTIVE' });
+    const st = (id: string, classId: string | null, status = 'ACTIVE', schoolId = 'school-a') =>
+      db.seed('students', id, { schoolId, firstName: id, lastName: 'X', classId, status });
+    st('a', 'c1'); st('b', 'c2'); st('c', 'c2'); st('d', 'c2');
+    st('e', null); st('f', 'gone'); st('g', 'c1', 'INACTIVE'); st('h', 'other', 'ACTIVE', 'school-b');
+
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(FirebaseService)
+      .useValue({ firestore: db })
+      .compile();
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api/v1');
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('counts active students per active class, in class order, and those without a class', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/dashboard/class-sizes').set('Authorization', `Bearer ${owner}`).expect(200);
+    expect(res.body.data).toEqual({
+      classes: [
+        { id: 'c1', name: 'JSS1', capacity: 40, students: 1 },
+        { id: 'c2', name: 'JSS2', capacity: 2, students: 3 },
+        { id: 'c10', name: 'JSS10', capacity: null, students: 0 },
+      ],
+      withoutClass: 2,
+      totalStudents: 6,
+    });
+  });
+});

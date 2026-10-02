@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
 import { brand } from '../theme'
+import StudentsByClass from '../components/StudentsByClass'
 
 interface DashboardStats {
   totalStudents: number
@@ -219,6 +220,10 @@ export default function Dashboard() {
               </Box>
             </Grid>
           )}
+
+          <Grid item xs={12}>
+            <StudentsByClass />
+          </Grid>
 
           <Grid item xs={12} md={6}>
             <ListCard

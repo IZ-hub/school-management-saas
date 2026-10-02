@@ -92,6 +92,8 @@ export class FakeFirestore {
     const ops: (() => Promise<void>)[] = [];
     return {
       set: (ref: FakeDocRef, data: Data) => ops.push(() => ref.set(data)),
+      update: (ref: FakeDocRef, data: Data) => ops.push(() => ref.update(data)),
+      delete: (ref: FakeDocRef) => ops.push(() => ref.delete()),
       commit: async () => {
         for (const op of ops) await op();
       },

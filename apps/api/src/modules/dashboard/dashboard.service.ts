@@ -68,6 +68,7 @@ export class DashboardService {
       totalPayments,
       attendanceToday,
       attendanceEverTaken,
+      nextExam,
     ] = await Promise.all([
       this.students.count(schoolId),
       this.teachers.count(schoolId),
@@ -79,6 +80,7 @@ export class DashboardService {
       this.payments.count(schoolId),
       this.attendance.today(schoolId),
       this.attendance.everTaken(schoolId),
+      this.exams.upcoming(schoolId),
     ]);
 
     // Today's attendance (Lagos time); 0 until a register has been taken today.
@@ -96,6 +98,7 @@ export class DashboardService {
         classesTotal: attendanceToday.classesTotal,
       },
       attendanceEverTaken,
+      nextExam,
       totalExams,
       totalResults,
       totalFees,

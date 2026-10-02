@@ -16,4 +16,11 @@ export class DashboardController {
     const data = await this.service.getStats(user.schoolId);
     return { data };
   }
+
+  /** Students per class, for the "Students by class" panel. */
+  @Get('class-sizes')
+  async getClassSizes(@CurrentUser() user: JwtPayload) {
+    const data = await this.service.classSizes(user.schoolId);
+    return { data };
+  }
 }

@@ -303,7 +303,15 @@ export class ExamsService {
       }
     }
     if (dto.durationMinutes !== undefined) changes.durationMinutes = dto.durationMinutes;
-    if (dto.maxScore !== undefined) changes.maxScore = dto.maxScore;
+    if (dto.maxScore !== undefined && dto.maxScore !== paper.maxScore) {
+      // Scores already entered must still fit: exam within the new max, CA within what's left of 100.
+      const results = await this.db.collection('examResults').where('schoolId', '==', schoolId).where('examId', '==', id).get();
+      const topExam = Math.max(0, ...results.docs.map((d) => d.data().exam ?? 0));
+      const topCa = Math.max(0, ...results.docs.map((d) => d.data().ca ?? 0));
+      if (topExam > dto.maxScore) throw new BadRequestException(`A student already scored ${topExam} on this paper, so the max score can't be below that.`);
+      if (topCa > 100 - dto.maxScore) throw new BadRequestException(`A student already has ${topCa} for CA, so the max score can't be above ${100 - topCa}.`);
+      changes.maxScore = dto.maxScore;
+    }
 
     await doc.ref.update({ ...changes, updatedAt: new Date() });
     return { id, ...paper, ...changes };

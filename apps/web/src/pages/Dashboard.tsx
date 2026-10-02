@@ -22,6 +22,8 @@ interface DashboardStats {
   totalClasses: number
   totalSubjects: number
   attendanceRate: number
+  attendanceToday?: { rate: number | null; classesTaken: number; classesTotal: number }
+  attendanceEverTaken?: boolean
   totalExams: number
   totalResults: number
   totalFees: number
@@ -120,7 +122,7 @@ export default function Dashboard() {
         { label: 'Add subjects', done: stats.totalSubjects > 0, to: '/subjects' },
         { label: 'Add teachers', done: stats.totalTeachers > 0, to: '/teachers' },
         { label: 'Enrol students', done: stats.totalStudents > 0, to: '/students' },
-        { label: 'Take attendance', done: stats.attendanceRate > 0, to: '/attendance' },
+        { label: 'Take attendance', done: !!stats.attendanceEverTaken || stats.attendanceRate > 0, to: '/attendance' },
         { label: 'Set up fees', done: stats.totalFees > 0, to: '/fees' },
       ]
     : []
@@ -180,10 +182,19 @@ export default function Dashboard() {
                 footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>On staff</Typography>} />,
               <StatTile key="c" label="Classes" value={fmt(stats.totalClasses)} icon={<ClassIcon />} to="/classes"
                 footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{stats.totalSubjects} subjects offered</Typography>} />,
-              <StatTile key="a" label="Attendance" value={`${stats.attendanceRate}%`} icon={<AttendanceIcon />} to="/attendance"
+              <StatTile key="a" label="Attendance today" value={stats.attendanceToday?.rate != null ? `${stats.attendanceToday.rate}%` : '—'} icon={<AttendanceIcon />} to="/attendance"
                 footer={
-                  <LinearProgress variant="determinate" value={Math.min(100, stats.attendanceRate)} aria-label="Attendance rate"
-                    sx={{ height: 5, borderRadius: 3, mt: 0.75, bgcolor: '#efeee8', '& .MuiLinearProgress-bar': { bgcolor: brand.accent, borderRadius: 3 } }} />
+                  stats.attendanceToday && stats.attendanceToday.classesTaken > 0 ? (
+                    <>
+                      <LinearProgress variant="determinate" value={Math.min(100, stats.attendanceToday.rate ?? 0)} aria-label="Attendance today"
+                        sx={{ height: 5, borderRadius: 3, mt: 0.25, bgcolor: '#efeee8', '& .MuiLinearProgress-bar': { bgcolor: brand.accent, borderRadius: 3 } }} />
+                      <Typography sx={{ fontSize: '12px', color: brand.subtle, mt: 0.75 }}>
+                        {stats.attendanceToday.classesTaken} of {stats.attendanceToday.classesTotal} classes marked
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>No registers taken yet today</Typography>
+                  )
                 } />,
             ].map((tile) => (
               <Grid item xs={6} md={3} key={tile.key}>

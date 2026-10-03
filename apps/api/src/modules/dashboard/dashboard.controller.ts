@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles, STAFF_ROLES } from '../../common/roles';
+import { Roles, FINANCE_ROLES, STAFF_ROLES } from '../../common/roles';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,7 +13,7 @@ export class DashboardController {
 
   @Get('stats')
   async getStats(@CurrentUser() user: JwtPayload) {
-    const data = await this.service.getStats(user.schoolId);
+    const data = await this.service.getStats(user.schoolId, FINANCE_ROLES.includes(user.role));
     return { data };
   }
 

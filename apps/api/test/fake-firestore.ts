@@ -1,6 +1,6 @@
 /**
  * Minimal in-memory stand-in for the parts of the Firestore Admin API the
- * services use: collection/doc/add/where/get/update/delete/batch.
+ * services use: collection/doc/add/where/get/update/delete/batch/runTransaction.
  */
 type Data = Record<string, any>;
 type Store = Map<string, Map<string, Data>>;
@@ -98,6 +98,27 @@ export class FakeFirestore {
         for (const op of ops) await op();
       },
     };
+  }
+
+  private txQueue: Promise<unknown> = Promise.resolve();
+
+  /** Runs transactions one at a time, which is enough to model Firestore's isolation in tests. */
+  runTransaction<T>(fn: (tx: any) => Promise<T>): Promise<T> {
+    const run = async () => {
+      const ops: (() => Promise<void>)[] = [];
+      const tx = {
+        get: (ref: FakeDocRef) => ref.get(),
+        set: (ref: FakeDocRef, data: Data) => ops.push(() => ref.set(data)),
+        update: (ref: FakeDocRef, data: Data) => ops.push(() => ref.update(data)),
+        delete: (ref: FakeDocRef) => ops.push(() => ref.delete()),
+      };
+      const result = await fn(tx);
+      for (const op of ops) await op();
+      return result;
+    };
+    const next = this.txQueue.then(run, run);
+    this.txQueue = next.catch(() => undefined);
+    return next;
   }
 
   /** Test helper: write a document directly. */

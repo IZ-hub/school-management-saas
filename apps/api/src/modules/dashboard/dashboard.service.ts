@@ -7,7 +7,6 @@ import { SubjectsService } from '../subjects/subjects.service';
 import { ExamsService } from '../exams/exams.service';
 import { ResultsService } from '../results/results.service';
 import { FeesService } from '../fees/fees.service';
-import { PaymentsService } from '../payments/payments.service';
 import { AttendanceService } from '../attendance/attendance.service';
 
 @Injectable()
@@ -20,7 +19,6 @@ export class DashboardService {
     private readonly exams: ExamsService,
     private readonly results: ResultsService,
     private readonly fees: FeesService,
-    private readonly payments: PaymentsService,
     private readonly attendance: AttendanceService,
     private readonly firebase: FirebaseService,
   ) {}
@@ -56,7 +54,8 @@ export class DashboardService {
     return { classes, withoutClass, totalStudents };
   }
 
-  async getStats(schoolId: string) {
+  /** Finance figures are only included for roles that can see fees. */
+  async getStats(schoolId: string, canSeeFees = true) {
     const [
       totalStudents,
       totalTeachers,
@@ -64,8 +63,7 @@ export class DashboardService {
       totalSubjects,
       totalExams,
       totalResults,
-      totalFees,
-      totalPayments,
+      feesTerm,
       attendanceToday,
       attendanceEverTaken,
       nextExam,
@@ -76,8 +74,7 @@ export class DashboardService {
       this.subjects.count(schoolId),
       this.exams.count(schoolId),
       this.results.count(schoolId),
-      this.fees.count(schoolId),
-      this.payments.count(schoolId),
+      canSeeFees ? this.fees.termSummary(schoolId) : Promise.resolve(null),
       this.attendance.today(schoolId),
       this.attendance.everTaken(schoolId),
       this.exams.upcoming(schoolId),
@@ -101,8 +98,7 @@ export class DashboardService {
       nextExam,
       totalExams,
       totalResults,
-      totalFees,
-      totalPayments,
+      feesTerm,
     };
   }
 }

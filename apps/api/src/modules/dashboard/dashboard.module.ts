@@ -8,7 +8,6 @@ import { SubjectsModule } from '../subjects/subjects.module';
 import { ExamsModule } from '../exams/exams.module';
 import { ResultsModule } from '../results/results.module';
 import { FeesModule } from '../fees/fees.module';
-import { PaymentsModule } from '../payments/payments.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 
 @Module({
@@ -20,7 +19,6 @@ import { AttendanceModule } from '../attendance/attendance.module';
     ExamsModule,
     ResultsModule,
     FeesModule,
-    PaymentsModule,
     AttendanceModule,
   ],
   controllers: [DashboardController],

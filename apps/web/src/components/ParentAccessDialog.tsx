@@ -15,6 +15,7 @@ import {
 import { ContentCopyOutlined as CopyIcon, WhatsApp as WhatsAppIcon } from '@mui/icons-material'
 import { InviteResult, LinkedParent, inviteParent, listParents, resendInvite, setupLink, unlinkParent } from '../lib/parentApi'
 import { brand } from '../theme'
+import { getSchool } from '../lib/schoolApi'
 
 interface StudentLite { id: string; firstName: string; lastName: string; parentEmail?: string | null; parentPhone?: string | null }
 
@@ -37,7 +38,9 @@ const STATUS = {
 }
 
 /** Give a parent access to a student's attendance, fees and report cards, with a one-time setup link to share. */
-export default function ParentAccessDialog({ student, schoolName, onClose }: { student: StudentLite; schoolName?: string; onClose: () => void }) {
+export default function ParentAccessDialog({ student, onClose }: { student: StudentLite; onClose: () => void }) {
+  const [schoolName, setSchoolName] = useState('')
+  useEffect(() => { getSchool().then((s) => setSchoolName(s.name)).catch(() => {}) }, [])
   const [parents, setParents] = useState<LinkedParent[] | null>(null)
   const [email, setEmail] = useState(student.parentEmail ?? '')
   const [firstName, setFirstName] = useState('')

@@ -36,6 +36,7 @@ const errorText = (err: any, fallback: string) => err?.response?.data?.message |
 export default function ParentHome() {
   const user = useAuthStore((s) => s.user)
   const [schoolName, setSchoolName] = useState('')
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null)
   const [children, setChildren] = useState<ParentChild[] | null>(null)
   const [childId, setChildId] = useState('')
   const [overview, setOverview] = useState<ChildOverview | null>(null)
@@ -45,7 +46,7 @@ export default function ParentHome() {
 
   useEffect(() => {
     getChildren()
-      .then((d) => { setSchoolName(d.schoolName); setChildren(d.children); setChildId(d.children[0]?.id ?? '') })
+      .then((d) => { setSchoolName(d.schoolName); setSchoolLogo(d.schoolLogo); setChildren(d.children); setChildId(d.children[0]?.id ?? '') })
       .catch((err) => { setChildren([]); setError(errorText(err, "We couldn't load your children.")) })
   }, [])
 
@@ -64,10 +65,13 @@ export default function ParentHome() {
       {/* Top bar */}
       <Box sx={{ borderBottom: `1px solid ${brand.border}`, bgcolor: brand.surface }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 1.5 }}>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em' }}>SCHOOLFUL LMS</Typography>
-            <Typography noWrap sx={{ fontSize: '15px', fontWeight: 700 }}>{schoolName || ' '}</Typography>
-          </Box>
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+            {schoolLogo && <Box component="img" src={schoolLogo} alt="" sx={{ height: 36, width: 36, objectFit: 'contain' }} />}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em' }}>SCHOOLFUL LMS</Typography>
+              <Typography noWrap sx={{ fontSize: '15px', fontWeight: 700 }}>{schoolName || ' '}</Typography>
+            </Box>
+          </Stack>
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Typography sx={{ display: { xs: 'none', sm: 'block' }, fontSize: '13.5px', color: brand.muted }}>{user?.firstName} {user?.lastName}</Typography>
             <Button size="small" startIcon={<SignOutIcon />} onClick={() => signOut()} sx={{ color: brand.muted }}>Sign out</Button>

@@ -16,6 +16,7 @@ import { useAuthStore } from '../store/authStore'
 import { api } from '../lib/api'
 import { brand } from '../theme'
 import StudentsByClass from '../components/StudentsByClass'
+import { ADMIN_ROLES } from '../lib/roles'
 import { countdown } from '../lib/examsApi'
 import { schoolToday } from '../lib/attendanceApi'
 
@@ -119,7 +120,8 @@ export default function Dashboard() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  const setupSteps = stats
+  // The setup checklist is for the people who set the school up.
+  const setupSteps = stats && ADMIN_ROLES.includes(user?.role ?? '')
     ? [
         { label: 'Create your classes', done: stats.totalClasses > 0, to: '/classes' },
         { label: 'Add subjects', done: stats.totalSubjects > 0, to: '/subjects' },
@@ -209,7 +211,7 @@ export default function Dashboard() {
       {stats && (
         <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 0, sm: 0.5 } }}>
           {/* Setup checklist, only until the basics are in place */}
-          {!setupComplete && (
+          {setupSteps.length > 0 && !setupComplete && (
             <Grid item xs={12}>
               <Box sx={{ ...card, p: { xs: 2, sm: 2.5 } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }}>

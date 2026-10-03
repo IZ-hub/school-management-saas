@@ -32,43 +32,53 @@ import {
   LogoutOutlined as LogoutIcon,
   Menu as MenuIcon,
   School as LogoIcon,
+  ManageAccountsOutlined as StaffIcon,
+  UpgradeOutlined as PromotionIcon,
+  SettingsOutlined as SettingsIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
 import { brand } from '../theme'
+import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
 
 const DRAWER_WIDTH = 248
 
-const navSections = [
+const navSections: { heading: string | null; items: { label: string; path: string; icon: JSX.Element; roles: string[] }[] }[] = [
   {
     heading: null,
-    items: [{ label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> }],
+    items: [{ label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, roles: STAFF_ROLES }],
   },
   {
     heading: 'People',
     items: [
-      { label: 'Students', path: '/students', icon: <PeopleIcon /> },
-      { label: 'Teachers', path: '/teachers', icon: <SchoolIcon /> },
+      { label: 'Students', path: '/students', icon: <PeopleIcon />, roles: STAFF_ROLES },
+      { label: 'Teachers', path: '/teachers', icon: <SchoolIcon />, roles: STAFF_ROLES },
+      { label: 'Staff accounts', path: '/staff', icon: <StaffIcon />, roles: ADMIN_ROLES },
     ],
   },
   {
     heading: 'Academics',
     items: [
-      { label: 'Classes', path: '/classes', icon: <ClassIcon /> },
-      { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon /> },
-      { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon /> },
-      { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon /> },
-      { label: 'Exams', path: '/exams', icon: <ExamsIcon /> },
-      { label: 'Results', path: '/results', icon: <ResultsIcon /> },
-      { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon /> },
+      { label: 'Classes', path: '/classes', icon: <ClassIcon />, roles: STAFF_ROLES },
+      { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon />, roles: STAFF_ROLES },
+      { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon />, roles: STAFF_ROLES },
+      { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES },
+      { label: 'Exams', path: '/exams', icon: <ExamsIcon />, roles: ACADEMIC_ROLES },
+      { label: 'Results', path: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES },
+      { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon />, roles: ACADEMIC_ROLES },
+      { label: 'Promotion', path: '/promotion', icon: <PromotionIcon />, roles: ADMIN_ROLES },
     ],
   },
   {
     heading: 'Finance',
     items: [
-      { label: 'Fees', path: '/fees', icon: <FeesIcon /> },
-      { label: 'Payments', path: '/payments', icon: <PaymentsIcon /> },
+      { label: 'Fees', path: '/fees', icon: <FeesIcon />, roles: FINANCE_ROLES },
+      { label: 'Payments', path: '/payments', icon: <PaymentsIcon />, roles: FINANCE_ROLES },
     ],
+  },
+  {
+    heading: 'School',
+    items: [{ label: 'School settings', path: '/settings', icon: <SettingsIcon />, roles: ADMIN_ROLES }],
   },
 ]
 
@@ -110,6 +120,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
+  const role = user?.role ?? ''
 
   const go = (path: string) => {
     navigate(path)
@@ -133,7 +144,10 @@ export default function DashboardLayout() {
       </Box>
 
       <Box component="nav" aria-label="Main" sx={{ flex: 1, overflowY: 'auto', px: 1.5, pb: 2 }}>
-        {navSections.map((section) => (
+        {navSections
+          .map((section) => ({ ...section, items: section.items.filter((i) => i.roles.includes(role)) }))
+          .filter((section) => section.items.length > 0)
+          .map((section) => (
           <Box key={section.heading ?? 'main'} sx={{ mt: section.heading ? 2.5 : 1 }}>
             {section.heading && (
               <Typography sx={{ px: 1.5, mb: 0.75, fontSize: '11px', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase', color: brand.subtle }}>

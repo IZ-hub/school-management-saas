@@ -175,6 +175,7 @@ export class AuthService {
     return {
       email: u.email,
       firstName: u.firstName,
+      role: u.role,
       schoolName: school.exists ? school.data()!.name : '',
       children: students.filter((d: any) => d.exists && d.data().schoolId === inv.schoolId).map((d: any) => d.data().firstName),
     };

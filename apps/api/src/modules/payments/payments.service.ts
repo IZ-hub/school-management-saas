@@ -97,7 +97,7 @@ export class PaymentsService {
   }
 
   async list(schoolId: string, query: { term?: string; session?: string; studentId?: string }) {
-    const ts = checkTermSession(query.term, query.session);
+    const ts = await this.fees.resolveTerm(schoolId, query.term, query.session);
     const [paySnap, studentSnap, classSnap] = await Promise.all([
       this.col.where('schoolId', '==', schoolId).where('term', '==', ts.term).where('session', '==', ts.session).get(),
       this.db.collection('students').where('schoolId', '==', schoolId).get(),

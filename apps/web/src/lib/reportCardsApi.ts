@@ -30,7 +30,7 @@ export interface ReportCard {
 }
 
 export interface ClassReport {
-  school: { name: string; address: string; phone: string; email: string; logo: string | null }
+  school: { name: string; address: string; phone: string; email: string; logo: string | null; motto?: string; principalName?: string }
   series: { id: string; name: string; term: 'FIRST' | 'SECOND' | 'THIRD'; session: string; startDate: string; endDate: string }
   class: { id: string; name: string; formTeacher: string | null }
   attendancePeriod: { from: string; to: string }

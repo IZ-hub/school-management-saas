@@ -4,14 +4,15 @@ import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField, Typograp
 import { acceptInvite, getInvite } from '../lib/parentApi'
 import { useAuthStore } from '../store/authStore'
 import { brand } from '../theme'
+import { ROLE_LABEL } from '../lib/roles'
 
-/** Where a parent lands from the school's setup link: choose a password, then go to their child's page. */
+/** Where an invited parent or staff member lands from the school's setup link: choose a password, then go to their home page. */
 export default function ParentSetup() {
   const navigate = useNavigate()
   const setUser = useAuthStore((s) => s.setUser)
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const code = window.location.hash.slice(1)
-  const [invite, setInvite] = useState<{ email: string; firstName: string; schoolName: string; children: string[] } | null>(null)
+  const [invite, setInvite] = useState<{ email: string; firstName: string; role: string; schoolName: string; children: string[] } | null>(null)
   const [loadError, setLoadError] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -33,8 +34,8 @@ export default function ParentSetup() {
       const data = await acceptInvite(code, password)
       setAccessToken(data.accessToken)
       setUser(data.user)
-      history.replaceState(null, '', '/parent-setup')
-      navigate('/parent', { replace: true })
+      history.replaceState(null, '', window.location.pathname)
+      navigate(data.user.role === 'PARENT' ? '/parent' : '/dashboard', { replace: true })
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Try again.')
       setSaving(false)
@@ -60,7 +61,9 @@ export default function ParentSetup() {
           <form onSubmit={submit}>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>Welcome, {invite.firstName}</Typography>
             <Typography sx={{ color: brand.muted, fontSize: '14.5px', mt: 0.5, mb: 2.5 }}>
-              {invite.schoolName} has given you access to {childText}'s attendance, fees and report cards. Choose a password to finish.
+              {invite.role === 'PARENT'
+                ? `${invite.schoolName} has given you access to ${childText}'s attendance, fees and report cards. Choose a password to finish.`
+                : `${invite.schoolName} has invited you to Schoolful LMS as ${ROLE_LABEL[invite.role]?.toLowerCase() === 'accountant' ? 'an' : 'a'} ${ROLE_LABEL[invite.role]?.toLowerCase() ?? 'staff member'}. Choose a password to finish.`}
             </Typography>
             <Stack spacing={2}>
               {error && <Alert severity="error">{error}</Alert>}

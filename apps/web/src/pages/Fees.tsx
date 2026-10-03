@@ -57,7 +57,7 @@ function Tile({ label, value, sub, children }: { label: string; value: string; s
 
 export default function Fees() {
   const navigate = useNavigate()
-  const { term, session, set } = useTermSession()
+  const { term, session, set, ready } = useTermSession()
   const [overview, setOverview] = useState<FeesOverview | null>(null)
   const [classes, setClasses] = useState<ClassRow[]>([])
   const [error, setError] = useState('')
@@ -75,7 +75,7 @@ export default function Fees() {
     getOverview(term, session).then(setOverview).catch((err) => setError(err.response?.data?.message || 'Failed to load fees'))
   }, [term, session])
 
-  useEffect(() => { setOverview(null); load() }, [load])
+  useEffect(() => { setOverview(null); if (ready) load() }, [load, ready])
   useEffect(() => { api.get('/classes').then((r) => setClasses(r.data.data)).catch(() => {}) }, [])
 
   const labels = useMemo(() => classLabels(classes), [classes])

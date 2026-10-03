@@ -20,7 +20,7 @@ import { ReceiptDialog, RecordPaymentDialog, TermPicker, longDate, useTermSessio
 import { brand } from '../theme'
 
 export default function Payments() {
-  const { term, session, set } = useTermSession()
+  const { term, session, set, ready } = useTermSession()
   const [list, setList] = useState<PaymentList | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -32,7 +32,7 @@ export default function Payments() {
   const load = useCallback(() => {
     listPayments(term, session).then(setList).catch((err) => setError(err.response?.data?.message || 'Failed to load payments'))
   }, [term, session])
-  useEffect(() => { setList(null); load() }, [load])
+  useEffect(() => { setList(null); if (ready) load() }, [load, ready])
 
   const shown = useMemo(() => {
     if (!list) return []

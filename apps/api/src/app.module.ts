@@ -17,6 +17,9 @@ import { SupportModule } from './modules/support/support.module';
 import { TeachingAssignmentsModule } from './modules/teaching-assignments/teaching-assignments.module';
 import { ReportCardsModule } from './modules/report-cards/report-cards.module';
 import { ParentsModule } from './modules/parents/parents.module';
+import { StaffModule } from './modules/staff/staff.module';
+import { PromotionModule } from './modules/promotion/promotion.module';
+import { SchoolModule } from './modules/school/school.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { ParentsModule } from './modules/parents/parents.module';
     TeachingAssignmentsModule,
     ReportCardsModule,
     ParentsModule,
+    StaffModule,
+    PromotionModule,
+    SchoolModule,
   ],
 })
 export class AppModule {}

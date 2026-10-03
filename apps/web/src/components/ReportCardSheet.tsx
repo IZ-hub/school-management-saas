@@ -31,7 +31,9 @@ export default function CardSheet({ report, card }: { report: Omit<ClassReport, 
     <Box sx={{ color: ink, fontFamily: '"Plus Jakarta Sans", Arial, sans-serif', maxWidth: 760, mx: 'auto' }}>
       {/* School header */}
       <Box sx={{ textAlign: 'center', pb: 1.5, borderBottom: `2px solid ${ink}` }}>
+        {report.school.logo && <Box component="img" src={report.school.logo} alt="" sx={{ height: 56, maxWidth: 170, objectFit: 'contain', mb: 0.5 }} />}
         <Typography sx={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.01em', color: ink }}>{report.school.name || 'School'}</Typography>
+        {report.school.motto && <Typography sx={{ fontSize: '12.5px', fontStyle: 'italic', color: '#4d534d' }}>{report.school.motto}</Typography>}
         {report.school.address && <Typography sx={{ fontSize: '12.5px', color: '#4d534d' }}>{report.school.address}</Typography>}
         {(report.school.phone || report.school.email) && (
           <Typography sx={{ fontSize: '12.5px', color: '#4d534d' }}>{[report.school.phone, report.school.email].filter(Boolean).join(' · ')}</Typography>
@@ -109,7 +111,7 @@ export default function CardSheet({ report, card }: { report: Omit<ClassReport, 
       <Box sx={{ mt: 2.25, display: 'grid', gap: 1.5 }}>
         {[
           ["Class teacher's remark", card.teacherRemark, report.class.formTeacher],
-          ["Principal's remark", card.principalRemark, null],
+          ["Principal's remark", card.principalRemark, report.school.principalName || null],
         ].map(([k, v, who]) => (
           <Box key={k as string}>
             <Typography sx={{ fontSize: '10.5px', fontWeight: 700, color: '#646b64', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{k}{who ? ` · ${who}` : ''}</Typography>
@@ -120,7 +122,7 @@ export default function CardSheet({ report, card }: { report: Omit<ClassReport, 
 
       {/* Signatures */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mt: 4 }}>
-        {['Class teacher', 'Principal', 'Date'].map((k) => (
+        {['Class teacher', report.school.principalName ? `Principal · ${report.school.principalName}` : 'Principal', 'Date'].map((k) => (
           <Box key={k} sx={{ borderTop: `1px solid ${ink}`, pt: 0.5 }}>
             <Typography sx={{ fontSize: '11px', color: '#646b64' }}>{k}</Typography>
           </Box>

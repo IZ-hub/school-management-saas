@@ -77,7 +77,7 @@ describe('Parent access (e2e)', () => {
     expect(early.body.message).toMatch(/Finish setting up/);
 
     const info = (await http.get(`/api/v1/auth/invite?code=${encodeURIComponent(inv.code)}`).expect(200)).body.data;
-    expect(info).toEqual({ email: 'ngozi.okafor@mail.com', firstName: 'Ngozi', schoolName: 'Greenfield Academy', children: ['Chioma'] });
+    expect(info).toEqual({ email: 'ngozi.okafor@mail.com', firstName: 'Ngozi', role: 'PARENT', schoolName: 'Greenfield Academy', children: ['Chioma'] });
     await http.post('/api/v1/auth/accept-invite').send({ code: inv.code, password: 'short' }).expect(400);
     const accessToken = await accept(inv.code);
     expect(jwt.decode(accessToken)).toMatchObject({ role: 'PARENT', schoolId: 'school-a' });
@@ -116,7 +116,7 @@ describe('Parent access (e2e)', () => {
     const inv = (await invite('s1').expect(201)).body.data;
     const parent = as(await accept(inv.code));
     const kids = (await parent.get('/api/v1/parent/children').expect(200)).body.data;
-    expect(kids).toEqual({ schoolName: 'Greenfield Academy', children: [{ id: 's1', firstName: 'Chioma', lastName: 'Okafor', admissionNumber: 'A/s1', className: 'JSS1' }] });
+    expect(kids).toEqual({ schoolName: 'Greenfield Academy', schoolLogo: null, children: [{ id: 's1', firstName: 'Chioma', lastName: 'Okafor', admissionNumber: 'A/s1', className: 'JSS1' }] });
 
     const o = (await parent.get('/api/v1/parent/children/s1').expect(200)).body.data;
     expect(o.fees).toMatchObject({ due: 50000, paid: 0, balance: 50000 });

@@ -65,7 +65,10 @@ export class OnlinePaymentsService {
 
   async saveKey(schoolId: string, userId: string, secretKey: string) {
     await this.paystack.checkKey(secretKey);
+    // Other settings (e.g. the SMS key) share this document, so keep them.
+    const existing = (await this.secrets(schoolId).get()).data() ?? {};
     await this.secrets(schoolId).set({
+      ...existing,
       schoolId,
       paystackSecretKey: seal(secretKey),
       paystackMode: secretKey.startsWith('sk_live_') ? 'live' : 'test',
@@ -77,7 +80,12 @@ export class OnlinePaymentsService {
   }
 
   async removeKey(schoolId: string) {
-    await this.secrets(schoolId).delete();
+    const ref = this.secrets(schoolId);
+    const d = (await ref.get()).data();
+    if (d) {
+      const { paystackSecretKey: _k, paystackMode: _m, paystackKeyHint: _h, ...rest } = d;
+      await ref.set(rest);
+    }
     return this.settings(schoolId);
   }
 

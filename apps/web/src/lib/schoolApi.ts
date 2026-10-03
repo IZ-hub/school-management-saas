@@ -64,3 +64,8 @@ export function resizeImage(file: File, max = 240): Promise<string> {
     img.src = url
   })
 }
+
+export interface PaystackSettings { enabled: boolean; needsNewKey: boolean; mode: 'live' | 'test' | null; keyHint: string | null; webhookUrl: string }
+export const getPaystack = async (): Promise<PaystackSettings> => (await api.get('/online-payments/settings')).data.data
+export const savePaystackKey = async (secretKey: string): Promise<PaystackSettings> => (await api.put('/online-payments/settings', { secretKey })).data.data
+export const removePaystackKey = async (): Promise<PaystackSettings> => (await api.delete('/online-payments/settings')).data.data

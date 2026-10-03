@@ -19,6 +19,7 @@ export interface ChildOverview {
     recent: { date: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' }[]
   }
   fees: Omit<Statement, 'school'>
+  onlinePayments: boolean
   reportCards: { seriesId: string; name: string; publishedAt: unknown; startDate: string }[]
 }
 
@@ -56,3 +57,9 @@ export const unlinkParent = async (userId: string, studentId: string) => (await 
 
 /** The setup link a school shares; the code sits after "#" so it never reaches server logs. */
 export const setupLink = (code: string) => `${window.location.origin}/parent-setup#${code}`
+
+// Online payments
+export const startOnlinePayment = async (childId: string, amount: number): Promise<{ reference: string; authorizationUrl: string }> =>
+  (await api.post(`/parent/children/${childId}/pay`, { amount })).data.data
+export const verifyOnlinePayment = async (reference: string): Promise<{ status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'REVIEW'; amount: number; receiptNumber: string | null }> =>
+  (await api.post('/parent/payments/verify', { reference })).data.data

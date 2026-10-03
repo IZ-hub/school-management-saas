@@ -6,6 +6,8 @@ import {
   ButtonBase,
   CircularProgress,
   Dialog,
+  DialogTitle,
+  TextField,
   DialogActions,
   DialogContent,
   Paper,
@@ -13,11 +15,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { LogoutOutlined as SignOutIcon, PrintOutlined as PrintIcon, ArticleOutlined as CardIcon, ChevronRight } from '@mui/icons-material'
+import { LogoutOutlined as SignOutIcon, PrintOutlined as PrintIcon, ArticleOutlined as CardIcon, ChevronRight, LockOutlined as LockIcon } from '@mui/icons-material'
 import { signOut } from '../lib/api'
 import { TERM_LABEL } from '../lib/examsApi'
-import { METHOD_LABEL, naira } from '../lib/feesApi'
-import { ChildOverview, ParentChild, getChildFees, getChildOverview, getChildReportCard, getChildren } from '../lib/parentApi'
+import { METHOD_LABEL, naira, parseNaira } from '../lib/feesApi'
+import { ChildOverview, ParentChild, getChildFees, getChildOverview, getChildReportCard, getChildren, startOnlinePayment, verifyOnlinePayment } from '../lib/parentApi'
 import { PrintArea, StatementSheet, longDate, usePrint } from '../components/FeesKit'
 import CardSheet from '../components/ReportCardSheet'
 import { useAuthStore } from '../store/authStore'
@@ -43,10 +45,38 @@ export default function ParentHome() {
   const [error, setError] = useState('')
   const [cardFor, setCardFor] = useState<string | null>(null)
   const [statementOpen, setStatementOpen] = useState(false)
+  const [payOpen, setPayOpen] = useState(false)
+  const [refresh, setRefresh] = useState(0)
+  const [payResult, setPayResult] = useState<{ severity: 'success' | 'info' | 'warning' | 'error'; text: string } | null>(null)
+
+  // Back from Paystack: confirm the payment, then tidy the address bar.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const reference = q.get('reference') || q.get('trxref')
+    if (!reference) return
+    history.replaceState(null, '', '/parent')
+    setPayResult({ severity: 'info', text: 'Confirming your payment…' })
+    verifyOnlinePayment(reference)
+      .then((r) => {
+        const text = {
+          SUCCESS: `Payment of ${naira(r.amount)} received, thank you. Your receipt number is ${r.receiptNumber}.`,
+          PENDING: 'Your payment is still being confirmed by the bank. Check back in a few minutes; you have not been charged twice.',
+          FAILED: "The payment didn't go through, so nothing was charged. You can try again.",
+          REVIEW: 'We received your payment but need to check it. The school will confirm it shortly.',
+        }[r.status]
+        setPayResult({ severity: r.status === 'SUCCESS' ? 'success' : r.status === 'FAILED' ? 'error' : 'warning', text })
+        setRefresh((n) => n + 1)
+      })
+      .catch((err) => setPayResult({ severity: 'error', text: errorText(err, "We couldn't confirm your payment. If you were charged, the school will see it.") }))
+  }, [])
 
   useEffect(() => {
     getChildren()
-      .then((d) => { setSchoolName(d.schoolName); setSchoolLogo(d.schoolLogo); setChildren(d.children); setChildId(d.children[0]?.id ?? '') })
+      .then((d) => {
+        setSchoolName(d.schoolName); setSchoolLogo(d.schoolLogo); setChildren(d.children)
+        const wanted = new URLSearchParams(window.location.search).get('child')
+        setChildId(d.children.find((c) => c.id === wanted)?.id ?? d.children[0]?.id ?? '')
+      })
       .catch((err) => { setChildren([]); setError(errorText(err, "We couldn't load your children.")) })
   }, [])
 
@@ -54,7 +84,7 @@ export default function ParentHome() {
     if (!childId) return
     setOverview(null)
     getChildOverview(childId).then(setOverview).catch((err) => setError(errorText(err, "We couldn't load this page.")))
-  }, [childId])
+  }, [childId, refresh])
 
   const child = children?.find((c) => c.id === childId)
   const a = overview?.attendance
@@ -81,6 +111,7 @@ export default function ParentHome() {
 
       <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 3, sm: 4 } }}>
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+        {payResult && <Alert severity={payResult.severity} sx={{ mb: 2 }} onClose={() => setPayResult(null)}>{payResult.text}</Alert>}
 
         {!children ? (
           <Skeleton variant="rounded" height={160} />
@@ -160,7 +191,12 @@ export default function ParentHome() {
                             <Typography sx={{ fontSize: '13.5px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{naira(p.amount)}</Typography>
                           </Stack>
                         ))}
-                        <Button size="small" startIcon={<PrintIcon />} onClick={() => setStatementOpen(true)} sx={{ mt: 1, ml: -0.75 }}>View fee statement</Button>
+                        <Stack direction="row" spacing={1} sx={{ mt: 1.25 }} flexWrap="wrap" useFlexGap>
+                          {overview.onlinePayments && f!.balance > 0 && (
+                            <Button variant="contained" size="small" startIcon={<LockIcon />} onClick={() => setPayOpen(true)}>Pay online</Button>
+                          )}
+                          <Button size="small" startIcon={<PrintIcon />} onClick={() => setStatementOpen(true)}>View fee statement</Button>
+                        </Stack>
                       </>
                     )}
                   </Paper>
@@ -192,6 +228,7 @@ export default function ParentHome() {
 
       {cardFor && childId && <ReportCardDialog childId={childId} seriesId={cardFor} onClose={() => setCardFor(null)} />}
       {statementOpen && childId && <StatementDialog childId={childId} onClose={() => setStatementOpen(false)} />}
+      {payOpen && child && overview && <PayDialog child={child} balance={overview.fees.balance} onClose={() => setPayOpen(false)} />}
     </Box>
   )
 }
@@ -234,6 +271,45 @@ function StatementDialog({ childId, onClose }: { childId: string; onClose: () =>
         <Button variant="contained" startIcon={<PrintIcon />} onClick={print} disabled={!data}>Print</Button>
       </DialogActions>
       {data && <PrintArea active={printing}><StatementSheet statement={data} /></PrintArea>}
+    </Dialog>
+  )
+}
+
+function PayDialog({ child, balance, onClose }: { child: ParentChild; balance: number; onClose: () => void }) {
+  const [amount, setAmount] = useState(balance.toLocaleString('en-NG'))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const value = parseNaira(amount)
+  const problem = value === null ? 'Enter an amount in naira' : value < 100 ? 'The smallest online payment is ₦100' : value > balance ? `The balance is ${naira(balance)}` : ''
+
+  const go = async () => {
+    if (!value || problem) return
+    setBusy(true)
+    setError('')
+    try {
+      const { authorizationUrl } = await startOnlinePayment(child.id, value)
+      window.location.assign(authorizationUrl)
+    } catch (err) {
+      setError(errorText(err, "We couldn't start the payment. Try again."))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Dialog open onClose={busy ? undefined : onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Pay {child.firstName}'s fees</DialogTitle>
+      <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <TextField label="Amount (₦)" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }}
+          error={!!problem} helperText={problem || `Balance ${naira(balance)}. You can pay part now and the rest later.`} fullWidth autoFocus sx={{ mt: 1 }} />
+        <Typography sx={{ fontSize: '12.5px', color: brand.subtle, mt: 1.5 }}>
+          You'll pay securely on Paystack by card, bank transfer or USSD. The money goes straight to the school, and your receipt appears here.
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button onClick={onClose} disabled={busy}>Cancel</Button>
+        <Button variant="contained" startIcon={<LockIcon />} onClick={go} disabled={!!problem || busy}>{busy ? 'Opening Paystack…' : value ? `Pay ${naira(value)}` : 'Pay'}</Button>
+      </DialogActions>
     </Dialog>
   )
 }

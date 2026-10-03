@@ -159,6 +159,7 @@ export class ParentsService {
       .map((d) => ({ seriesId: d.id, name: d.data().name, publishedAt: d.data().publishedAt ?? null, startDate: d.data().startDate }))
       .sort((a, b) => String(b.startDate).localeCompare(String(a.startDate)));
     const { school: _school, ...fees } = statement;
+    const secrets = await this.db.collection('schoolSecrets').doc(user.schoolId).get();
     return {
       ...ts,
       attendance: {
@@ -168,6 +169,7 @@ export class ParentsService {
         recent: marks.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10).map((m) => ({ date: m.date, status: m.status })),
       },
       fees,
+      onlinePayments: secrets.exists && !!secrets.data()!.paystackSecretKey,
       reportCards,
     };
   }

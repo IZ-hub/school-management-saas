@@ -17,6 +17,8 @@ import Results from './pages/Results'
 import ReportCards from './pages/ReportCards'
 import Fees from './pages/Fees'
 import Payments from './pages/Payments'
+import ParentHome from './pages/ParentHome'
+import ParentSetup from './pages/ParentSetup'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -27,26 +29,36 @@ function RedirectToLogin() {
   return <Navigate to="/login" replace />
 }
 
-/** After signing in: back to the page the visitor was sent away from, else the dashboard. */
+/** After signing in: back to the page the visitor was sent away from, else their home page. */
 function AfterSignIn() {
-  const target = peekReturnTo() ?? '/dashboard'
+  const isParent = useAuthStore((state) => state.user?.role) === 'PARENT'
+  const saved = peekReturnTo()
+  // Parents only have their own page, so a remembered staff page is ignored for them.
+  const target = isParent ? (saved?.startsWith('/parent') ? saved : '/parent') : saved ?? '/dashboard'
   useEffect(() => clearReturnTo(), [])
   return <Navigate to={target} replace />
 }
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isParent = useAuthStore((state) => state.user?.role) === 'PARENT'
+  const home = isParent ? '/parent' : '/dashboard'
 
   return (
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LandingPage />} />
+        <Route path="/" element={isAuthenticated ? <Navigate to={home} /> : <LandingPage />} />
         <Route path="/login" element={isAuthenticated ? <AfterSignIn /> : <Login />} />
         <Route path="/register" element={isAuthenticated ? <AfterSignIn /> : <RegisterSchool />} />
 
-        {/* Protected routes with sidebar layout */}
-        <Route element={isAuthenticated ? <DashboardLayout /> : <RedirectToLogin />}>
+        <Route path="/parent-setup" element={<ParentSetup />} />
+
+        {/* Parents: their own children only */}
+        <Route path="/parent" element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <ParentHome /> : <Navigate to="/dashboard" replace />} />
+
+        {/* Staff routes with sidebar layout */}
+        <Route element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <Navigate to="/parent" replace /> : <DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/students" element={<Students />} />
           <Route path="/teachers" element={<Teachers />} />
@@ -62,7 +74,7 @@ function App() {
           <Route path="/payments" element={<Payments />} />
         </Route>
       </Routes>
-      <SupportWidget />
+      {!isParent && <SupportWidget />}
     </Router>
   )
 }

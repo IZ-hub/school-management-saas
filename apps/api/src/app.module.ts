@@ -16,6 +16,7 @@ import { TimetableModule } from './modules/timetable/timetable.module';
 import { SupportModule } from './modules/support/support.module';
 import { TeachingAssignmentsModule } from './modules/teaching-assignments/teaching-assignments.module';
 import { ReportCardsModule } from './modules/report-cards/report-cards.module';
+import { ParentsModule } from './modules/parents/parents.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ReportCardsModule } from './modules/report-cards/report-cards.module';
     SupportModule,
     TeachingAssignmentsModule,
     ReportCardsModule,
+    ParentsModule,
   ],
 })
 export class AppModule {}

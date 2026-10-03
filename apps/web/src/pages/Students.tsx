@@ -32,11 +32,14 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   FileUpload as ImportIcon,
+  FamilyRestroomOutlined as ParentIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
 import { classLabels } from '../lib/classLabels'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
+import ParentAccessDialog from '../components/ParentAccessDialog'
+import { useAuthStore } from '../store/authStore'
 
 interface Student {
   id: string
@@ -106,6 +109,8 @@ export default function Students() {
   const [formError, setFormError] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [classes, setClasses] = useState<ClassOption[]>([])
+  const [parentFor, setParentFor] = useState<Student | null>(null)
+  const canManageParents = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PRINCIPAL'].includes(useAuthStore((s) => s.user?.role) ?? '')
   const theme = useTheme()
   const isPhone = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -341,6 +346,11 @@ export default function Students() {
                     </Typography>
                   </Stack>
                 </Box>
+                {canManageParents && (
+                  <IconButton aria-label={`Parent access for ${student.firstName} ${student.lastName}`} onClick={() => setParentFor(student)} sx={{ color: brand.muted }}>
+                    <ParentIcon fontSize="small" />
+                  </IconButton>
+                )}
                 <IconButton aria-label={`Edit ${student.firstName} ${student.lastName}`} onClick={() => openEditDialog(student)} sx={{ color: brand.muted }}>
                   <EditIcon fontSize="small" />
                 </IconButton>
@@ -378,6 +388,13 @@ export default function Students() {
                     <StatusBadge status={student.status} />
                   </TableCell>
                   <TableCell align="right">
+                    {canManageParents && (
+                      <Tooltip title="Parent access">
+                        <IconButton size="small" aria-label={`Parent access for ${student.firstName} ${student.lastName}`} onClick={() => setParentFor(student)}>
+                          <ParentIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Edit">
                       <IconButton size="small" aria-label={`Edit ${student.firstName} ${student.lastName}`} onClick={() => openEditDialog(student)}>
                         <EditIcon fontSize="small" />
@@ -527,6 +544,8 @@ export default function Students() {
         endpoint="/students/bulk-import"
         columns={studentColumns}
       />
+
+      {parentFor && <ParentAccessDialog student={parentFor} onClose={() => setParentFor(null)} />}
     </Box>
   )
 }

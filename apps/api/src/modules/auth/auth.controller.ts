@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterSchoolDto } from './dto/register-school.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { clearSessionCookie, readSessionCookie, setSessionCookie } from './session-cookie';
 
 @Controller()
@@ -34,6 +35,18 @@ export class AuthController {
       clearSessionCookie(res);
       throw err;
     }
+  }
+
+  /** Public: details for a parent's setup link. */
+  @Get('auth/invite')
+  async getInvite(@Query('code') code = '') {
+    return { data: await this.authService.getInvite(code) };
+  }
+
+  /** Public: a parent sets their password from the setup link and is signed in. */
+  @Post('auth/accept-invite')
+  async acceptInvite(@Body() dto: AcceptInviteDto, @Res({ passthrough: true }) res: Response) {
+    return this.respond(res, await this.authService.acceptInvite(dto.code, dto.password));
   }
 
   @Post('auth/logout')

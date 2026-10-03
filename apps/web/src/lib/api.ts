@@ -1,3 +1,4 @@
+import { resetMyScope } from './scopeApi'
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../store/authStore'
 
@@ -79,6 +80,7 @@ export async function signOut() {
     /* already signed out on the server, or offline: still sign out locally */
   }
   useAuthStore.getState().logout()
+  resetMyScope()
 }
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean }

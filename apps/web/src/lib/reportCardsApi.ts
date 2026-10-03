@@ -37,6 +37,7 @@ export interface ClassReport {
   classSize: number
   ranked: number
   classAverage: number | null
+  canRemark?: boolean
   cards: ReportCard[]
 }
 

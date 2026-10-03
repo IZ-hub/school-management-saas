@@ -138,7 +138,10 @@ describe('Results score sheets (e2e)', () => {
   });
 
   it('lets teachers enter scores but not accountants or parents', async () => {
+    db.seed('users', 't-1', { schoolId: 'school-a', role: 'TEACHER', status: 'ACTIVE', teacherId: 'tr-1' });
+    db.seed('teachingAssignments', 'ta-1', { schoolId: 'school-a', classId: 'jss1', subjectId: 'maths', teacherId: 'tr-1' });
     await save([{ studentId: 's1', exam: 40 }], paper, as(token('TEACHER', 't-1'))).expect(200);
+    await save([{ studentId: 's1', exam: 40 }], 'ser1__jss1__eng', as(token('TEACHER', 't-1'))).expect(403);
     await as(token('ACCOUNTANT', 'a-1')).get(`/api/v1/results/sheet?examId=${paper}`).expect(403);
     await save([{ studentId: 's1', exam: 40 }], paper, as(token('PARENT', 'p-1'))).expect(403);
   });

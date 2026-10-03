@@ -3,7 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { createInvite, revokeSessions } from '../../common/invites';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
-import { ChangeRoleDto, InviteStaffDto, StaffRole } from './dto/staff.dto';
+import { ChangeRoleDto, InviteStaffDto, LinkTeacherDto } from './dto/staff.dto';
 
 const LEADERS = ['PRINCIPAL', 'VICE_PRINCIPAL'];
 const OWNERS = ['SCHOOL_OWNER', 'SUPER_ADMIN'];
@@ -106,6 +106,19 @@ export class StaffService {
     // Signs them out so their next sign-in carries the new role.
     await revokeSessions(this.db as any, userId);
     return { userId, role: dto.role };
+  }
+
+  /** Links a teacher's sign-in to their Teachers record, which decides the classes they can work on. */
+  async linkTeacher(schoolId: string, user: JwtPayload, userId: string, dto: LinkTeacherDto) {
+    const doc = await this.manageable(schoolId, user, userId);
+    if (doc.data()!.role !== 'TEACHER') throw new BadRequestException('Only teacher accounts are linked to a teacher record.');
+    if (dto.teacherId) {
+      await getOwnedDoc(this.db.collection('teachers'), dto.teacherId, schoolId, 'Teacher not found');
+      const taken = await this.users.where('schoolId', '==', schoolId).where('teacherId', '==', dto.teacherId).get();
+      if (taken.docs.some((d) => d.id !== userId)) throw new BadRequestException('Another account is already linked to this teacher.');
+    }
+    await doc.ref.update({ teacherId: dto.teacherId ?? null, updatedAt: new Date() });
+    return { userId, teacherId: dto.teacherId ?? null };
   }
 
   async setEnabled(schoolId: string, user: JwtPayload, userId: string, enabled: boolean) {

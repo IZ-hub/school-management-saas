@@ -26,6 +26,7 @@ import { ExamSeries, listSeries, setPublished } from '../lib/examsApi'
 import { ClassReport, ReportCard, getClassReport, ordinal, saveRemarks, suggestRemarks } from '../lib/reportCardsApi'
 import { useAuthStore } from '../store/authStore'
 import CardSheet from '../components/ReportCardSheet'
+import { MyScope, UNLINKED_MESSAGE, getMyScope } from '../lib/scopeApi'
 import { brand } from '../theme'
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PRINCIPAL']
@@ -46,6 +47,7 @@ export default function ReportCards() {
 
   const [series, setSeries] = useState<ExamSeries[] | null>(null)
   const [classes, setClasses] = useState<ClassRow[]>([])
+  const [scope, setScope] = useState<MyScope | null>(null)
   const [report, setReport] = useState<ClassReport | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -66,6 +68,7 @@ export default function ReportCards() {
 
   useEffect(() => {
     api.get('/classes').then((r) => setClasses(r.data.data)).catch(() => {})
+    getMyScope().then(setScope).catch(() => {})
     listSeries()
       .then((list) => setSeries([...list].sort((a, b) => b.startDate.localeCompare(a.startDate))))
       .catch(() => { setSeries([]); setError('Failed to load exams') })
@@ -73,9 +76,9 @@ export default function ReportCards() {
 
   const current = series?.find((s) => s.id === seriesId)
   const seriesClasses = useMemo(
-    () => (current ? [...current.classIds].filter((id) => classes.some((c) => c.id === id && c.status !== 'INACTIVE')).sort((a, b) => className(a).localeCompare(className(b), undefined, { numeric: true })) : []),
+    () => (current && scope ? [...current.classIds].filter((id) => classes.some((c) => c.id === id && c.status !== 'INACTIVE') && (scope.all || scope.classIds.includes(id))).sort((a, b) => className(a).localeCompare(className(b), undefined, { numeric: true })) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [current, classes, labels],
+    [current, classes, labels, scope],
   )
 
   // Defaults: the exam in progress (else the latest), then its first class.
@@ -113,7 +116,7 @@ export default function ReportCards() {
     setPrincipalRemark(card?.principalRemark ?? '')
   }, [card?.student.id, card?.teacherRemark, card?.principalRemark])
 
-  const remarksDirty = !!card && (teacherRemark.trim() !== card.teacherRemark || (isAdmin && principalRemark.trim() !== card.principalRemark))
+  const remarksDirty = !!card && ((report?.canRemark !== false && teacherRemark.trim() !== card.teacherRemark) || (isAdmin && principalRemark.trim() !== card.principalRemark))
   const incomplete = ordered.filter((c) => c.subjectsScored < c.subjectsTotal).length
   const remarksDone = ordered.filter((c) => c.teacherRemark).length
 
@@ -130,7 +133,7 @@ export default function ReportCards() {
       const saved = await saveRemarks({
         seriesId: report.series.id,
         studentId: card.student.id,
-        teacherRemark,
+        ...(report.canRemark !== false ? { teacherRemark } : {}),
         ...(isAdmin ? { principalRemark } : {}),
       })
       setReport({ ...report, cards: report.cards.map((c) => (c.student.id === card.student.id ? { ...c, ...saved } : c)) })
@@ -243,6 +246,7 @@ export default function ReportCards() {
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+        {scope && !scope.linked && <Alert severity="info" sx={{ mb: 2 }}>{UNLINKED_MESSAGE}</Alert>}
 
         {!series ? (
           <Skeleton variant="rounded" height={120} />
@@ -309,7 +313,8 @@ export default function ReportCards() {
                         </Stack>
                       </Stack>
                       <Stack spacing={1.5}>
-                        <RemarkField label="Class teacher's remark" value={teacherRemark} onChange={setTeacherRemark} suggestions={suggestRemarks(card.average)} />
+                        <RemarkField label="Class teacher's remark" value={teacherRemark} onChange={setTeacherRemark} suggestions={suggestRemarks(card.average)}
+                        disabled={report.canRemark === false} helper={report.canRemark === false ? "Only this class's form teacher can write this." : undefined} />
                         <RemarkField label="Principal's remark" value={principalRemark} onChange={setPrincipalRemark} suggestions={suggestRemarks(card.average)}
                           disabled={!isAdmin} helper={isAdmin ? undefined : 'Only the principal or school admin can write this.'} />
                         <Stack direction="row" spacing={1} justifyContent="flex-end">

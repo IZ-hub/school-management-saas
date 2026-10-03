@@ -24,6 +24,7 @@ import { toDate } from '../lib/attendanceApi'
 import { ExamSeries, listSeries } from '../lib/examsApi'
 import { GRADES, GRADE_STYLE, PaperProgress, ScoreSheet, getProgress, getSheet, gradeFor, saveSheet } from '../lib/resultsApi'
 import { brand } from '../theme'
+import { MyScope, UNLINKED_MESSAGE, getMyScope } from '../lib/scopeApi'
 
 interface ClassRow { id: string; name: string; status?: string; createdAt?: unknown }
 type Part = 'ca' | 'exam'
@@ -68,6 +69,8 @@ export default function Results() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const cells = useRef<Map<string, HTMLInputElement>>(new Map())
+  const [scope, setScope] = useState<MyScope | null>(null)
+  useEffect(() => { getMyScope().then(setScope).catch(() => {}) }, [])
   const justFocused = useRef(false)
 
   const labels = useMemo(() => classLabels(classes), [classes])
@@ -254,6 +257,7 @@ export default function Results() {
         onBlur={() => { justFocused.current = false }}
         inputRef={(el: HTMLInputElement | null) => { if (el) cells.current.set(`${id}:${part}`, el); else cells.current.delete(`${id}:${part}`) }}
         inputProps={{ inputMode: 'decimal', 'aria-label': `${part === 'ca' ? 'CA' : 'Exam'} for ${sheet!.students[row].firstName} ${sheet!.students[row].lastName}`, 'aria-invalid': !!bad, title: bad || undefined }}
+        readOnly={!sheet!.canEdit}
         sx={{
           width: { xs: 56, sm: 72 }, height: 36, px: 1, borderRadius: '8px', fontSize: '14.5px', fontWeight: 600, fontVariantNumeric: 'tabular-nums',
           border: `1px solid ${bad ? '#e0928a' : brand.border}`, bgcolor: bad ? '#fdf3f2' : brand.surface,
@@ -270,6 +274,7 @@ export default function Results() {
       <Typography sx={{ color: brand.muted, fontSize: '14.5px', mb: 3 }}>Enter CA and exam scores for each class and subject.</Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {scope && !scope.linked && <Alert severity="info" sx={{ mb: 2 }}>{UNLINKED_MESSAGE}</Alert>}
 
       {!series ? (
         <Skeleton variant="rounded" height={140} />
@@ -322,6 +327,7 @@ export default function Results() {
                           >
                             {done ? <DoneIcon sx={{ fontSize: 16, color: '#1f6f43' }} /> : p.started > 0 ? <PartIcon sx={{ fontSize: 16, color: '#b07a1a' }} /> : <EmptyIcon sx={{ fontSize: 16, color: '#c9c7bd' }} />}
                             <Typography sx={{ fontSize: '13px', fontWeight: 600, color: brand.text }}>{p.subject}</Typography>
+                            {p.mine && <Box component="span" sx={{ px: 0.6, borderRadius: '5px', fontSize: '10.5px', fontWeight: 700, bgcolor: brand.greenSoft, color: brand.green }}>YOURS</Box>}
                             <Typography sx={{ fontSize: '12px', color: brand.muted, fontVariantNumeric: 'tabular-nums' }}>
                               {p.complete}/{p.students}{p.average !== null ? ` · avg ${p.average}` : ''}
                             </Typography>
@@ -376,7 +382,10 @@ export default function Results() {
                         {totals.length} of {sheet.students.length} complete
                       </Typography>
                     </Stack>
-                    {!isPhone && (
+                    {!sheet.canEdit && (
+                      <Alert severity="info" sx={{ mb: 1.5 }}>View only. You can enter scores only for subjects assigned to you in Class subjects.</Alert>
+                    )}
+                    {!isPhone && sheet.canEdit && (
                       <Typography sx={{ fontSize: '12.5px', color: brand.subtle, mb: 1 }}>
                         Tip: Enter or ↓ moves down the column. You can paste a column of scores from Excel into the first box.
                       </Typography>
@@ -410,7 +419,7 @@ export default function Results() {
                     </Box>
 
                     {/* Save bar: sticks to the bottom of the screen on phones */}
-                    <Box
+                    {sheet.canEdit && <Box
                       sx={{
                         position: { xs: 'fixed', md: 'static' }, left: 0, right: 0, bottom: 0, zIndex: 10,
                         bgcolor: { xs: 'rgba(255,255,255,0.97)', md: 'transparent' }, borderTop: { xs: `1px solid ${brand.border}`, md: 'none' },
@@ -424,7 +433,7 @@ export default function Results() {
                       <Button variant="contained" onClick={handleSave} disabled={saving || !dirty || errors > 0} sx={{ px: 3, minHeight: 42 }}>
                         {saving ? 'Saving…' : 'Save scores'}
                       </Button>
-                    </Box>
+                    </Box>}
                   </>
                 )}
               </>

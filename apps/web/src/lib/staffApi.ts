@@ -26,3 +26,4 @@ export const changeStaffRole = async (id: string, role: StaffRole) => (await api
 export const setStaffEnabled = async (id: string, enabled: boolean) => (await api.post(`/staff/${id}/${enabled ? 'enable' : 'disable'}`)).data.data
 
 export const staffSetupLink = (code: string) => `${window.location.origin}/setup#${code}`
+export const linkTeacherRecord = async (id: string, teacherId: string | null) => (await api.patch(`/staff/${id}/teacher`, { teacherId })).data.data

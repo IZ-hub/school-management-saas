@@ -16,3 +16,8 @@ export class InviteStaffDto {
 export class ChangeRoleDto {
   @IsIn(STAFF_ROLE_OPTIONS) role: StaffRole;
 }
+
+export class LinkTeacherDto {
+  /** A record on the Teachers page, or null to unlink. */
+  @IsOptional() @IsString() teacherId: string | null;
+}

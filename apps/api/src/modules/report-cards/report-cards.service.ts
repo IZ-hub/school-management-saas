@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { ADMIN_ROLES } from '../../common/roles';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { TeachingScope } from '../../common/teaching-scope';
 import { gradeFor } from '../results/results.service';
 import { fixedTermRange } from '../../common/school-date';
 import { TermCalendar } from '../../common/term-calendar';
@@ -38,10 +39,12 @@ export class ReportCardsService {
   private remarksId = (seriesId: string, studentId: string) => `${seriesId}__${studentId}`;
 
   /** Report cards for every current student in a class for one exam: subjects, totals, positions, attendance and remarks. */
-  async forClass(schoolId: string, seriesId: string, classId: string) {
+  async forClass(schoolId: string, seriesId: string, classId: string, user?: JwtPayload) {
     const seriesDoc = await getOwnedDoc(this.db.collection('examSeries'), seriesId, schoolId, 'Exam not found');
     const series = seriesDoc.data()!;
     const classDoc = await getOwnedDoc(this.db.collection('classes'), classId, schoolId, 'Class not found');
+    const scope = user ? await TeachingScope.load(this.db as any, user) : null;
+    scope?.requireClass(classId, classDoc.data()!.name);
     const { from, to } = (await TermCalendar.load(this.db as any, schoolId)).range(series.term, series.session);
 
     const [school, papersSnap, resultsSnap, studentsSnap, attendanceSnap, remarksSnap, teachersSnap] = await Promise.all([
@@ -146,6 +149,7 @@ export class ReportCardsService {
       classSize: students.length,
       ranked,
       classAverage: averages.length ? round1(averages.reduce((a, b) => a + b, 0) / averages.length) : null,
+      canRemark: scope ? scope.canRemark(classId) : true,
       cards,
     };
   }
@@ -157,7 +161,8 @@ export class ReportCardsService {
       throw new ForbiddenException("Only the principal or school admin can write the principal's remark.");
     }
     await getOwnedDoc(this.db.collection('examSeries'), dto.seriesId, schoolId, 'Exam not found');
-    await getOwnedDoc(this.db.collection('students'), dto.studentId, schoolId, 'Student not found');
+    const student = await getOwnedDoc(this.db.collection('students'), dto.studentId, schoolId, 'Student not found');
+    if (dto.teacherRemark !== undefined) (await TeachingScope.load(this.db as any, user)).requireRemark(student.data()!.classId);
     const ref = this.db.collection('reportRemarks').doc(this.remarksId(dto.seriesId, dto.studentId));
     const existing = await ref.get();
     const tidy = (v: string) => v.trim().replace(/\s+/g, ' ');

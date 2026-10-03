@@ -14,7 +14,7 @@ export class ReportCardsController {
 
   @Get()
   async forClass(@CurrentUser() user: JwtPayload, @Query('seriesId') seriesId = '', @Query('classId') classId = '') {
-    const data = await this.service.forClass(user.schoolId, seriesId, classId);
+    const data = await this.service.forClass(user.schoolId, seriesId, classId, user);
     return { data };
   }
 

@@ -44,7 +44,7 @@ export interface FeesOverview {
   students: StudentFees[]
 }
 
-export interface SchoolInfo { name: string; address: string; phone: string; email: string }
+export interface SchoolInfo { name: string; address: string; phone: string; email: string; logo?: string | null; motto?: string }
 
 export interface Statement {
   term: Term

@@ -36,14 +36,14 @@ export interface LinkedParent {
 export type InviteResult = { status: 'LINKED'; userId: string; email: string } | { status: 'INVITED'; userId: string; email: string; code: string; expiresAt: string }
 
 // Parent portal
-export const getChildren = async (): Promise<{ schoolName: string; children: ParentChild[] }> => (await api.get('/parent/children')).data.data
+export const getChildren = async (): Promise<{ schoolName: string; schoolLogo: string | null; children: ParentChild[] }> => (await api.get('/parent/children')).data.data
 export const getChildOverview = async (id: string): Promise<ChildOverview> => (await api.get(`/parent/children/${id}`)).data.data
 export const getChildReportCard = async (id: string, seriesId: string): Promise<Omit<ClassReport, 'cards'> & { card: ReportCard }> =>
   (await api.get(`/parent/children/${id}/report-card`, { params: { seriesId } })).data.data
 export const getChildFees = async (id: string): Promise<Statement> => (await api.get(`/parent/children/${id}/fees`)).data.data
 
 // Invites (public)
-export const getInvite = async (code: string): Promise<{ email: string; firstName: string; schoolName: string; children: string[] }> =>
+export const getInvite = async (code: string): Promise<{ email: string; firstName: string; role: string; schoolName: string; children: string[] }> =>
   (await api.get('/auth/invite', { params: { code } })).data.data
 export const acceptInvite = async (code: string, password: string) => (await api.post('/auth/accept-invite', { code, password })).data.data
 

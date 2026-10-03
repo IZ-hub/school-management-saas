@@ -38,6 +38,7 @@ import {
   saveDiscount,
 } from '../lib/feesApi'
 import { brand } from '../theme'
+import { getSchool } from '../lib/schoolApi'
 
 const errorText = (err: any, fallback: string) => {
   const msg = err?.response?.data?.message
@@ -46,18 +47,27 @@ const errorText = (err: any, fallback: string) => {
 
 export const longDate = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
-/** Term and session kept in the URL (?term=FIRST&session=2026/2027), defaulting to the current term. */
+/**
+ * Term and session kept in the URL (?term=FIRST&session=2026/2027). Without them, the school's current
+ * term (from its term dates in School settings) is used; `ready` is false until that is known.
+ */
 export function useTermSession() {
   const [params, setParams] = useSearchParams()
-  const term = (TERMS as readonly string[]).includes(params.get('term') ?? '') ? (params.get('term') as Term) : currentTerm()
-  const session = /^\d{4}\/\d{4}$/.test(params.get('session') ?? '') ? params.get('session')! : currentSession()
+  const fromUrl = (TERMS as readonly string[]).includes(params.get('term') ?? '') && /^\d{4}\/\d{4}$/.test(params.get('session') ?? '')
+  const [current, setCurrent] = useState<{ term: Term; session: string } | null>(null)
+  useEffect(() => {
+    if (fromUrl || current) return
+    getSchool().then((s) => setCurrent(s.currentTerm)).catch(() => setCurrent({ term: currentTerm(), session: currentSession() }))
+  }, [fromUrl, current])
+  const term = fromUrl ? (params.get('term') as Term) : current?.term ?? currentTerm()
+  const session = fromUrl ? params.get('session')! : current?.session ?? currentSession()
   const set = (t: Term, s: string) => {
     const next = new URLSearchParams(params)
     next.set('term', t)
     next.set('session', s)
     setParams(next, { replace: true })
   }
-  return { term, session, set }
+  return { term, session, set, ready: fromUrl || !!current }
 }
 
 /** The term before this one, e.g. First Term 2026/2027 -> Third Term 2025/2026. */
@@ -131,7 +141,9 @@ function SchoolHeader({ school, title }: { school: Receipt['school']; title: str
   return (
     <>
       <Box sx={{ textAlign: 'center', pb: 1.25, borderBottom: `2px solid ${ink}` }}>
+        {school.logo && <Box component="img" src={school.logo} alt="" sx={{ height: 52, maxWidth: 160, objectFit: 'contain', mb: 0.5 }} />}
         <Typography sx={{ fontSize: '20px', fontWeight: 800, color: ink }}>{school.name || 'School'}</Typography>
+        {school.motto && <Typography sx={{ fontSize: '12px', fontStyle: 'italic', color: '#4d534d' }}>{school.motto}</Typography>}
         {school.address && <Typography sx={{ fontSize: '12px', color: '#4d534d' }}>{school.address}</Typography>}
         {(school.phone || school.email) && <Typography sx={{ fontSize: '12px', color: '#4d534d' }}>{[school.phone, school.email].filter(Boolean).join(' · ')}</Typography>}
       </Box>

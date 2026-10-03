@@ -1,15 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import * as crypto from 'crypto';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
-import { currentTermSession, schoolToday } from '../../common/school-date';
+import { createInvite, revokeSessions } from '../../common/invites';
+import { schoolToday } from '../../common/school-date';
+import { TermCalendar } from '../../common/term-calendar';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { FeesService } from '../fees/fees.service';
-import { ReportCardsService, termRange } from '../report-cards/report-cards.service';
+import { ReportCardsService } from '../report-cards/report-cards.service';
 import { InviteParentDto } from './dto/invite-parent.dto';
 
-const INVITE_DAYS = 7;
-const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 const toMillis = (v: any): number => v?.toMillis?.() ?? v?.getTime?.() ?? new Date(v).getTime();
 
 @Injectable()
@@ -28,16 +27,8 @@ export class ParentsService {
     return this.db.collection('users');
   }
 
-  /** A one-time setup link code: "<id>.<secret>". Only a hash of the secret is stored. */
-  private async createInvite(schoolId: string, userId: string, createdBy: string) {
-    // Older unused links for this parent stop working.
-    const old = await this.db.collection('invites').where('userId', '==', userId).get();
-    const now = new Date();
-    await Promise.all(old.docs.filter((d) => !d.data().usedAt).map((d) => d.ref.update({ usedAt: now, replaced: true })));
-    const secret = crypto.randomBytes(24).toString('base64url');
-    const expiresAt = new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000);
-    const ref = await this.db.collection('invites').add({ schoolId, userId, hash: sha256(secret), createdBy, createdAt: now, expiresAt, usedAt: null });
-    return { code: `${ref.id}.${secret}`, expiresAt };
+  private createInvite(schoolId: string, userId: string, createdBy: string) {
+    return createInvite(this.db as any, schoolId, userId, createdBy);
   }
 
   /** Parents linked to a student, for the Students page. */
@@ -108,10 +99,7 @@ export class ParentsService {
     if (doc.data()!.role !== 'PARENT') throw new NotFoundException('Parent not found');
     const childIds = (doc.data()!.childIds ?? []).filter((id: string) => id !== studentId);
     await doc.ref.update({ childIds, ...(childIds.length === 0 ? { status: 'DISABLED' } : {}), updatedAt: new Date() });
-    if (childIds.length === 0) {
-      const tokens = await this.db.collection('refreshTokens').where('userId', '==', userId).get();
-      await Promise.all(tokens.docs.map((t) => t.ref.delete()));
-    }
+    if (childIds.length === 0) await revokeSessions(this.db as any, userId);
     return { childIds };
   }
 
@@ -143,6 +131,7 @@ export class ParentsService {
     const classes = new Map(classSnap.docs.map((d) => [d.id, d.data().name]));
     return {
       schoolName: school.exists ? school.data()!.name : '',
+      schoolLogo: school.exists ? school.data()!.logo ?? null : null,
       children: kids.map((d) => ({
         id: d.id, firstName: d.data()!.firstName, lastName: d.data()!.lastName, admissionNumber: d.data()!.admissionNumber ?? '',
         className: classes.get(d.data()!.classId) ?? null,
@@ -153,8 +142,9 @@ export class ParentsService {
   /** One child at a glance: attendance this term, fees this term, and published report cards. */
   async overview(user: JwtPayload, studentId: string) {
     const child = await this.myChild(user, studentId);
-    const ts = currentTermSession();
-    const { from, to } = termRange(ts.term, ts.session);
+    const calendar = await TermCalendar.load(this.db as any, user.schoolId);
+    const ts = calendar.current();
+    const { from, to } = calendar.range(ts.term, ts.session);
     const [marksSnap, statement, seriesSnap] = await Promise.all([
       this.db.collection('attendance').where('schoolId', '==', user.schoolId).where('studentId', '==', studentId).get(),
       this.fees.statement(user.schoolId, studentId, ts.term, ts.session),

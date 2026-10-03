@@ -4,17 +4,14 @@ import { getOwnedDoc } from '../../common/tenant';
 import { ADMIN_ROLES } from '../../common/roles';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { gradeFor } from '../results/results.service';
+import { fixedTermRange } from '../../common/school-date';
+import { TermCalendar } from '../../common/term-calendar';
 import { SaveRemarksDto } from './dto/save-remarks.dto';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-/** Months each term covers, for attendance: First Sep–Dec, Second Jan–Apr, Third May–Aug. */
-export function termRange(term: string, session: string) {
-  const [y1, y2] = session.split('/').map(Number);
-  if (term === 'FIRST') return { from: `${y1}-09-01`, to: `${y1}-12-31` };
-  if (term === 'SECOND') return { from: `${y2}-01-01`, to: `${y2}-04-30` };
-  return { from: `${y2}-05-01`, to: `${y2}-08-31` };
-}
+/** Fixed term months (kept for callers that don't load the school's calendar). */
+export const termRange = fixedTermRange;
 
 /** 1 -> "1st", 22 -> "22nd", 13 -> "13th". */
 export const ordinal = (n: number) => {
@@ -45,7 +42,7 @@ export class ReportCardsService {
     const seriesDoc = await getOwnedDoc(this.db.collection('examSeries'), seriesId, schoolId, 'Exam not found');
     const series = seriesDoc.data()!;
     const classDoc = await getOwnedDoc(this.db.collection('classes'), classId, schoolId, 'Class not found');
-    const { from, to } = termRange(series.term, series.session);
+    const { from, to } = (await TermCalendar.load(this.db as any, schoolId)).range(series.term, series.session);
 
     const [school, papersSnap, resultsSnap, studentsSnap, attendanceSnap, remarksSnap, teachersSnap] = await Promise.all([
       this.db.collection('schools').doc(schoolId).get(),
@@ -142,7 +139,7 @@ export class ReportCardsService {
     const averages = cards.map((c) => c.average).filter((a): a is number => a !== null);
     const sch = school.exists ? school.data()! : {};
     return {
-      school: { name: sch.name ?? '', address: [sch.address, sch.city, sch.state].filter(Boolean).join(', '), phone: sch.phone ?? '', email: sch.email ?? '', logo: sch.logo ?? null },
+      school: { name: sch.name ?? '', address: [sch.address, sch.city, sch.state].filter(Boolean).join(', '), phone: sch.phone ?? '', email: sch.email ?? '', logo: sch.logo ?? null, motto: sch.motto ?? '', principalName: sch.principalName ?? '' },
       series: { id: seriesId, name: series.name, term: series.term, session: series.session, startDate: series.startDate, endDate: series.endDate },
       class: { id: classId, name: classDoc.data()!.name, formTeacher: formTeacher ? `${formTeacher.data().firstName ?? ''} ${formTeacher.data().lastName ?? ''}`.trim() : null },
       attendancePeriod: { from, to },

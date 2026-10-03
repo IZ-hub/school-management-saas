@@ -19,6 +19,9 @@ import Fees from './pages/Fees'
 import Payments from './pages/Payments'
 import ParentHome from './pages/ParentHome'
 import ParentSetup from './pages/ParentSetup'
+import Staff from './pages/Staff'
+import Promotion from './pages/Promotion'
+import Settings from './pages/Settings'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -53,6 +56,7 @@ function App() {
         <Route path="/register" element={isAuthenticated ? <AfterSignIn /> : <RegisterSchool />} />
 
         <Route path="/parent-setup" element={<ParentSetup />} />
+        <Route path="/setup" element={<ParentSetup />} />
 
         {/* Parents: their own children only */}
         <Route path="/parent" element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <ParentHome /> : <Navigate to="/dashboard" replace />} />
@@ -72,6 +76,9 @@ function App() {
           <Route path="/report-cards" element={<ReportCards />} />
           <Route path="/fees" element={<Fees />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/promotion" element={<Promotion />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
       {!isParent && <SupportWidget />}

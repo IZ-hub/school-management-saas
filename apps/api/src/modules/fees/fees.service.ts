@@ -1,15 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
-import { currentTermSession, isIsoDate, Term, TERMS } from '../../common/school-date';
+import { isIsoDate, Term, TERMS } from '../../common/school-date';
+import { TermCalendar } from '../../common/term-calendar';
 import { SaveDiscountDto, SaveScheduleDto } from './dto/fees.dto';
 
 export type FeeStatus = 'PAID' | 'PART' | 'UNPAID' | 'NO_FEES';
 
 const looseKey = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
 
+/** Validates an explicit term and session. */
 export function checkTermSession(term?: string, session?: string): { term: Term; session: string } {
-  if (!term && !session) return currentTermSession();
   if (!TERMS.includes(term as Term)) throw new BadRequestException('Choose a term.');
   const [y1, y2] = String(session ?? '').split('/').map(Number);
   if (!/^\d{4}\/\d{4}$/.test(session ?? '') || y2 !== y1 + 1) throw new BadRequestException('Session must be two consecutive years, like 2026/2027.');
@@ -30,6 +31,12 @@ export class FeesService {
 
   private get discounts() {
     return this.db.collection('feeDiscounts');
+  }
+
+  /** The given term, or the school's current term when none is given. */
+  async resolveTerm(schoolId: string, term?: string, session?: string) {
+    if (!term && !session) return (await TermCalendar.load(this.db as any, schoolId)).current();
+    return checkTermSession(term, session);
   }
 
   /** One fee list per class per term, so saving again replaces it. */
@@ -105,7 +112,7 @@ export class FeesService {
 
   /** What one student owes for a term: fee items, discount, payments and balance. */
   async statement(schoolId: string, studentId: string, term?: string, session?: string) {
-    const ts = checkTermSession(term, session);
+    const ts = await this.resolveTerm(schoolId, term, session);
     const student = await getOwnedDoc(this.db.collection('students'), studentId, schoolId, 'Student not found');
     const s = student.data()!;
     const [cls, schedule, discount, paySnap, school] = await Promise.all([
@@ -127,7 +134,7 @@ export class FeesService {
     const sch = school.exists ? school.data()! : {};
     return {
       ...ts,
-      school: { name: sch.name ?? '', address: [sch.address, sch.city, sch.state].filter(Boolean).join(', '), phone: sch.phone ?? '', email: sch.email ?? '' },
+      school: { name: sch.name ?? '', address: [sch.address, sch.city, sch.state].filter(Boolean).join(', '), phone: sch.phone ?? '', email: sch.email ?? '', logo: sch.logo ?? null, motto: sch.motto ?? '' },
       student: { id: studentId, firstName: s.firstName ?? '', lastName: s.lastName ?? '', admissionNumber: s.admissionNumber ?? '', classId: s.classId ?? null, className: cls?.exists ? cls.data()!.name : null },
       items: sched?.items ?? [],
       feesSet: !!sched,
@@ -143,7 +150,7 @@ export class FeesService {
 
   /** The term at a glance: expected, collected and outstanding, by class and by student. */
   async overview(schoolId: string, term?: string, session?: string) {
-    const ts = checkTermSession(term, session);
+    const ts = await this.resolveTerm(schoolId, term, session);
     const [classSnap, studentSnap, scheduleSnap, discountSnap, paySnap] = await Promise.all([
       this.db.collection('classes').where('schoolId', '==', schoolId).get(),
       this.db.collection('students').where('schoolId', '==', schoolId).get(),

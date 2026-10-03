@@ -23,3 +23,11 @@ export function currentTermSession(today = schoolToday()): { term: Term; session
   if (m >= 9) return { term: 'FIRST', session: `${y}/${y + 1}` };
   return { term: m <= 4 ? 'SECOND' : 'THIRD', session: `${y - 1}/${y}` };
 }
+
+/** Months each term covers when a school hasn't set its own dates: First Sep–Dec, Second Jan–Apr, Third May–Aug. */
+export function fixedTermRange(term: string, session: string) {
+  const [y1, y2] = session.split('/').map(Number);
+  if (term === 'FIRST') return { from: `${y1}-09-01`, to: `${y1}-12-31` };
+  if (term === 'SECOND') return { from: `${y2}-01-01`, to: `${y2}-04-30` };
+  return { from: `${y2}-05-01`, to: `${y2}-08-31` };
+}

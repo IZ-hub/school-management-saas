@@ -36,6 +36,7 @@ import {
   UpgradeOutlined as PromotionIcon,
   SettingsOutlined as SettingsIcon,
   ForumOutlined as MessagesIcon,
+  CalendarViewWeekOutlined as TimetableIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
@@ -67,6 +68,7 @@ const navSections: { heading: string | null; items: { label: string; path: strin
       { label: 'Exams', path: '/exams', icon: <ExamsIcon />, roles: ACADEMIC_ROLES },
       { label: 'Results', path: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES },
       { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon />, roles: ACADEMIC_ROLES },
+      { label: 'Timetable', path: '/timetable', icon: <TimetableIcon />, roles: STAFF_ROLES },
       { label: 'Promotion', path: '/promotion', icon: <PromotionIcon />, roles: ADMIN_ROLES },
     ],
   },

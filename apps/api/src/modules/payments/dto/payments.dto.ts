@@ -2,6 +2,7 @@ import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength,
 import { Type } from 'class-transformer';
 import { TERMS, Term } from '../../../common/school-date';
 
+/** Methods a person can record by hand. Online payments are recorded by Paystack confirmations only. */
 export const METHODS = ['CASH', 'TRANSFER', 'POS', 'CHEQUE'] as const;
 
 export class RecordPaymentDto {

@@ -78,7 +78,7 @@ export default function Payments() {
                 <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{list.count} {list.count === 1 ? 'payment' : 'payments'}</Typography>
               </Box>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {METHODS.filter((m) => list.byMethod[m]).map((m) => (
+                {([...METHODS, 'ONLINE'] as Method[]).filter((m) => list.byMethod[m]).map((m) => (
                   <Box key={m} sx={{ px: 1.25, py: 0.75, borderRadius: '10px', border: `1px solid ${brand.border}` }}>
                     <Typography sx={{ fontSize: '12px', color: brand.muted }}>{METHOD_LABEL[m]}</Typography>
                     <Typography sx={{ fontSize: '14px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{naira(list.byMethod[m]!)}</Typography>
@@ -94,7 +94,7 @@ export default function Payments() {
                 InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: brand.subtle }} /></InputAdornment> }} sx={{ width: { sm: 300 } }} />
               <TextField select size="small" value={method} onChange={(e) => setMethod(e.target.value as Method | '')} SelectProps={{ displayEmpty: true }} sx={{ width: { sm: 170 } }}>
                 <MenuItem value="">All methods</MenuItem>
-                {METHODS.map((m) => <MenuItem key={m} value={m}>{METHOD_LABEL[m]}</MenuItem>)}
+                {([...METHODS, 'ONLINE'] as Method[]).map((m) => <MenuItem key={m} value={m}>{METHOD_LABEL[m]}</MenuItem>)}
               </TextField>
             </Stack>
 

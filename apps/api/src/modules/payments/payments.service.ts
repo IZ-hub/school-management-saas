@@ -36,8 +36,45 @@ export class PaymentsService {
     if (statement.balance <= 0) throw new BadRequestException(`${name} has already paid in full for this term.`);
     if (dto.amount > statement.balance) throw new BadRequestException(`${name} only owes ${naira(statement.balance)} for this term.`);
 
-    const recordedByName = await this.userName(user);
-    const year = dto.paidOn.slice(0, 4);
+    return this.insert(schoolId, {
+      studentId: dto.studentId,
+      classId: statement.student.classId,
+      term: dto.term,
+      session: dto.session,
+      amount: dto.amount,
+      method: dto.method,
+      paidOn: dto.paidOn,
+      reference: dto.reference?.trim() || null,
+      note: dto.note?.trim() || null,
+      recordedBy: user.sub,
+      recordedByName: await this.userName(user),
+    });
+  }
+
+  /**
+   * Records money already received online. Unlike a manual entry it isn't refused when it exceeds the
+   * balance (e.g. a cash payment landed while the parent was paying); the extra shows as credit.
+   */
+  async recordOnline(schoolId: string, p: { studentId: string; term: string; session: string; amount: number; paidOn: string; reference: string; payerName: string }) {
+    const statement = await this.fees.statement(schoolId, p.studentId, p.term, p.session);
+    return this.insert(schoolId, {
+      studentId: p.studentId,
+      classId: statement.student.classId,
+      term: p.term,
+      session: p.session,
+      amount: p.amount,
+      method: 'ONLINE',
+      paidOn: p.paidOn,
+      reference: p.reference,
+      note: `Paid online by ${p.payerName}`,
+      recordedBy: 'paystack',
+      recordedByName: 'Paystack (online)',
+    });
+  }
+
+  /** Saves a payment with the next receipt number for its year. */
+  private async insert(schoolId: string, p: Record<string, any> & { paidOn: string }) {
+    const year = p.paidOn.slice(0, 4);
     const counter = this.db.collection('counters').doc(`${schoolId}__receipts__${year}`);
     const ref = this.col.doc();
     const now = new Date();
@@ -46,23 +83,7 @@ export class PaymentsService {
       const next = (c.exists ? c.data()!.value : 0) + 1;
       tx.set(counter, { schoolId, value: next, updatedAt: now });
       const number = `RCP-${year}-${String(next).padStart(4, '0')}`;
-      tx.set(ref, {
-        schoolId,
-        studentId: dto.studentId,
-        classId: statement.student.classId,
-        term: dto.term,
-        session: dto.session,
-        amount: dto.amount,
-        method: dto.method,
-        paidOn: dto.paidOn,
-        reference: dto.reference?.trim() || null,
-        note: dto.note?.trim() || null,
-        receiptNumber: number,
-        recordedBy: user.sub,
-        recordedByName,
-        voided: false,
-        createdAt: now,
-      });
+      tx.set(ref, { schoolId, ...p, receiptNumber: number, voided: false, createdAt: now });
       return number;
     });
     return this.receipt(schoolId, ref.id).then((r) => ({ ...r, receiptNumber }));

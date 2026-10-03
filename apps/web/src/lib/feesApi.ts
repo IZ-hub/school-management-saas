@@ -2,9 +2,10 @@ import { api } from './api'
 import type { Term } from './examsApi'
 
 export type FeeStatus = 'PAID' | 'PART' | 'UNPAID' | 'NO_FEES'
+/** Methods staff can record by hand; ONLINE payments come from Paystack. */
 export const METHODS = ['CASH', 'TRANSFER', 'POS', 'CHEQUE'] as const
-export type Method = (typeof METHODS)[number]
-export const METHOD_LABEL: Record<Method, string> = { CASH: 'Cash', TRANSFER: 'Bank transfer', POS: 'POS', CHEQUE: 'Cheque' }
+export type Method = (typeof METHODS)[number] | 'ONLINE'
+export const METHOD_LABEL: Record<Method, string> = { CASH: 'Cash', TRANSFER: 'Bank transfer', POS: 'POS', CHEQUE: 'Cheque', ONLINE: 'Online (Paystack)' }
 
 export interface FeeItem { name: string; amount: number }
 

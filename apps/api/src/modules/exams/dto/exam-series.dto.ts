@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 
 export const TERMS = ['FIRST', 'SECOND', 'THIRD'] as const;
 export type Term = (typeof TERMS)[number];
@@ -27,4 +27,8 @@ export class UpdateExamSeriesDto {
 export class AddPapersDto {
   /** Classes to add to the series. Missing papers are created for these and for the series' existing classes. */
   @IsOptional() @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) classIds?: string[];
+}
+
+export class PublishResultsDto {
+  @IsBoolean() published: boolean;
 }

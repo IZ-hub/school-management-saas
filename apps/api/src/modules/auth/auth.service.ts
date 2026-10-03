@@ -105,10 +105,15 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    let query: FirebaseFirestore.Query = this.db.collection('users').where('email', '==', dto.email);
-    if (dto.schoolId) query = query.where('schoolId', '==', dto.schoolId);
-    // Fetch two so we can tell when an email is shared across schools.
-    const usersSnap = await query.limit(2).get();
+    const byEmail = (email: string) => {
+      let query: FirebaseFirestore.Query = this.db.collection('users').where('email', '==', email);
+      if (dto.schoolId) query = query.where('schoolId', '==', dto.schoolId);
+      // Fetch two so we can tell when an email is shared across schools.
+      return query.limit(2).get();
+    };
+    let usersSnap = await byEmail(dto.email);
+    // Parent accounts are stored in lowercase, so "Ada@Mail.com" still finds "ada@mail.com".
+    if (usersSnap.empty && dto.email !== dto.email.toLowerCase()) usersSnap = await byEmail(dto.email.toLowerCase());
 
     if (usersSnap.empty) {
       throw new UnauthorizedException('Invalid credentials');
@@ -123,8 +128,12 @@ export class AuthService {
     const userDoc = usersSnap.docs[0];
     const userData = userDoc.data();
 
-    const passwordValid = await bcrypt.compare(dto.password, userData.password);
+    // Invited parents have no password until they open their setup link.
+    const passwordValid = !!userData.password && (await bcrypt.compare(dto.password, userData.password));
     if (!passwordValid) {
+      if (userData.status === 'INVITED') {
+        throw new UnauthorizedException('Finish setting up your account with the link your school sent you.');
+      }
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -136,6 +145,49 @@ export class AuthService {
     await userDoc.ref.update({ lastLogin: new Date() });
 
     return this.createSession(userDoc.id, userData);
+  }
+
+  /** Finds a usable invite for a "<id>.<secret>" code, or throws. */
+  private async findInvite(code: string) {
+    const invalid = () => new BadRequestException('This link is not valid or has expired. Ask your school for a new one.');
+    const [id, secret] = (code ?? '').split('.');
+    if (!id || !secret || id.includes('/')) throw invalid();
+    const doc = await this.db.collection('invites').doc(id).get();
+    if (!doc.exists) throw invalid();
+    const inv = doc.data()!;
+    const expected = Buffer.from(inv.hash, 'hex');
+    const actual = Buffer.from(sha256(secret), 'hex');
+    if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) throw invalid();
+    if (inv.usedAt || toMillis(inv.expiresAt) <= Date.now()) throw invalid();
+    const user = await this.db.collection('users').doc(inv.userId).get();
+    if (!user.exists || user.data()!.status !== 'INVITED') throw invalid();
+    return { doc, inv, user };
+  }
+
+  /** What the setup page shows before the parent chooses a password. */
+  async getInvite(code: string) {
+    const { inv, user } = await this.findInvite(code);
+    const u = user.data()!;
+    const [school, students] = await Promise.all([
+      this.db.collection('schools').doc(inv.schoolId).get(),
+      Promise.all((u.childIds ?? []).map((id: string) => this.db.collection('students').doc(id).get())),
+    ]);
+    return {
+      email: u.email,
+      firstName: u.firstName,
+      schoolName: school.exists ? school.data()!.name : '',
+      children: students.filter((d: any) => d.exists && d.data().schoolId === inv.schoolId).map((d: any) => d.data().firstName),
+    };
+  }
+
+  /** Sets the invited parent's password, activates the account and signs them in. */
+  async acceptInvite(code: string, password: string) {
+    if (typeof password !== 'string' || password.length < 8) throw new BadRequestException('Use at least 8 characters for your password.');
+    const { doc, user } = await this.findInvite(code);
+    const now = new Date();
+    await user.ref.update({ password: await bcrypt.hash(password, 10), status: 'ACTIVE', lastLogin: now, updatedAt: now });
+    await doc.ref.update({ usedAt: now });
+    return this.createSession(user.id, { ...user.data()!, status: 'ACTIVE' });
   }
 
   async registerSchool(dto: RegisterSchoolDto) {

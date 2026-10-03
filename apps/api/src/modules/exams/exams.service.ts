@@ -378,6 +378,12 @@ export class ExamsService {
     return { imported, errors };
   }
 
+  async setPublished(schoolId: string, id: string, published: boolean) {
+    const doc = await getOwnedDoc(this.seriesCol, id, schoolId, 'Exam not found');
+    await doc.ref.update({ resultsPublished: published, publishedAt: published ? new Date() : null, updatedAt: new Date() });
+    return { id, resultsPublished: published };
+  }
+
   /** The exam in progress, or the next one coming up, for the dashboard. */
   async upcoming(schoolId: string) {
     const today = schoolToday();

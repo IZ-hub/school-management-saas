@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ExamsService } from './exams.service';
-import { AddPapersDto, CreateExamSeriesDto, UpdateExamSeriesDto } from './dto/exam-series.dto';
+import { AddPapersDto, CreateExamSeriesDto, PublishResultsDto, UpdateExamSeriesDto } from './dto/exam-series.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles, ACADEMIC_ROLES, ADMIN_ROLES } from '../../common/roles';
@@ -50,6 +50,14 @@ export class ExamSeriesController {
   @Post(':id/schedule-import')
   async importSchedule(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() body: { records: any[] }) {
     const data = await this.service.importSchedule(user.schoolId, id, body.records ?? []);
+    return { data };
+  }
+
+  /** Makes this exam's report cards visible to parents (or hides them again). */
+  @Roles(...ADMIN_ROLES)
+  @Patch(':id/publish')
+  async publish(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: PublishResultsDto) {
+    const data = await this.service.setPublished(user.schoolId, id, dto.published);
     return { data };
   }
 

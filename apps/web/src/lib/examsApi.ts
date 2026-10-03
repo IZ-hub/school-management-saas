@@ -20,6 +20,7 @@ export interface ExamSeries {
   scheduled: number
   clashCount: number
   status: SeriesStatus
+  resultsPublished?: boolean
 }
 
 export interface ExamPaper {
@@ -79,6 +80,10 @@ export async function addPapers(id: string, classIds: string[] = []): Promise<{ 
 
 export async function deleteSeries(id: string): Promise<void> {
   await api.delete(`/exam-series/${id}`)
+}
+
+export async function setPublished(id: string, published: boolean): Promise<void> {
+  await api.patch(`/exam-series/${id}/publish`, { published })
 }
 
 export async function updatePaper(

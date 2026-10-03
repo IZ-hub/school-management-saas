@@ -1,5 +1,5 @@
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Alert,
   Box,
@@ -35,6 +35,7 @@ import {
   toDate,
 } from '../lib/attendanceApi'
 import { brand } from '../theme'
+import { useAuthStore } from '../store/authStore'
 import { MyScope, UNLINKED_MESSAGE, getMyScope } from '../lib/scopeApi'
 
 // Status colours are paired with a word (and a letter on phones), never colour alone.
@@ -69,6 +70,8 @@ export default function Attendance() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const navigate = useNavigate()
+  const role = useAuthStore((st) => st.user?.role) ?? ''
   const [focusIndex, setFocusIndex] = useState(0)
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -364,6 +367,11 @@ export default function Attendance() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2,
               }}
             >
+              {isTaken && changedCount === 0 && register.date === today && register.students.some((st) => st.status === 'ABSENT') && ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PRINCIPAL'].includes(role) && (
+                <Button size="small" onClick={() => navigate(`/messages?audience=ABSENT_TODAY&class=${register.classId}`)}>
+                  Message parents of absent students
+                </Button>
+              )}
               <Typography sx={{ fontSize: '13px', color: brand.muted }}>
                 {isTaken ? (changedCount > 0 ? `${changedCount} unsaved ${changedCount === 1 ? 'change' : 'changes'}` : 'All changes saved') : 'Not saved yet'}
               </Typography>

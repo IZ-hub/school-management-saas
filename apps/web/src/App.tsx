@@ -22,6 +22,7 @@ import ParentSetup from './pages/ParentSetup'
 import Staff from './pages/Staff'
 import Promotion from './pages/Promotion'
 import Settings from './pages/Settings'
+import Messages from './pages/Messages'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -79,6 +80,7 @@ function App() {
           <Route path="/staff" element={<Staff />} />
           <Route path="/promotion" element={<Promotion />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/messages" element={<Messages />} />
         </Route>
       </Routes>
       {!isParent && <SupportWidget />}

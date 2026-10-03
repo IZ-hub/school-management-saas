@@ -21,6 +21,8 @@ import { TERM_LABEL } from '../lib/examsApi'
 import { METHOD_LABEL, naira, parseNaira } from '../lib/feesApi'
 import { ChildOverview, ParentChild, getChildFees, getChildOverview, getChildReportCard, getChildren, startOnlinePayment, verifyOnlinePayment } from '../lib/parentApi'
 import { PrintArea, StatementSheet, longDate, usePrint } from '../components/FeesKit'
+import { parentInbox } from '../lib/messagesApi'
+import { toDate } from '../lib/attendanceApi'
 import CardSheet from '../components/ReportCardSheet'
 import { useAuthStore } from '../store/authStore'
 import { brand } from '../theme'
@@ -46,6 +48,8 @@ export default function ParentHome() {
   const [cardFor, setCardFor] = useState<string | null>(null)
   const [statementOpen, setStatementOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
+  const [inbox, setInbox] = useState<Awaited<ReturnType<typeof parentInbox>>>([])
+  useEffect(() => { parentInbox().then(setInbox).catch(() => {}) }, [])
   const [refresh, setRefresh] = useState(0)
   const [payResult, setPayResult] = useState<{ severity: 'success' | 'info' | 'warning' | 'error'; text: string } | null>(null)
 
@@ -201,6 +205,21 @@ export default function ParentHome() {
                     )}
                   </Paper>
                 </Box>
+
+                {/* Messages from school */}
+                {inbox.filter((m) => m.studentId === childId).length > 0 && (
+                  <Paper sx={{ p: { xs: 2, sm: 2.5 } }}>
+                    <Typography sx={{ fontSize: '15px', fontWeight: 700, mb: 1 }}>Messages from school</Typography>
+                    <Stack spacing={1.25}>
+                      {inbox.filter((m) => m.studentId === childId).slice(0, 5).map((m) => (
+                        <Box key={m.id} sx={{ pb: 1.25, borderBottom: `1px solid ${brand.border}`, '&:last-child': { borderBottom: 'none', pb: 0 } }}>
+                          <Typography sx={{ fontSize: '12px', color: brand.subtle }}>{toDate(m.createdAt)?.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}</Typography>
+                          <Typography sx={{ fontSize: '14px', whiteSpace: 'pre-wrap' }}>{m.text}</Typography>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Paper>
+                )}
 
                 {/* Report cards */}
                 <Paper sx={{ p: { xs: 2, sm: 2.5 } }}>

@@ -35,6 +35,7 @@ import {
   ManageAccountsOutlined as StaffIcon,
   UpgradeOutlined as PromotionIcon,
   SettingsOutlined as SettingsIcon,
+  ForumOutlined as MessagesIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
@@ -78,7 +79,10 @@ const navSections: { heading: string | null; items: { label: string; path: strin
   },
   {
     heading: 'School',
-    items: [{ label: 'School settings', path: '/settings', icon: <SettingsIcon />, roles: ADMIN_ROLES }],
+    items: [
+      { label: 'Messages', path: '/messages', icon: <MessagesIcon />, roles: [...ADMIN_ROLES, 'ACCOUNTANT'] },
+      { label: 'School settings', path: '/settings', icon: <SettingsIcon />, roles: ADMIN_ROLES },
+    ],
   },
 ]
 

@@ -4,6 +4,7 @@ import { UploadOutlined as UploadIcon, ContentCopyOutlined as CopyIcon, CheckCir
 import { TERMS, TERM_LABEL, Term } from '../lib/examsApi'
 import { PaystackSettings, SchoolSettings, getPaystack, getSchool, removePaystackKey, resizeImage, saveTermDates, savePaystackKey, updateSchool } from '../lib/schoolApi'
 import { brand } from '../theme'
+import { SmsSettings, getSmsSettings, removeSmsSettings, saveSmsSettings } from '../lib/messagesApi'
 
 const FIELDS: { key: 'name' | 'motto' | 'principalName' | 'address' | 'city' | 'state' | 'phone' | 'email'; label: string; max: number; half?: boolean; hint?: string }[] = [
   { key: 'name', label: 'School name', max: 100 },
@@ -131,6 +132,7 @@ export default function Settings() {
           </Paper>
 
           <PaystackSection onNotice={setNotice} onError={setError} />
+          <SmsSection onNotice={setNotice} onError={setError} />
 
           <Paper sx={{ p: { xs: 2, sm: 3 } }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.5} sx={{ mb: 1 }}>
@@ -230,6 +232,60 @@ function PaystackSection({ onNotice, onError }: { onNotice: (m: string) => void;
           </Stack>
         </Box>
       )}
+    </Paper>
+  )
+}
+
+/** Connects the school's own Termii account so messages can also go out by SMS. */
+function SmsSection({ onNotice, onError }: { onNotice: (m: string) => void; onError: (m: string) => void }) {
+  const [settings, setSettings] = useState<SmsSettings | null>(null)
+  const [apiKey, setApiKey] = useState('')
+  const [senderId, setSenderId] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { getSmsSettings().then((s) => { setSettings(s); setSenderId(s.senderId ?? '') }).catch(() => {}) }, [])
+
+  const save = async () => {
+    setBusy(true)
+    try {
+      setSettings(await saveSmsSettings(apiKey.trim(), senderId.trim()))
+      setApiKey('')
+      onNotice('SMS is set up')
+    } catch (err) {
+      onError(errorText(err, 'Failed to save SMS settings'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const remove = async () => {
+    if (!window.confirm('Turn off SMS? Messages will still appear on parent pages.')) return
+    try { setSettings(await removeSmsSettings()); onNotice('SMS turned off') } catch (err) { onError(errorText(err, 'Failed')) }
+  }
+  if (!settings) return null
+  const valid = /^[A-Za-z0-9]{20,100}$/.test(apiKey.trim()) && /^[A-Za-z0-9 ]{3,11}$/.test(senderId.trim())
+  return (
+    <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography component="h2" sx={{ fontSize: '15px', fontWeight: 700, mb: 0.5 }}>SMS (Termii)</Typography>
+      <Typography sx={{ fontSize: '13px', color: brand.muted, mb: 2 }}>
+        Optional. Messages always appear on parents' pages; with SMS they also get a text. Texts are charged to your school's own Termii account. Your sender ID must be approved by Termii first.
+      </Typography>
+      {settings.enabled && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }} sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
+            <OkIcon sx={{ color: '#1f6f43', fontSize: 20 }} />
+            <Typography sx={{ fontSize: '14px' }}>
+              Connected · sender “{settings.senderId}” · key ending {settings.keyHint}{settings.balance !== null ? ` · balance ₦${settings.balance.toLocaleString('en-NG')}` : ''}
+            </Typography>
+          </Stack>
+          <Button color="error" onClick={remove}>Turn off</Button>
+        </Stack>
+      )}
+      {settings.needsNewKey && <Alert severity="warning" sx={{ mb: 2 }}>Your saved Termii key can no longer be read. Paste it again below.</Alert>}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'flex-start' }}>
+        <TextField size="small" type="password" label={settings.enabled ? 'Replace API key' : 'Termii API key'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} autoComplete="off"
+          helperText="Termii dashboard → API settings. Stored encrypted." sx={{ flex: 1 }} />
+        <TextField size="small" label="Sender ID" value={senderId} onChange={(e) => setSenderId(e.target.value)} inputProps={{ maxLength: 11 }} helperText="e.g. Greenfield" sx={{ width: { sm: 160 } }} />
+        <Button variant="contained" onClick={save} disabled={!valid || busy} sx={{ mt: { sm: '1px' } }}>{busy ? 'Checking…' : 'Connect'}</Button>
+      </Stack>
     </Paper>
   )
 }

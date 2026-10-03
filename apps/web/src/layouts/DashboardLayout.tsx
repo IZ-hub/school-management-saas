@@ -25,6 +25,7 @@ import {
   EventAvailableOutlined as AttendanceIcon,
   AssignmentOutlined as ExamsIcon,
   InsightsOutlined as ResultsIcon,
+  ArticleOutlined as ReportCardsIcon,
   RequestQuoteOutlined as FeesIcon,
   ReceiptLongOutlined as PaymentsIcon,
   HelpOutlineOutlined as HelpIcon,
@@ -59,6 +60,7 @@ const navSections = [
       { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon /> },
       { label: 'Exams', path: '/exams', icon: <ExamsIcon /> },
       { label: 'Results', path: '/results', icon: <ResultsIcon /> },
+      { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon /> },
     ],
   },
   {

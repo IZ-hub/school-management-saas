@@ -21,6 +21,7 @@ export interface ScoreSheet {
   subject: string
   caMax: number
   examMax: number
+  canEdit: boolean
   updatedAt: unknown
   updatedByName: string | null
   students: SheetStudent[]
@@ -35,6 +36,8 @@ export interface PaperProgress {
   complete: number
   started: number
   average: number | null
+  mine: boolean
+  canEdit: boolean
 }
 
 export async function getSheet(examId: string): Promise<ScoreSheet> {

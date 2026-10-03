@@ -122,7 +122,11 @@ describe('Attendance register (e2e)', () => {
   });
 
   it('lets teachers take registers but not accountants or parents', async () => {
+    // A teacher linked to a Teachers record who is JSS1's form teacher.
+    db.seed('users', 't-1', { schoolId: 'school-a', role: 'TEACHER', status: 'ACTIVE', teacherId: 'tr-1', firstName: 'Tunde', lastName: 'Ade' });
+    db.peek('classes', 'jss1')!.teacherId = 'tr-1';
     await as(token('TEACHER', 't-1')).put('/api/v1/attendance/register', { classId: 'jss1', date: today, marks: [{ studentId: 's1', status: 'PRESENT' }] }).expect(200);
+    await as(token('TEACHER', 't-1')).put('/api/v1/attendance/register', { classId: 'jss2', date: today, marks: [{ studentId: 's5', status: 'PRESENT' }] }).expect(403);
     await as(token('ACCOUNTANT', 'a-1')).get('/api/v1/attendance/today').expect(403);
     await as(token('PARENT', 'p-1')).get(`/api/v1/attendance/register?classId=jss1&date=${today}`).expect(403);
   });

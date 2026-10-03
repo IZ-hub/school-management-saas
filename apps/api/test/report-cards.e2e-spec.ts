@@ -99,6 +99,7 @@ describe('Report cards (e2e)', () => {
 
   it('saves remarks; only admins write the principal’s remark', async () => {
     await api.put('/api/v1/report-cards/remarks', { seriesId: 'ser1', studentId: 's1', teacherRemark: '  A  hardworking   student. ', principalRemark: 'Excellent result.' }).expect(200);
+    db.seed('users', 't-1', { schoolId: 'school-a', role: 'TEACHER', status: 'ACTIVE', teacherId: 't1' }); // t1 is JSS1's form teacher
     const teacher = as(token('TEACHER', 't-1'));
     await teacher.put('/api/v1/report-cards/remarks', { seriesId: 'ser1', studentId: 's2', teacherRemark: 'Good effort.' }).expect(200);
     await teacher.put('/api/v1/report-cards/remarks', { seriesId: 'ser1', studentId: 's2', principalRemark: 'Hi' }).expect(403);

@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { isIsoDate, schoolToday } from '../../common/school-date';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { TeachingScope } from '../../common/teaching-scope';
 import { AttendanceStatus, SaveRegisterDto } from './dto/save-register.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
@@ -54,9 +55,10 @@ export class AttendanceService {
   }
 
   /** The register for a class on a date: every current student with their mark (null if not marked). */
-  async getRegister(schoolId: string, classId: string, date: string) {
+  async getRegister(schoolId: string, classId: string, date: string, user?: JwtPayload) {
     this.checkDate(date);
     const cls = await getOwnedDoc(this.db.collection('classes'), classId, schoolId, 'Class not found');
+    if (user) (await TeachingScope.load(this.db as any, user)).requireClass(classId, cls.data()!.name);
     const [students, marksSnap, summary] = await Promise.all([
       this.classStudents(schoolId, classId),
       this.marks.where('schoolId', '==', schoolId).where('classId', '==', classId).where('date', '==', date).get(),
@@ -79,6 +81,7 @@ export class AttendanceService {
     this.checkDate(dto.date);
     const cls = await getOwnedDoc(this.db.collection('classes'), dto.classId, schoolId, 'Class not found');
     if (cls.data()!.status === 'INACTIVE') throw new BadRequestException('That class has been deleted.');
+    (await TeachingScope.load(this.db as any, user)).requireClass(dto.classId, cls.data()!.name);
     if (dto.marks.length === 0) throw new BadRequestException('Mark at least one student.');
 
     const students = await this.classStudents(schoolId, dto.classId);
@@ -128,12 +131,13 @@ export class AttendanceService {
       counts,
     });
 
-    return this.getRegister(schoolId, dto.classId, dto.date);
+    return this.getRegister(schoolId, dto.classId, dto.date, user);
   }
 
   /** Which classes have taken the register on a date (today by default), with counts and rates. */
-  async today(schoolId: string, date = schoolToday()) {
+  async today(schoolId: string, date = schoolToday(), user?: JwtPayload) {
     if (!isIsoDate(date)) throw new BadRequestException('Use a date like 2026-10-02.');
+    const scope = user ? await TeachingScope.load(this.db as any, user) : null;
     const [classSnap, registerSnap] = await Promise.all([
       this.db.collection('classes').where('schoolId', '==', schoolId).get(),
       this.registers.where('schoolId', '==', schoolId).where('date', '==', date).get(),
@@ -141,7 +145,7 @@ export class AttendanceService {
     const byClass = new Map(registerSnap.docs.map((d) => [d.data().classId, d.data()]));
     const school = emptyCounts();
     const classes = classSnap.docs
-      .filter((d) => d.data().status !== 'INACTIVE')
+      .filter((d) => d.data().status !== 'INACTIVE' && (!scope || scope.canViewClass(d.id)))
       .map((d) => {
         const r = byClass.get(d.id);
         const counts: Counts = r ? { ...emptyCounts(), ...r.counts } : emptyCounts();
@@ -173,20 +177,22 @@ export class AttendanceService {
     return !snap.empty;
   }
 
-  async findAll(schoolId: string, query: Record<string, string>) {
+  async findAll(schoolId: string, query: Record<string, string>, user?: JwtPayload) {
+    const scope = user ? await TeachingScope.load(this.db as any, user) : null;
     let ref: FirebaseFirestore.Query = this.marks.where('schoolId', '==', schoolId);
     if (query.studentId) ref = ref.where('studentId', '==', query.studentId);
     if (query.classId) ref = ref.where('classId', '==', query.classId);
     if (query.date) ref = ref.where('date', '==', query.date);
     if (query.status) ref = ref.where('status', '==', query.status);
     const snapshot = await ref.get();
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.filter((d) => !scope || scope.canViewClass(d.data().classId)).map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
   /** Corrects one student's mark and keeps that day's register counts in step. */
-  async update(schoolId: string, id: string, dto: UpdateAttendanceDto) {
+  async update(schoolId: string, id: string, dto: UpdateAttendanceDto, user?: JwtPayload) {
     const doc = await getOwnedDoc(this.marks, id, schoolId, 'Attendance record not found');
     const previous = doc.data()!;
+    if (user) (await TeachingScope.load(this.db as any, user)).requireClass(previous.classId);
     await doc.ref.update({ status: dto.status, updatedAt: new Date() });
     const summaryRef = this.registers.doc(this.registerId(schoolId, previous.classId, previous.date));
     const summary = await summaryRef.get();

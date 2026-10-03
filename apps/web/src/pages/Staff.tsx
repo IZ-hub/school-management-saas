@@ -21,7 +21,7 @@ import {
 import { PersonAddAlt1Outlined as InviteIcon, MoreVert as MoreIcon, ContentCopyOutlined as CopyIcon } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { ROLE_LABEL } from '../lib/roles'
-import { STAFF_ROLE_OPTIONS, StaffInvite, StaffMember, StaffRole, changeStaffRole, inviteStaff, listStaff, resendStaffInvite, setStaffEnabled, staffSetupLink } from '../lib/staffApi'
+import { STAFF_ROLE_OPTIONS, StaffInvite, StaffMember, StaffRole, changeStaffRole, inviteStaff, linkTeacherRecord, listStaff, resendStaffInvite, setStaffEnabled, staffSetupLink } from '../lib/staffApi'
 import { getSchool } from '../lib/schoolApi'
 import { useAuthStore } from '../store/authStore'
 import { brand } from '../theme'
@@ -56,6 +56,7 @@ export default function Staff() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [link, setLink] = useState<(StaffInvite & { name: string }) | null>(null)
   const [menu, setMenu] = useState<{ el: HTMLElement; member: StaffMember } | null>(null)
+  const [linking, setLinking] = useState<StaffMember | null>(null)
 
   const load = () => listStaff().then(setStaff).catch((err) => { setStaff([]); setError(errorText(err, 'Failed to load staff')) })
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function Staff() {
                     {m.firstName} {m.lastName}{m.userId === me?.id && <Box component="span" sx={{ color: brand.subtle, fontWeight: 400 }}> (you)</Box>}
                   </Typography>
                   <Typography noWrap sx={{ fontSize: '12.5px', color: brand.subtle }}>
-                    {[m.email, m.teacherName ? `Teacher record: ${m.teacherName}` : null, m.status === 'ACTIVE' ? ago(m.lastLogin) : m.status === 'INVITED' ? (m.inviteExpiresAt ? 'Setup link sent' : 'Setup link expired') : null].filter(Boolean).join(' · ')}
+                    {[m.email, m.teacherName ? `Teacher record: ${m.teacherName}` : null, m.role === 'TEACHER' && !m.teacherId ? 'Not linked to a teacher record' : null, m.status === 'ACTIVE' ? ago(m.lastLogin) : m.status === 'INVITED' ? (m.inviteExpiresAt ? 'Setup link sent' : 'Setup link expired') : null].filter(Boolean).join(' · ')}
                   </Typography>
                 </Box>
                 <Typography sx={{ display: { xs: 'none', sm: 'block' }, width: 120, fontSize: '13.5px', fontWeight: 600 }}>{ROLE_LABEL[m.role] ?? m.role}</Typography>
@@ -119,6 +120,9 @@ export default function Staff() {
       <Menu anchorEl={menu?.el} open={!!menu} onClose={() => setMenu(null)}>
         {menu && menu.member.status === 'INVITED' && (
           <MenuItem onClick={() => { const m = menu.member; setMenu(null); resendStaffInvite(m.userId).then((r) => setLink({ ...r, name: m.firstName })).catch((err) => setError(errorText(err, 'Failed'))) }}>New setup link</MenuItem>
+        )}
+        {menu && menu.member.role === 'TEACHER' && (
+          <MenuItem onClick={() => { setLinking(menu.member); setMenu(null) }}>{menu.member.teacherId ? 'Change teacher record' : 'Link to teacher record'}</MenuItem>
         )}
         {menu && grantable.filter((r) => r !== menu.member.role).map((r) => (
           <MenuItem key={r} onClick={() => act(() => changeStaffRole(menu.member.userId, r), `${menu.member.firstName} is now ${ROLE_LABEL[r].toLowerCase() === 'accountant' ? 'an' : 'a'} ${ROLE_LABEL[r].toLowerCase()}`)}>
@@ -145,6 +149,15 @@ export default function Staff() {
       )}
 
       {link && <LinkDialog invite={link} schoolName={schoolName} onClose={() => setLink(null)} />}
+
+      {linking && (
+        <LinkTeacherDialog
+          member={linking}
+          teachers={teachers.filter((t) => t.id === linking.teacherId || !staff?.some((s) => s.teacherId === t.id))}
+          onClose={() => setLinking(null)}
+          onSave={(teacherId) => { const m = linking; setLinking(null); act(() => linkTeacherRecord(m.userId, teacherId), teacherId ? `${m.firstName} is linked. They now see the classes assigned to that teacher.` : `${m.firstName} is unlinked`) }}
+        />
+      )}
 
       <Snackbar open={!!notice} autoHideDuration={3000} onClose={() => setNotice('')} message={notice} />
     </Box>
@@ -225,6 +238,27 @@ function LinkDialog({ invite, schoolName, onClose }: { invite: StaffInvite & { n
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button startIcon={<CopyIcon />} onClick={() => navigator.clipboard?.writeText(message).then(() => setCopied(true)).catch(() => {})}>{copied ? 'Copied' : 'Copy message'}</Button>
         <Button variant="contained" onClick={onClose}>Done</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function LinkTeacherDialog({ member, teachers, onClose, onSave }: { member: StaffMember; teachers: TeacherRow[]; onClose: () => void; onSave: (teacherId: string | null) => void }) {
+  const [teacher, setTeacher] = useState<TeacherRow | null>(teachers.find((t) => t.id === member.teacherId) ?? null)
+  return (
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Link {member.firstName} to a teacher record</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ fontSize: '13.5px', color: brand.muted, mb: 2 }}>
+          A teacher can only work on the classes and subjects given to their record in Class subjects, and the classes they are form teacher of.
+        </Typography>
+        <Autocomplete options={teachers} value={teacher} onChange={(_, t) => setTeacher(t)} getOptionLabel={(t) => `${t.firstName} ${t.lastName}`}
+          renderInput={(p) => <TextField {...p} label="Teacher record" />} />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        {member.teacherId && <Button color="error" onClick={() => onSave(null)} sx={{ mr: 'auto' }}>Unlink</Button>}
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={!teacher || teacher.id === member.teacherId} onClick={() => onSave(teacher!.id)}>Save</Button>
       </DialogActions>
     </Dialog>
   )

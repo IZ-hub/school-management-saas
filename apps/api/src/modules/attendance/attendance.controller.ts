@@ -16,14 +16,14 @@ export class AttendanceController {
   /** Which classes have taken the register today (or ?date=YYYY-MM-DD). */
   @Get('today')
   async today(@CurrentUser() user: JwtPayload, @Query('date') date?: string) {
-    const data = await this.service.today(user.schoolId, date || undefined);
+    const data = await this.service.today(user.schoolId, date || undefined, user);
     return { data };
   }
 
   /** The register for one class on one date. */
   @Get('register')
   async getRegister(@CurrentUser() user: JwtPayload, @Query('classId') classId: string, @Query('date') date: string) {
-    const data = await this.service.getRegister(user.schoolId, classId ?? '', date ?? '');
+    const data = await this.service.getRegister(user.schoolId, classId ?? '', date ?? '', user);
     return { data };
   }
 
@@ -47,13 +47,13 @@ export class AttendanceController {
     if (classId) query.classId = classId;
     if (date) query.date = date;
     if (status) query.status = status;
-    const data = await this.service.findAll(user.schoolId, query);
+    const data = await this.service.findAll(user.schoolId, query, user);
     return { data };
   }
 
   @Patch(':id')
   async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateAttendanceDto) {
-    const data = await this.service.update(user.schoolId, id, dto);
+    const data = await this.service.update(user.schoolId, id, dto, user);
     return { data };
   }
 }

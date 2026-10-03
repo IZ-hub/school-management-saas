@@ -35,6 +35,7 @@ import {
   toDate,
 } from '../lib/attendanceApi'
 import { brand } from '../theme'
+import { MyScope, UNLINKED_MESSAGE, getMyScope } from '../lib/scopeApi'
 
 // Status colours are paired with a word (and a letter on phones), never colour alone.
 const STATUS_STYLE: Record<AttendanceStatus, { label: string; key: string; bg: string; fg: string; border: string }> = {
@@ -60,6 +61,7 @@ export default function Attendance() {
   const date = params.get('date') ?? today
 
   const [classes, setClasses] = useState<ClassRow[]>([])
+  const [scope, setScope] = useState<MyScope | null>(null)
   const [overview, setOverview] = useState<TodayOverview | null>(null)
   const [register, setRegister] = useState<Register | null>(null)
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>({})
@@ -74,9 +76,9 @@ export default function Attendance() {
   const activeClasses = useMemo(
     () =>
       classes
-        .filter((c) => c.status !== 'INACTIVE')
+        .filter((c) => c.status !== 'INACTIVE' && (!scope || scope.all || scope.classIds.includes(c.id)))
         .sort((a, b) => (labels.get(a.id) ?? a.name).localeCompare(labels.get(b.id) ?? b.name, undefined, { numeric: true })),
-    [classes, labels],
+    [classes, labels, scope],
   )
 
   const loadOverview = useCallback(() => {
@@ -87,6 +89,7 @@ export default function Attendance() {
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data.data)).catch(() => setError('Failed to load classes'))
+    getMyScope().then(setScope).catch(() => {})
     loadOverview()
   }, [loadOverview])
 
@@ -199,6 +202,8 @@ export default function Attendance() {
     <Box sx={{ flexGrow: 1, maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 }, pb: { xs: 12, md: 4.5 } }}>
       <Typography variant="h4">Attendance</Typography>
       <Typography sx={{ color: brand.muted, fontSize: '14.5px', mb: 3 }}>Take the daily register for each class.</Typography>
+
+      {scope && !scope.linked && <Alert severity="info" sx={{ mb: 2 }}>{UNLINKED_MESSAGE}</Alert>}
 
       {/* Today at a glance */}
       <Paper sx={{ p: { xs: 2, sm: 2.5 }, mb: 2 }}>

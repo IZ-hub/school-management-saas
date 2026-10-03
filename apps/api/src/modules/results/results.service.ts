@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { TeachingScope } from '../../common/teaching-scope';
 import { SaveSheetDto } from './dto/save-sheet.dto';
 
 /** A 70–100, B 60–69, C 50–59, D 45–49, E 40–44, F below 40 (totals are out of 100). */
@@ -59,8 +60,10 @@ export class ResultsService {
   }
 
   /** The score sheet for one paper: every current student in the class with their CA, exam, total and grade. */
-  async getSheet(schoolId: string, examId: string) {
+  async getSheet(schoolId: string, examId: string, user?: JwtPayload) {
     const ctx = await this.paperContext(schoolId, examId);
+    const scope = user ? await TeachingScope.load(this.db as any, user) : null;
+    scope?.requireClass(ctx.paper.classId, ctx.className);
     const [students, snap] = await Promise.all([
       this.classStudents(schoolId, ctx.paper.classId),
       this.col.where('schoolId', '==', schoolId).where('examId', '==', examId).get(),
@@ -77,6 +80,7 @@ export class ResultsService {
       subject: ctx.paper.title,
       caMax: ctx.caMax,
       examMax: ctx.examMax,
+      canEdit: scope ? scope.canScore(ctx.paper.classId, ctx.paper.subjectId) : true,
       updatedAt: latest?.updatedAt ?? null,
       updatedByName: latest?.enteredByName ?? null,
       students: students.map((s) => {
@@ -91,6 +95,7 @@ export class ResultsService {
   /** Saves scores for a paper. Students with both parts cleared have their result removed. */
   async saveSheet(schoolId: string, user: JwtPayload, dto: SaveSheetDto) {
     const ctx = await this.paperContext(schoolId, dto.examId);
+    (await TeachingScope.load(this.db as any, user)).requireScore(ctx.paper.classId, ctx.paper.subjectId, `${ctx.paper.title} in ${ctx.className}`);
     const students = await this.classStudents(schoolId, ctx.paper.classId);
     const names = new Map(students.map((s) => [s.id, `${s.firstName} ${s.lastName}`.trim()]));
     const seen = new Set<string>();
@@ -143,12 +148,13 @@ export class ResultsService {
       changed++;
     }
     if (changed > 0) await batch.commit();
-    return { ...(await this.getSheet(schoolId, dto.examId)), changed };
+    return { ...(await this.getSheet(schoolId, dto.examId, user)), changed };
   }
 
   /** Progress for every paper in an exam series: how many students are scored, and the class average. */
-  async progress(schoolId: string, seriesId: string) {
+  async progress(schoolId: string, seriesId: string, user?: JwtPayload) {
     await getOwnedDoc(this.db.collection('examSeries'), seriesId, schoolId, 'Exam not found');
+    const scope = user ? await TeachingScope.load(this.db as any, user) : null;
     const [paperSnap, resultSnap, studentSnap] = await Promise.all([
       this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
       this.col.where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
@@ -160,6 +166,7 @@ export class ResultsService {
     active.forEach((d) => classSize.set(d.data().classId, (classSize.get(d.data().classId) ?? 0) + 1));
 
     return paperSnap.docs
+      .filter((d) => !scope || scope.canViewClass(d.data().classId))
       .map((d) => {
         const p = d.data();
         // Only count students still in the class, so leavers don't inflate progress.
@@ -174,6 +181,8 @@ export class ResultsService {
           complete: totals.length,
           started: results.length,
           average: totals.length ? round1(totals.reduce((a, b) => a + b, 0) / totals.length) : null,
+          mine: scope ? scope.canScore(p.classId, p.subjectId) && !scope.all : false,
+          canEdit: scope ? scope.canScore(p.classId, p.subjectId) : true,
         };
       })
       .sort((a, b) => a.subject.localeCompare(b.subject));
@@ -188,12 +197,12 @@ export class ResultsService {
     );
   }
 
-  async findAll(schoolId: string, query: Record<string, string>) {
+  async findAll(schoolId: string, query: Record<string, string>, user?: JwtPayload) {
     let ref: FirebaseFirestore.Query = this.col.where('schoolId', '==', schoolId);
     if (query.examId) ref = ref.where('examId', '==', query.examId);
     if (query.studentId) ref = ref.where('studentId', '==', query.studentId);
-    const snapshot = await ref.get();
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const [snapshot, scope] = await Promise.all([ref.get(), user ? TeachingScope.load(this.db as any, user) : Promise.resolve(null)]);
+    return snapshot.docs.filter((d) => !scope || scope.canViewClass(d.data().classId)).map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
   async count(schoolId: string) {

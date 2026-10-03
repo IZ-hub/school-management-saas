@@ -17,21 +17,21 @@ export class ResultsController {
     const query: Record<string, string> = {};
     if (examId) query.examId = examId;
     if (studentId) query.studentId = studentId;
-    const data = await this.service.findAll(user.schoolId, query);
+    const data = await this.service.findAll(user.schoolId, query, user);
     return { data };
   }
 
   /** Scoring progress for each paper in an exam series. */
   @Get('progress')
   async progress(@CurrentUser() user: JwtPayload, @Query('seriesId') seriesId = '') {
-    const data = await this.service.progress(user.schoolId, seriesId);
+    const data = await this.service.progress(user.schoolId, seriesId, user);
     return { data };
   }
 
   /** The score sheet for one paper (class + subject). */
   @Get('sheet')
   async getSheet(@CurrentUser() user: JwtPayload, @Query('examId') examId = '') {
-    const data = await this.service.getSheet(user.schoolId, examId);
+    const data = await this.service.getSheet(user.schoolId, examId, user);
     return { data };
   }
 

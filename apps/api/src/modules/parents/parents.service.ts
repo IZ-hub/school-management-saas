@@ -183,7 +183,7 @@ export class ParentsService {
     const card = report.cards.find((c) => c.student.id === studentId);
     if (!card) throw new NotFoundException('Report card not found');
     // Only this child's card, plus the class-level figures printed on every card.
-    const { cards: _cards, ...rest } = report;
+    const { cards: _cards, canRemark: _canRemark, ...rest } = report;
     return { ...rest, card };
   }
 

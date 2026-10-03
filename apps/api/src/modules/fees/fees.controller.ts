@@ -1,10 +1,6 @@
-import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, Query, UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { FeesService } from './fees.service';
-import { CreateFeeDto } from './dto/create-fee.dto';
-import { UpdateFeeDto } from './dto/update-fee.dto';
+import { SaveDiscountDto, SaveScheduleDto } from './dto/fees.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles, FINANCE_ROLES } from '../../common/roles';
@@ -16,44 +12,34 @@ import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.de
 export class FeesController {
   constructor(private readonly service: FeesService) {}
 
-  @Post()
-  async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateFeeDto) {
-    const data = await this.service.create(user.schoolId, dto);
+  /** Expected, collected and outstanding for a term (the current term by default). */
+  @Get('overview')
+  async overview(@CurrentUser() user: JwtPayload, @Query('term') term?: string, @Query('session') session?: string) {
+    const data = await this.service.overview(user.schoolId, term, session);
     return { data };
   }
 
-  @Get()
-  async findAll(
-    @CurrentUser() user: JwtPayload,
-    @Query('studentId') studentId?: string,
-    @Query('classId') classId?: string,
-    @Query('term') term?: string,
-    @Query('status') status?: string,
-  ) {
-    const query: Record<string, string> = {};
-    if (studentId) query.studentId = studentId;
-    if (classId) query.classId = classId;
-    if (term) query.term = term;
-    if (status) query.status = status;
-    const data = await this.service.findAll(user.schoolId, query);
+  @Get('statement/:studentId')
+  async statement(@CurrentUser() user: JwtPayload, @Param('studentId') studentId: string, @Query('term') term?: string, @Query('session') session?: string) {
+    const data = await this.service.statement(user.schoolId, studentId, term, session);
     return { data };
   }
 
-  @Get(':id')
-  async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    const data = await this.service.findOne(user.schoolId, id);
+  @Post('schedules')
+  async saveSchedule(@CurrentUser() user: JwtPayload, @Body() dto: SaveScheduleDto) {
+    const data = await this.service.saveSchedule(user.schoolId, user.sub, dto);
     return { data };
   }
 
-  @Patch(':id')
-  async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateFeeDto) {
-    const data = await this.service.update(user.schoolId, id, dto);
+  @Delete('schedules/:id')
+  async deleteSchedule(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    const data = await this.service.deleteSchedule(user.schoolId, id);
     return { data };
   }
 
-  @Delete(':id')
-  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    const data = await this.service.remove(user.schoolId, id);
+  @Put('discounts')
+  async saveDiscount(@CurrentUser() user: JwtPayload, @Body() dto: SaveDiscountDto) {
+    const data = await this.service.saveDiscount(user.schoolId, user.sub, dto);
     return { data };
   }
 }

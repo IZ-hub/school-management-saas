@@ -24,7 +24,6 @@ describe('Tenant isolation and role checks (e2e)', () => {
   beforeEach(async () => {
     db = new FakeFirestore();
     db.seed('students', 'stu-a', { schoolId: 'school-a', firstName: 'Ada', lastName: 'A', status: 'ACTIVE' });
-    db.seed('fees', 'fee-a', { schoolId: 'school-a', amount: 500, status: 'PENDING' });
     db.seed('timetables', 'tt-a', { schoolId: 'school-a', day: 'Monday', room: '1' });
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -100,24 +99,13 @@ describe('Tenant isolation and role checks (e2e)', () => {
       await http.delete('/api/v1/timetable/nope').set('Authorization', `Bearer ${ownerA}`).expect(404);
     });
 
-    it('refuses a payment against another school’s fee and records nothing', async () => {
+    it('refuses a payment for another school’s student and records nothing', async () => {
       await http
         .post('/api/v1/payments')
         .set('Authorization', `Bearer ${ownerB}`)
-        .send({ feeId: 'fee-a', studentId: 'stu-a', amountPaid: 500, method: 'CASH' })
+        .send({ studentId: 'stu-a', term: 'FIRST', session: '2026/2027', amount: 500, method: 'CASH', paidOn: '2026-09-15' })
         .expect(404);
-
-      expect(db.peek('fees', 'fee-a')!.status).toBe('PENDING');
-      expect(db.store.get('payments')?.size ?? 0).toBe(0);
-    });
-
-    it('marks a school’s own fee as paid on full payment', async () => {
-      await http
-        .post('/api/v1/payments')
-        .set('Authorization', `Bearer ${ownerA}`)
-        .send({ feeId: 'fee-a', studentId: 'stu-a', amountPaid: 500, method: 'CASH' })
-        .expect(201);
-      expect(db.peek('fees', 'fee-a')!.status).toBe('PAID');
+      expect(db.store.get('feePayments')?.size ?? 0).toBe(0);
     });
 
     it('still scopes list endpoints to the caller’s school', async () => {
@@ -144,8 +132,8 @@ describe('Tenant isolation and role checks (e2e)', () => {
     });
 
     it('keeps teachers out of finance and accountants out of academics', async () => {
-      await http.get('/api/v1/fees').set('Authorization', `Bearer ${teacherA}`).expect(403);
-      await http.get('/api/v1/fees').set('Authorization', `Bearer ${accountantA}`).expect(200);
+      await http.get('/api/v1/fees/overview').set('Authorization', `Bearer ${teacherA}`).expect(403);
+      await http.get('/api/v1/fees/overview').set('Authorization', `Bearer ${accountantA}`).expect(200);
       await http.get('/api/v1/results').set('Authorization', `Bearer ${accountantA}`).expect(403);
       await http.get('/api/v1/results').set('Authorization', `Bearer ${teacherA}`).expect(200);
     });
@@ -154,13 +142,13 @@ describe('Tenant isolation and role checks (e2e)', () => {
       for (const token of [parentA, studentA]) {
         await http.get('/api/v1/students').set('Authorization', `Bearer ${token}`).expect(403);
         await http.get('/api/v1/results').set('Authorization', `Bearer ${token}`).expect(403);
-        await http.get('/api/v1/fees').set('Authorization', `Bearer ${token}`).expect(403);
+        await http.get('/api/v1/fees/overview').set('Authorization', `Bearer ${token}`).expect(403);
         await http.get('/api/v1/dashboard/stats').set('Authorization', `Bearer ${token}`).expect(403);
       }
     });
 
     it('lets the owner reach every area', async () => {
-      for (const path of ['students', 'teachers', 'classes', 'subjects', 'attendance', 'exams', 'results', 'fees', 'payments', 'timetable', 'dashboard/stats']) {
+      for (const path of ['students', 'teachers', 'classes', 'subjects', 'attendance', 'exams', 'results', 'fees/overview', 'payments', 'timetable', 'dashboard/stats']) {
         await http.get(`/api/v1/${path}`).set('Authorization', `Bearer ${ownerA}`).expect(200);
       }
     });

@@ -30,8 +30,7 @@ interface DashboardStats {
   nextExam?: { id: string; name: string; startDate: string; endDate: string; inProgress: boolean } | null
   totalExams: number
   totalResults: number
-  totalFees: number
-  totalPayments: number
+  feesTerm?: { term: string; session: string; expected: number; collected: number; outstanding: number; rate: number | null; owing: number; feesSet: boolean } | null
 }
 
 const card = {
@@ -71,7 +70,7 @@ function StatTile({ label, value, icon, to, footer }: { label: string; value: Re
   )
 }
 
-function ListCard({ title, rows }: { title: string; rows: { label: string; value: number; to: string; hint?: string }[] }) {
+function ListCard({ title, rows }: { title: string; rows: { label: string; value: number | string; to: string; hint?: string }[] }) {
   const navigate = useNavigate()
   return (
     <Box sx={{ ...card, height: '100%' }}>
@@ -91,7 +90,7 @@ function ListCard({ title, rows }: { title: string; rows: { label: string; value
             <Typography sx={{ fontSize: '14px', fontWeight: 500, color: brand.text }}>{r.label}</Typography>
             {r.hint && <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{r.hint}</Typography>}
           </Box>
-          <Typography sx={{ fontSize: '15px', fontWeight: 700, color: brand.text }}>{fmt(r.value)}</Typography>
+          <Typography sx={{ fontSize: '15px', fontWeight: 700, color: brand.text }}>{typeof r.value === 'number' ? fmt(r.value) : r.value}</Typography>
           <ChevronIcon sx={{ fontSize: 18, color: brand.subtle }} />
         </ButtonBase>
       ))}
@@ -127,7 +126,7 @@ export default function Dashboard() {
         { label: 'Add teachers', done: stats.totalTeachers > 0, to: '/teachers' },
         { label: 'Enrol students', done: stats.totalStudents > 0, to: '/students' },
         { label: 'Take attendance', done: !!stats.attendanceEverTaken || stats.attendanceRate > 0, to: '/attendance' },
-        { label: 'Set up fees', done: stats.totalFees > 0, to: '/fees' },
+        ...(stats.feesTerm ? [{ label: 'Set up fees', done: stats.feesTerm.feesSet, to: '/fees' }] : []),
       ]
     : []
   const doneCount = setupSteps.filter((s) => s.done).length
@@ -257,7 +256,7 @@ export default function Dashboard() {
             <StudentsByClass />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={stats.feesTerm ? 6 : 12}>
             <ListCard
               title="Academics"
               rows={[
@@ -267,15 +266,27 @@ export default function Dashboard() {
               ]}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <ListCard
-              title="Finance"
-              rows={[
-                { label: 'Fee records', value: stats.totalFees, to: '/fees', hint: 'Fees set for students this session' },
-                { label: 'Payments recorded', value: stats.totalPayments, to: '/payments' },
-              ]}
-            />
-          </Grid>
+          {stats.feesTerm && (
+            <Grid item xs={12} md={6}>
+              <ListCard
+                title="Fees this term"
+                rows={[
+                  {
+                    label: 'Collected',
+                    value: `₦${stats.feesTerm.collected.toLocaleString('en-NG')}`,
+                    to: '/fees',
+                    hint: stats.feesTerm.feesSet ? `of ₦${stats.feesTerm.expected.toLocaleString('en-NG')} expected · ${stats.feesTerm.rate ?? 0}%` : 'Fees not set for this term yet',
+                  },
+                  {
+                    label: 'Still owed',
+                    value: `₦${stats.feesTerm.outstanding.toLocaleString('en-NG')}`,
+                    to: '/fees',
+                    hint: `${stats.feesTerm.owing} ${stats.feesTerm.owing === 1 ? 'student' : 'students'} owing`,
+                  },
+                ]}
+              />
+            </Grid>
+          )}
         </Grid>
       )}
 

@@ -12,3 +12,14 @@ export function isIsoDate(value: string): boolean {
   const d = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
+
+export const TERMS = ['FIRST', 'SECOND', 'THIRD'] as const;
+export type Term = (typeof TERMS)[number];
+
+/** The school term and session for a date: First Term Sep–Dec, Second Jan–Apr, Third May–Aug. */
+export function currentTermSession(today = schoolToday()): { term: Term; session: string } {
+  const y = Number(today.slice(0, 4));
+  const m = Number(today.slice(5, 7));
+  if (m >= 9) return { term: 'FIRST', session: `${y}/${y + 1}` };
+  return { term: m <= 4 ? 'SECOND' : 'THIRD', session: `${y - 1}/${y}` };
+}

@@ -24,7 +24,7 @@ describe('Tenant isolation and role checks (e2e)', () => {
   beforeEach(async () => {
     db = new FakeFirestore();
     db.seed('students', 'stu-a', { schoolId: 'school-a', firstName: 'Ada', lastName: 'A', status: 'ACTIVE' });
-    db.seed('timetables', 'tt-a', { schoolId: 'school-a', day: 'Monday', room: '1' });
+    db.seed('classes', 'class-a', { schoolId: 'school-a', name: 'JSS1', status: 'ACTIVE' });
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(FirebaseService)
@@ -65,38 +65,9 @@ describe('Tenant isolation and role checks (e2e)', () => {
       expect(db.peek('students', 'stu-a')).toMatchObject({ firstName: 'Ada', status: 'ACTIVE' });
     });
 
-    it('blocks another school from editing or deleting a timetable entry', async () => {
-      await http
-        .patch('/api/v1/timetable/tt-a')
-        .set('Authorization', `Bearer ${ownerB}`)
-        .send({ room: '99' })
-        .expect(404);
-      await http.delete('/api/v1/timetable/tt-a').set('Authorization', `Bearer ${ownerB}`).expect(404);
-      expect(db.peek('timetables', 'tt-a')!.room).toBe('1');
-    });
-
-    it('lets a school create, filter and edit its own timetable', async () => {
-      await http
-        .post('/api/v1/timetable')
-        .set('Authorization', `Bearer ${ownerA}`)
-        .send({ classId: 'c1', subjectId: 's1', teacherId: 't1', room: '2', day: 'Tuesday', startTime: '08:00', endTime: '09:00' })
-        .expect(201);
-      const res = await http
-        .get('/api/v1/timetable?day=Tuesday')
-        .set('Authorization', `Bearer ${ownerA}`)
-        .expect(200);
-      expect(res.body.data).toHaveLength(1);
-
-      await http
-        .patch('/api/v1/timetable/tt-a')
-        .set('Authorization', `Bearer ${ownerA}`)
-        .send({ room: '5' })
-        .expect(200);
-      expect(db.peek('timetables', 'tt-a')!.room).toBe('5');
-    });
-
-    it('returns 404 instead of crashing for a missing timetable entry', async () => {
-      await http.delete('/api/v1/timetable/nope').set('Authorization', `Bearer ${ownerA}`).expect(404);
+    it('blocks another school from viewing or editing a class timetable', async () => {
+      await http.get('/api/v1/timetable/class/class-a').set('Authorization', `Bearer ${ownerB}`).expect(404);
+      await http.put('/api/v1/timetable/class/class-a/slot').set('Authorization', `Bearer ${ownerB}`).send({ day: 'MON', periodId: 'p1', subjectId: null }).expect(404);
     });
 
     it('refuses a payment for another school’s student and records nothing', async () => {
@@ -148,7 +119,7 @@ describe('Tenant isolation and role checks (e2e)', () => {
     });
 
     it('lets the owner reach every area', async () => {
-      for (const path of ['students', 'teachers', 'classes', 'subjects', 'attendance', 'exams', 'results', 'fees/overview', 'payments', 'timetable', 'dashboard/stats']) {
+      for (const path of ['students', 'teachers', 'classes', 'subjects', 'attendance', 'exams', 'results', 'fees/overview', 'payments', 'timetable/overview', 'dashboard/stats']) {
         await http.get(`/api/v1/${path}`).set('Authorization', `Bearer ${ownerA}`).expect(200);
       }
     });

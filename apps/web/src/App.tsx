@@ -23,6 +23,7 @@ import Staff from './pages/Staff'
 import Promotion from './pages/Promotion'
 import Settings from './pages/Settings'
 import Messages from './pages/Messages'
+import Timetable from './pages/Timetable'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -81,6 +82,7 @@ function App() {
           <Route path="/promotion" element={<Promotion />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/timetable" element={<Timetable />} />
         </Route>
       </Routes>
       {!isParent && <SupportWidget />}

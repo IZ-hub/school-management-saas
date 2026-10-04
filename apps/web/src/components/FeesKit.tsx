@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Alert,
   Autocomplete,
@@ -436,6 +436,7 @@ export function StatementDialog({ studentId, term, session, onClose, onChanged, 
   onRecordPayment: (studentId: string) => void
 }) {
   const { printing, print } = usePrint()
+  const navigate = useNavigate()
   const [statement, setStatement] = useState<Statement | null>(null)
   const [editingDiscount, setEditingDiscount] = useState(false)
   const [discount, setDiscount] = useState('')
@@ -491,6 +492,7 @@ export function StatementDialog({ studentId, term, session, onClose, onChanged, 
       <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
         <Box>
           {statement?.feesSet && !editingDiscount && <Button onClick={() => setEditingDiscount(true)}>{statement.discount ? 'Change discount' : 'Add discount'}</Button>}
+          {!window.location.pathname.startsWith('/students/') && <Button onClick={() => navigate(`/students/${studentId}`)}>Student profile</Button>}
         </Box>
         <Stack direction="row" spacing={1}>
           <Button onClick={onClose}>Close</Button>

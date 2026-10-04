@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -333,7 +333,7 @@ export default function Students() {
               <Box component="li" key={student.id}
                 sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, px: 2, py: 1.75, borderTop: i === 0 ? 'none' : `1px solid ${brand.border}` }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '15px', color: brand.text }} noWrap>
+                  <Typography component={RouterLink} to={`/students/${student.id}`} sx={{ display: 'block', fontWeight: 600, fontSize: '15px', color: brand.text, textDecoration: 'none' }} noWrap>
                     {student.firstName} {student.lastName}
                   </Typography>
                   <Typography sx={{ fontSize: '13px', color: brand.muted }} noWrap>
@@ -379,7 +379,9 @@ export default function Students() {
                 <TableRow key={student.id} hover>
                   <TableCell sx={{ color: brand.muted }}>{student.admissionNumber}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>
-                    {student.firstName} {student.lastName}
+                    <Box component={RouterLink} to={`/students/${student.id}`} sx={{ color: brand.text, textDecoration: 'none', '&:hover': { color: brand.green, textDecoration: 'underline' } }}>
+                      {student.firstName} {student.lastName}
+                    </Box>
                   </TableCell>
                   <TableCell>{titleCase(student.gender)}</TableCell>
                   <TableCell>{formatDate(student.dateOfBirth)}</TableCell>

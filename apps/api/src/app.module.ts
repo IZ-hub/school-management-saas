@@ -22,6 +22,7 @@ import { PromotionModule } from './modules/promotion/promotion.module';
 import { SchoolModule } from './modules/school/school.module';
 import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { StudentProfileModule } from './modules/student-profile/student-profile.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { MessagesModule } from './modules/messages/messages.module';
     SchoolModule,
     OnlinePaymentsModule,
     MessagesModule,
+    StudentProfileModule,
   ],
 })
 export class AppModule {}

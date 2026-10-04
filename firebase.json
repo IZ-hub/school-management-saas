@@ -1,8 +1,14 @@
 {
   "hosting": {
-    "predeploy": ["npm --prefix apps/web run build"],
+    "predeploy": [
+      "npm --prefix apps/web run build"
+    ],
     "public": "apps/web/dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "/api/**",
@@ -15,12 +21,15 @@
     ]
   },
   "functions": {
-    "predeploy": ["npm --prefix apps/api run build"],
+    "predeploy": [
+      "npm --prefix apps/api run build"
+    ],
     "source": "apps/api",
     "runtime": "nodejs22"
   },
   "firestore": {
-    "indexes": "firestore.indexes.json"
+    "indexes": "firestore.indexes.json",
+    "rules": "firestore.rules"
   },
   "emulators": {
     "firestore": {

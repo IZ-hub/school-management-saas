@@ -77,7 +77,7 @@ describe('Parent access (e2e)', () => {
     expect(early.body.message).toMatch(/Finish setting up/);
 
     const info = (await http.get(`/api/v1/auth/invite?code=${encodeURIComponent(inv.code)}`).expect(200)).body.data;
-    expect(info).toEqual({ email: 'ngozi.okafor@mail.com', firstName: 'Ngozi', role: 'PARENT', schoolName: 'Greenfield Academy', children: ['Chioma'] });
+    expect(info).toEqual({ email: 'ngozi.okafor@mail.com', firstName: 'Ngozi', role: 'PARENT', purpose: 'SETUP', schoolName: 'Greenfield Academy', children: ['Chioma'] });
     await http.post('/api/v1/auth/accept-invite').send({ code: inv.code, password: 'short' }).expect(400);
     const accessToken = await accept(inv.code);
     expect(jwt.decode(accessToken)).toMatchObject({ role: 'PARENT', schoolId: 'school-a' });
@@ -149,7 +149,8 @@ describe('Parent access (e2e)', () => {
     await parent.get('/api/v1/parent/children/s1').expect(200);
     await admin.delete(`/api/v1/parent-access/${inv.userId}/children/s1`).expect(200);
     expect(db.peek('users', inv.userId)!.status).toBe('DISABLED');
-    await parent.get('/api/v1/parent/children/s1').expect(403);
+    // Refused at once, not when their 15-minute token runs out.
+    await parent.get('/api/v1/parent/children/s1').expect(401);
     await http.post('/api/v1/auth/login').send({ email: 'ngozi.okafor@mail.com', password: 'secret-pass-1' }).expect(401);
   });
 

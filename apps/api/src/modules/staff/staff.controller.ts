@@ -28,6 +28,11 @@ export class StaffController {
     return { data: await this.service.resend(user.schoolId, user, id) };
   }
 
+  @Post(':id/reset-link')
+  async resetLink(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return { data: await this.service.resetLink(user.schoolId, user, id) };
+  }
+
   @Patch(':id/role')
   async changeRole(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: ChangeRoleDto) {
     return { data: await this.service.changeRole(user.schoolId, user, id, dto) };

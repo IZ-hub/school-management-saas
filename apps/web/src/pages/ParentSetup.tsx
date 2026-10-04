@@ -12,7 +12,7 @@ export default function ParentSetup() {
   const setUser = useAuthStore((s) => s.setUser)
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const code = window.location.hash.slice(1)
-  const [invite, setInvite] = useState<{ email: string; firstName: string; role: string; schoolName: string; children: string[] } | null>(null)
+  const [invite, setInvite] = useState<{ email: string; firstName: string; role: string; purpose: 'SETUP' | 'RESET'; schoolName: string; children: string[] } | null>(null)
   const [loadError, setLoadError] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -59,9 +59,11 @@ export default function ParentSetup() {
         )}
         {invite && (
           <form onSubmit={submit}>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>Welcome, {invite.firstName}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>{invite.purpose === 'RESET' ? `Choose a new password, ${invite.firstName}` : `Welcome, ${invite.firstName}`}</Typography>
             <Typography sx={{ color: brand.muted, fontSize: '14.5px', mt: 0.5, mb: 2.5 }}>
-              {invite.role === 'PARENT'
+              {invite.purpose === 'RESET'
+                ? 'Your new password replaces the old one, and you will be signed out on other devices.'
+                : invite.role === 'PARENT'
                 ? `${invite.schoolName} has given you access to ${childText}'s attendance, fees and report cards. Choose a password to finish.`
                 : `${invite.schoolName} has invited you to Schoolful LMS as ${ROLE_LABEL[invite.role]?.toLowerCase() === 'accountant' ? 'an' : 'a'} ${ROLE_LABEL[invite.role]?.toLowerCase() ?? 'staff member'}. Choose a password to finish.`}
             </Typography>
@@ -70,7 +72,7 @@ export default function ParentSetup() {
               <TextField label="Email" value={invite.email} disabled helperText="You'll sign in with this email" />
               <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" helperText="At least 8 characters" autoFocus />
               <TextField label="Confirm password" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
-              <Button type="submit" variant="contained" size="large" disabled={saving}>{saving ? 'Setting up…' : 'Finish setup'}</Button>
+              <Button type="submit" variant="contained" size="large" disabled={saving}>{saving ? 'Saving…' : invite.purpose === 'RESET' ? 'Save new password' : 'Finish setup'}</Button>
             </Stack>
           </form>
         )}

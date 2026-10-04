@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material'
 import { ContentCopyOutlined as CopyIcon, WhatsApp as WhatsAppIcon } from '@mui/icons-material'
-import { InviteResult, LinkedParent, inviteParent, listParents, resendInvite, setupLink, unlinkParent } from '../lib/parentApi'
+import { InviteResult, LinkedParent, inviteParent, listParents, parentResetLink, resendInvite, resetLinkUrl, setupLink, unlinkParent } from '../lib/parentApi'
 import { brand } from '../theme'
 import { getSchool } from '../lib/schoolApi'
 
@@ -46,7 +46,7 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState(student.lastName)
   const [phone, setPhone] = useState(student.parentPhone ?? '')
-  const [result, setResult] = useState<(InviteResult & { phone?: string }) | null>(null)
+  const [result, setResult] = useState<(InviteResult & { phone?: string; reset?: boolean }) | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -66,8 +66,10 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
     load()
   })
 
-  const link = result?.status === 'INVITED' ? setupLink(result.code) : ''
-  const message = `Hello. ${schoolName || 'Our school'} has given you access to ${student.firstName}'s attendance, fees and report cards on Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${link}`
+  const link = result?.status === 'INVITED' ? (result.reset ? resetLinkUrl(result.code) : setupLink(result.code)) : ''
+  const message = result?.reset
+    ? `Hello. Here is a link to choose a new Schoolful LMS password (it works once and expires in 3 days): ${link}`
+    : `Hello. ${schoolName || 'Our school'} has given you access to ${student.firstName}'s attendance, fees and report cards on Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${link}`
   const copy = () => navigator.clipboard?.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {})
   const valid = /^\S+@\S+\.\S+$/.test(email.trim()) && firstName.trim() && lastName.trim()
 
@@ -90,6 +92,9 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
                   {p.status === 'INVITED' && (
                     <Button size="small" disabled={busy} onClick={() => run(async () => { setResult({ ...(await resendInvite(p.userId)), phone: p.phone ?? '' }) })}>New link</Button>
                   )}
+                  {p.status === 'ACTIVE' && (
+                    <Button size="small" disabled={busy} onClick={() => run(async () => { const r = await parentResetLink(p.userId); setResult({ status: 'INVITED', userId: p.userId, email: r.email, code: r.code, expiresAt: '', phone: p.phone ?? '', reset: true }) })}>Reset link</Button>
+                  )}
                   <Button size="small" color="error" disabled={busy} onClick={() => {
                     if (window.confirm(`Remove ${p.firstName}'s access to ${student.firstName}?`)) run(async () => { await unlinkParent(p.userId, student.id); setResult(null); await load() })
                   }}>Remove</Button>
@@ -103,8 +108,8 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
               <Alert severity="success">{result.email} already has an account, so {student.firstName} has been added to it. They'll see {student.firstName} next time they sign in.</Alert>
             ) : (
               <Box sx={{ border: `1px solid #9fcdab`, bgcolor: '#f3f9f4', borderRadius: '10px', p: 1.75 }}>
-                <Typography sx={{ fontSize: '14px', fontWeight: 700, mb: 0.5 }}>Send this setup link to the parent</Typography>
-                <Typography sx={{ fontSize: '12.5px', color: brand.muted, mb: 1.25 }}>It works once and expires in 7 days. They choose a password, then sign in with {result.email}.</Typography>
+                <Typography sx={{ fontSize: '14px', fontWeight: 700, mb: 0.5 }}>Send this {result.reset ? 'password reset' : 'setup'} link to the parent</Typography>
+                <Typography sx={{ fontSize: '12.5px', color: brand.muted, mb: 1.25 }}>It works once and expires in {result.reset ? '3' : '7'} days. They choose {result.reset ? 'a new' : 'a'} password, then sign in with {result.email}.</Typography>
                 <Box sx={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '12.5px', bgcolor: brand.surface, border: `1px solid ${brand.border}`, borderRadius: '8px', p: 1, wordBreak: 'break-all', mb: 1.25 }}>{link}</Box>
                 <Stack direction="row" spacing={1}>
                   <Button size="small" variant="outlined" startIcon={<CopyIcon />} onClick={copy}>{copied ? 'Copied' : 'Copy link'}</Button>

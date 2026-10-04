@@ -28,6 +28,11 @@ export class ParentAccessController {
     return { data: await this.service.resendInvite(user.schoolId, user, userId) };
   }
 
+  @Post(':userId/reset-link')
+  async resetLink(@CurrentUser() user: JwtPayload, @Param('userId') userId: string) {
+    return { data: await this.service.resetLink(user.schoolId, user, userId) };
+  }
+
   @Delete(':userId/children/:studentId')
   async unlink(@CurrentUser() user: JwtPayload, @Param('userId') userId: string, @Param('studentId') studentId: string) {
     return { data: await this.service.unlink(user.schoolId, userId, studentId) };

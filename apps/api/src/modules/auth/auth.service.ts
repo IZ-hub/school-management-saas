@@ -11,12 +11,18 @@ import { getJwtSecret } from '../../common/jwt-secret';
 import { LoginDto } from './dto/login.dto';
 import { RegisterSchoolDto } from './dto/register-school.dto';
 import { SESSION_DAYS } from './session-cookie';
+import { RateLimiter } from '../../common/rate-limit';
+import { createInvite, revokeSessions } from '../../common/invites';
+import { mailEnabled, sendMail } from '../../common/mailer';
+import { appOrigin } from '../../common/origins';
+import { forgetAccount } from './guards/jwt-auth.guard';
 
 // Two tabs may renew with the same token at the same moment; allow the second within this window.
 const ROTATION_GRACE_MS = 60 * 1000;
 
 const toMillis = (v: any): number => v?.toMillis?.() ?? v?.getTime?.() ?? new Date(v).getTime();
 const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
+const escapeHtml = (v: string) => v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 @Injectable()
 export class AuthService {
@@ -27,6 +33,15 @@ export class AuthService {
 
   private get db() {
     return this.firebase.firestore;
+  }
+
+  /** Five wrong passwords for an email, or thirty from one address, lock sign-in for 15 minutes. */
+  private get emailFailures() {
+    return new RateLimiter(this.db as any, 'login-email', 5, 15 * 60_000);
+  }
+
+  private get ipFailures() {
+    return new RateLimiter(this.db as any, 'login-ip', 30, 15 * 60_000);
   }
 
   private generateAccessToken(payload: Record<string, any>): string {
@@ -104,7 +119,23 @@ export class AuthService {
     if (doc) await doc.ref.delete();
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ip = 'unknown') {
+    const locked = 'Too many wrong attempts. Wait {minutes} minutes, or use "Forgot password?".';
+    await this.emailFailures.check(dto.email, locked);
+    await this.ipFailures.check(ip, 'Too many sign-in attempts from this network. Try again in {minutes} minutes.');
+    try {
+      const session = await this.attemptLogin(dto);
+      await this.emailFailures.clear(dto.email);
+      return session;
+    } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        await Promise.all([this.emailFailures.hit(dto.email), this.ipFailures.hit(ip)]);
+      }
+      throw err;
+    }
+  }
+
+  private async attemptLogin(dto: LoginDto) {
     const byEmail = (email: string) => {
       let query: FirebaseFirestore.Query = this.db.collection('users').where('email', '==', email);
       if (dto.schoolId) query = query.where('schoolId', '==', dto.schoolId);
@@ -160,13 +191,15 @@ export class AuthService {
     if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) throw invalid();
     if (inv.usedAt || toMillis(inv.expiresAt) <= Date.now()) throw invalid();
     const user = await this.db.collection('users').doc(inv.userId).get();
-    if (!user.exists || user.data()!.status !== 'INVITED') throw invalid();
-    return { doc, inv, user };
+    // Setup links are for accounts not yet set up; reset links for active accounts.
+    const purpose: 'SETUP' | 'RESET' = inv.purpose === 'RESET' ? 'RESET' : 'SETUP';
+    if (!user.exists || user.data()!.status !== (purpose === 'RESET' ? 'ACTIVE' : 'INVITED')) throw invalid();
+    return { doc, inv, user, purpose };
   }
 
   /** What the setup page shows before the parent chooses a password. */
   async getInvite(code: string) {
-    const { inv, user } = await this.findInvite(code);
+    const { inv, user, purpose } = await this.findInvite(code);
     const u = user.data()!;
     const [school, students] = await Promise.all([
       this.db.collection('schools').doc(inv.schoolId).get(),
@@ -176,6 +209,7 @@ export class AuthService {
       email: u.email,
       firstName: u.firstName,
       role: u.role,
+      purpose,
       schoolName: school.exists ? school.data()!.name : '',
       children: students.filter((d: any) => d.exists && d.data().schoolId === inv.schoolId).map((d: any) => d.data().firstName),
     };
@@ -184,11 +218,59 @@ export class AuthService {
   /** Sets the invited parent's password, activates the account and signs them in. */
   async acceptInvite(code: string, password: string) {
     if (typeof password !== 'string' || password.length < 8) throw new BadRequestException('Use at least 8 characters for your password.');
-    const { doc, user } = await this.findInvite(code);
+    const { doc, user, purpose } = await this.findInvite(code);
     const now = new Date();
+    // A reset signs the account out everywhere else before signing in here.
+    if (purpose === 'RESET') await revokeSessions(this.db as any, user.id);
     await user.ref.update({ password: await bcrypt.hash(password, 10), status: 'ACTIVE', lastLogin: now, updatedAt: now });
     await doc.ref.update({ usedAt: now });
+    await this.emailFailures.clear(user.data()!.email);
+    forgetAccount(user.id);
     return this.createSession(user.id, { ...user.data()!, status: 'ACTIVE' });
+  }
+
+  /**
+   * Emails a one-hour reset link. Always answers the same way, so it can't be used to discover
+   * which emails have accounts; repeated requests are limited per email and per address.
+   */
+  async forgotPassword(email: string, origin?: string, ip = 'unknown') {
+    const perEmail = new RateLimiter(this.db as any, 'forgot-email', 3, 60 * 60_000);
+    const perIp = new RateLimiter(this.db as any, 'forgot-ip', 10, 60 * 60_000);
+    const done = { sent: true, emailEnabled: mailEnabled() };
+    try {
+      await perEmail.check(email, '');
+      await perIp.check(ip, '');
+    } catch {
+      return done;
+    }
+    await Promise.all([perEmail.hit(email), perIp.hit(ip)]);
+
+    const lower = email.trim().toLowerCase();
+    const found = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+    for (const e of new Set([email.trim(), lower])) {
+      (await this.db.collection('users').where('email', '==', e).limit(5).get()).docs.forEach((d) => found.set(d.id, d));
+    }
+    const accounts = [...found.values()].filter((d) => d.data().status === 'ACTIVE').slice(0, 3);
+    if (accounts.length === 0) return done;
+
+    const base = appOrigin(origin);
+    const links: { school: string; url: string }[] = [];
+    for (const a of accounts) {
+      const { code } = await createInvite(this.db as any, a.data().schoolId, a.id, 'self', 'RESET', 1);
+      const school = await this.db.collection('schools').doc(a.data().schoolId).get();
+      links.push({ school: school.exists ? school.data()!.name : 'your school', url: `${base}/reset#${code}` });
+    }
+    const name = accounts[0].data().firstName || 'there';
+    const lines = links.map((l) => (links.length > 1 ? `${l.school}: ${l.url}` : l.url));
+    await sendMail(
+      accounts[0].data().email,
+      'Reset your Schoolful LMS password',
+      `Hello ${name},\n\nUse this link to choose a new password. It works once and expires in 1 hour:\n\n${lines.join('\n')}\n\nIf you didn't ask for this, you can ignore this email; your password won't change.\n\nSchoolful LMS`,
+      `<p>Hello ${escapeHtml(name)},</p><p>Use this link to choose a new password. It works once and expires in 1 hour:</p>${links
+        .map((l) => `<p>${links.length > 1 ? `<b>${escapeHtml(l.school)}</b><br>` : ''}<a href="${l.url}">Reset my password</a></p>`)
+        .join('')}<p>If you didn't ask for this, you can ignore this email; your password won't change.</p><p>Schoolful LMS</p>`,
+    );
+    return done;
   }
 
   async registerSchool(dto: RegisterSchoolDto) {

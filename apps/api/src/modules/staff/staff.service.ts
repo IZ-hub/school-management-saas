@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { createInvite, revokeSessions } from '../../common/invites';
+import { forgetAccount } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { ChangeRoleDto, InviteStaffDto, LinkTeacherDto } from './dto/staff.dto';
 
@@ -99,12 +100,20 @@ export class StaffService {
     return { userId, email: doc.data()!.email, ...(await createInvite(this.db as any, schoolId, userId, user.sub)) };
   }
 
+  /** A one-time link (valid 3 days) for a staff member who forgot their password. */
+  async resetLink(schoolId: string, user: JwtPayload, userId: string) {
+    const doc = await this.manageable(schoolId, user, userId);
+    if (doc.data()!.status !== 'ACTIVE') throw new BadRequestException(doc.data()!.status === 'INVITED' ? "This person hasn't set up their account yet. Send them a new setup link instead." : 'Switch this account back on first.');
+    return { userId, email: doc.data()!.email, purpose: 'RESET' as const, ...(await createInvite(this.db as any, schoolId, userId, user.sub, 'RESET', 72)) };
+  }
+
   async changeRole(schoolId: string, user: JwtPayload, userId: string, dto: ChangeRoleDto) {
     this.checkCanGrant(user, dto.role);
     const doc = await this.manageable(schoolId, user, userId);
     await doc.ref.update({ role: dto.role, updatedAt: new Date() });
     // Signs them out so their next sign-in carries the new role.
     await revokeSessions(this.db as any, userId);
+    forgetAccount(userId);
     return { userId, role: dto.role };
   }
 
@@ -127,6 +136,7 @@ export class StaffService {
     const status = enabled ? (u.password ? 'ACTIVE' : 'INVITED') : 'DISABLED';
     await doc.ref.update({ status, updatedAt: new Date() });
     if (!enabled) await revokeSessions(this.db as any, userId);
+    forgetAccount(userId);
     return { userId, status };
   }
 }

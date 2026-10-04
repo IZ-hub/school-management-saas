@@ -8,14 +8,8 @@ import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { FeesService } from '../fees/fees.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PaystackClient, PaystackTransaction } from './paystack.client';
+import { appOrigin } from '../../common/origins';
 
-/** Where Paystack may send parents back to after paying. */
-const RETURN_ORIGINS = [
-  'https://school-management-1f070.web.app',
-  'https://school-management-1f070.firebaseapp.com',
-  'http://localhost:5173',
-  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()) : []),
-];
 const API_BASE = 'https://school-management-1f070.web.app/api/v1';
 
 @Injectable()
@@ -127,7 +121,7 @@ export class OnlinePaymentsService {
     if (amount > statement.balance) throw new BadRequestException(`The balance is ₦${statement.balance.toLocaleString('en-NG')}.`);
 
     const reference = `SF-${crypto.randomBytes(9).toString('hex')}`;
-    const returnTo = RETURN_ORIGINS.includes(origin ?? '') ? origin! : RETURN_ORIGINS[0];
+    const returnTo = appOrigin(origin);
     const studentName = `${child.firstName ?? ''} ${child.lastName ?? ''}`.trim();
     const payerName = `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email;
     await this.attempts.doc(reference).set({

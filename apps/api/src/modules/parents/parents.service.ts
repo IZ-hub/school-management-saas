@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { createInvite, revokeSessions } from '../../common/invites';
+import { forgetAccount } from '../auth/guards/jwt-auth.guard';
 import { schoolToday } from '../../common/school-date';
 import { TermCalendar } from '../../common/term-calendar';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
@@ -93,6 +94,14 @@ export class ParentsService {
     return { status: 'INVITED' as const, userId, email: doc.data()!.email, ...(await this.createInvite(schoolId, userId, user.sub)) };
   }
 
+  /** A one-time link (valid 3 days) for a parent who forgot their password. */
+  async resetLink(schoolId: string, user: JwtPayload, userId: string) {
+    const doc = await getOwnedDoc(this.users, userId, schoolId, 'Parent not found');
+    if (doc.data()!.role !== 'PARENT') throw new NotFoundException('Parent not found');
+    if (doc.data()!.status !== 'ACTIVE') throw new BadRequestException("This parent hasn't set up their account yet. Send a new setup link instead.");
+    return { status: 'RESET' as const, userId, email: doc.data()!.email, ...(await createInvite(this.db as any, schoolId, userId, user.sub, 'RESET', 72)) };
+  }
+
   /** Removes a parent's access to one child; with no children left the account is switched off. */
   async unlink(schoolId: string, userId: string, studentId: string) {
     const doc = await getOwnedDoc(this.users, userId, schoolId, 'Parent not found');
@@ -100,6 +109,7 @@ export class ParentsService {
     const childIds = (doc.data()!.childIds ?? []).filter((id: string) => id !== studentId);
     await doc.ref.update({ childIds, ...(childIds.length === 0 ? { status: 'DISABLED' } : {}), updatedAt: new Date() });
     if (childIds.length === 0) await revokeSessions(this.db as any, userId);
+    forgetAccount(userId);
     return { childIds };
   }
 

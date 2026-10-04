@@ -27,3 +27,4 @@ export const setStaffEnabled = async (id: string, enabled: boolean) => (await ap
 
 export const staffSetupLink = (code: string) => `${window.location.origin}/setup#${code}`
 export const linkTeacherRecord = async (id: string, teacherId: string | null) => (await api.patch(`/staff/${id}/teacher`, { teacherId })).data.data
+export const staffResetLink = async (id: string): Promise<StaffInvite> => (await api.post(`/staff/${id}/reset-link`)).data.data

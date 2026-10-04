@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, HttpCode, Query, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterSchoolDto } from './dto/register-school.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { clientIp } from '../../common/rate-limit';
 import { clearSessionCookie, readSessionCookie, setSessionCookie } from './session-cookie';
 
 @Controller()
@@ -17,8 +19,15 @@ export class AuthController {
   }
 
   @Post('auth/login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    return this.respond(res, await this.authService.login(dto));
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    return this.respond(res, await this.authService.login(dto, clientIp(req)));
+  }
+
+  /** Public: emails a password reset link if the account exists (the answer is the same either way). */
+  @Post('auth/forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: Request, @Headers('origin') origin?: string) {
+    return { data: await this.authService.forgotPassword(dto.email, origin, clientIp(req)) };
   }
 
   @Post('schools/register')

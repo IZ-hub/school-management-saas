@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { Alert, Box, Button, IconButton, InputAdornment, Link as MuiLink } from '@mui/material'
 import { VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
@@ -120,11 +121,7 @@ export default function Login() {
           </Button>
 
           <Box sx={{ textAlign: 'center', mt: '16px', lineHeight: '20px' }}>
-            <MuiLink
-              href="mailto:support@schoolful.app?subject=Password%20reset%20request"
-              underline="hover"
-              sx={{ color: authColors.muted, fontSize: '14px' }}
-            >
+            <MuiLink component={RouterLink} to="/forgot-password" underline="hover" sx={{ color: authColors.muted, fontSize: '14px' }}>
               Forgot password?
             </MuiLink>
           </Box>

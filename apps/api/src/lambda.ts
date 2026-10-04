@@ -14,6 +14,9 @@ async function getServer() {
     const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), { rawBody: true });
 
     app.setGlobalPrefix('api/v1');
+    const { HttpAdapterHost } = require('@nestjs/core');
+    const { AllExceptionsFilter } = require('./common/all-exceptions.filter');
+    app.useGlobalFilters(new AllExceptionsFilter(app.get(HttpAdapterHost).httpAdapter));
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

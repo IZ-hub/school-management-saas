@@ -19,6 +19,7 @@ import Fees from './pages/Fees'
 import Payments from './pages/Payments'
 import ParentHome from './pages/ParentHome'
 import ParentSetup from './pages/ParentSetup'
+import ForgotPassword from './pages/ForgotPassword'
 import Staff from './pages/Staff'
 import Promotion from './pages/Promotion'
 import Settings from './pages/Settings'
@@ -59,6 +60,8 @@ function App() {
 
         <Route path="/parent-setup" element={<ParentSetup />} />
         <Route path="/setup" element={<ParentSetup />} />
+        <Route path="/reset" element={<ParentSetup />} />
+        <Route path="/forgot-password" element={isAuthenticated ? <AfterSignIn /> : <ForgotPassword />} />
 
         {/* Parents: their own children only */}
         <Route path="/parent" element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <ParentHome /> : <Navigate to="/dashboard" replace />} />

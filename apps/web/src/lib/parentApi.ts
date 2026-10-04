@@ -44,7 +44,7 @@ export const getChildReportCard = async (id: string, seriesId: string): Promise<
 export const getChildFees = async (id: string): Promise<Statement> => (await api.get(`/parent/children/${id}/fees`)).data.data
 
 // Invites (public)
-export const getInvite = async (code: string): Promise<{ email: string; firstName: string; role: string; schoolName: string; children: string[] }> =>
+export const getInvite = async (code: string): Promise<{ email: string; firstName: string; role: string; purpose: 'SETUP' | 'RESET'; schoolName: string; children: string[] }> =>
   (await api.get('/auth/invite', { params: { code } })).data.data
 export const acceptInvite = async (code: string, password: string) => (await api.post('/auth/accept-invite', { code, password })).data.data
 
@@ -63,3 +63,5 @@ export const startOnlinePayment = async (childId: string, amount: number): Promi
   (await api.post(`/parent/children/${childId}/pay`, { amount })).data.data
 export const verifyOnlinePayment = async (reference: string): Promise<{ status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'REVIEW'; amount: number; receiptNumber: string | null }> =>
   (await api.post('/parent/payments/verify', { reference })).data.data
+export const parentResetLink = async (userId: string): Promise<{ code: string; email: string }> => (await api.post(`/parent-access/${userId}/reset-link`)).data.data
+export const resetLinkUrl = (code: string) => `${window.location.origin}/reset#${code}`

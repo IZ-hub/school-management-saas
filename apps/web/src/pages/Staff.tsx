@@ -21,7 +21,7 @@ import {
 import { PersonAddAlt1Outlined as InviteIcon, MoreVert as MoreIcon, ContentCopyOutlined as CopyIcon } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { ROLE_LABEL } from '../lib/roles'
-import { STAFF_ROLE_OPTIONS, StaffInvite, StaffMember, StaffRole, changeStaffRole, inviteStaff, linkTeacherRecord, listStaff, resendStaffInvite, setStaffEnabled, staffSetupLink } from '../lib/staffApi'
+import { STAFF_ROLE_OPTIONS, StaffInvite, StaffMember, StaffRole, changeStaffRole, inviteStaff, linkTeacherRecord, listStaff, resendStaffInvite, staffResetLink, setStaffEnabled, staffSetupLink } from '../lib/staffApi'
 import { getSchool } from '../lib/schoolApi'
 import { useAuthStore } from '../store/authStore'
 import { brand } from '../theme'
@@ -54,7 +54,7 @@ export default function Staff() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
-  const [link, setLink] = useState<(StaffInvite & { name: string }) | null>(null)
+  const [link, setLink] = useState<(StaffInvite & { name: string; reset?: boolean }) | null>(null)
   const [menu, setMenu] = useState<{ el: HTMLElement; member: StaffMember } | null>(null)
   const [linking, setLinking] = useState<StaffMember | null>(null)
 
@@ -120,6 +120,9 @@ export default function Staff() {
       <Menu anchorEl={menu?.el} open={!!menu} onClose={() => setMenu(null)}>
         {menu && menu.member.status === 'INVITED' && (
           <MenuItem onClick={() => { const m = menu.member; setMenu(null); resendStaffInvite(m.userId).then((r) => setLink({ ...r, name: m.firstName })).catch((err) => setError(errorText(err, 'Failed'))) }}>New setup link</MenuItem>
+        )}
+        {menu && menu.member.status === 'ACTIVE' && (
+          <MenuItem onClick={() => { const m = menu.member; setMenu(null); staffResetLink(m.userId).then((r) => setLink({ ...r, name: m.firstName, reset: true })).catch((err) => setError(errorText(err, 'Failed'))) }}>Reset password link</MenuItem>
         )}
         {menu && menu.member.role === 'TEACHER' && (
           <MenuItem onClick={() => { setLinking(menu.member); setMenu(null) }}>{menu.member.teacherId ? 'Change teacher record' : 'Link to teacher record'}</MenuItem>
@@ -224,15 +227,19 @@ function InviteDialog({ teachers, roles, onClose, onInvited }: {
   )
 }
 
-function LinkDialog({ invite, schoolName, onClose }: { invite: StaffInvite & { name: string }; schoolName: string; onClose: () => void }) {
+function LinkDialog({ invite, schoolName, onClose }: { invite: StaffInvite & { name: string; reset?: boolean }; schoolName: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false)
-  const url = staffSetupLink(invite.code)
-  const message = `Hello ${invite.name}. ${schoolName || 'Your school'} has invited you to Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${url}`
+  const url = invite.reset ? `${window.location.origin}/reset#${invite.code}` : staffSetupLink(invite.code)
+  const message = invite.reset
+    ? `Hello ${invite.name}. Here is a link to choose a new Schoolful LMS password (it works once and expires in 3 days): ${url}`
+    : `Hello ${invite.name}. ${schoolName || 'Your school'} has invited you to Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${url}`
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700 }}>Send this setup link to {invite.name}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700 }}>Send this {invite.reset ? 'reset' : 'setup'} link to {invite.name}</DialogTitle>
       <DialogContent>
-        <Typography sx={{ fontSize: '13.5px', color: brand.muted, mb: 1.5 }}>It works once and expires in 7 days. They choose a password, then sign in with {invite.email}.</Typography>
+        <Typography sx={{ fontSize: '13.5px', color: brand.muted, mb: 1.5 }}>
+          It works once and expires in {invite.reset ? '3' : '7'} days. They choose {invite.reset ? 'a new' : 'a'} password, then sign in with {invite.email}.
+        </Typography>
         <Box sx={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '12.5px', bgcolor: '#fbfaf6', border: `1px solid ${brand.border}`, borderRadius: '8px', p: 1.25, wordBreak: 'break-all' }}>{url}</Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>

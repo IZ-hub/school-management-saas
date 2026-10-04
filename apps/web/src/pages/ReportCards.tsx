@@ -306,7 +306,10 @@ export default function ReportCards() {
                     {/* Remarks */}
                     <Paper sx={{ p: { xs: 2, sm: 2.5 } }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                        <Typography sx={{ fontSize: '15px', fontWeight: 700 }}>Remarks · {card.student.firstName} {card.student.lastName}</Typography>
+                        <Typography sx={{ fontSize: '15px', fontWeight: 700 }}>
+                          Remarks ·{' '}
+                          <ButtonBase onClick={() => navigate(`/students/${card.student.id}`)} sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: brand.green, verticalAlign: 'baseline' }}>{card.student.firstName} {card.student.lastName}</ButtonBase>
+                        </Typography>
                         <Stack direction="row" spacing={0.5}>
                           <Button size="small" startIcon={<ChevronLeft />} disabled={index <= 0} onClick={() => goTo(ordered[index - 1])} sx={{ minWidth: 0 }}>Prev</Button>
                           <Button size="small" endIcon={<ChevronRight />} disabled={index >= ordered.length - 1} onClick={() => goTo(ordered[index + 1])} sx={{ minWidth: 0 }}>Next</Button>

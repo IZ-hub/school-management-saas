@@ -25,6 +25,7 @@ import Promotion from './pages/Promotion'
 import Settings from './pages/Settings'
 import Messages from './pages/Messages'
 import Timetable from './pages/Timetable'
+import StudentProfile from './pages/StudentProfile'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -70,6 +71,7 @@ function App() {
         <Route element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <Navigate to="/parent" replace /> : <DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/students" element={<Students />} />
+          <Route path="/students/:id" element={<StudentProfile />} />
           <Route path="/teachers" element={<Teachers />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/subjects" element={<Subjects />} />

@@ -9,6 +9,6 @@ import { PaymentsModule } from '../payments/payments.module';
   imports: [FeesModule, PaymentsModule],
   controllers: [OnlinePaymentsController, PaystackWebhookController],
   providers: [OnlinePaymentsService, PaystackClient],
-  exports: [OnlinePaymentsService],
+  exports: [OnlinePaymentsService, PaystackClient],
 })
 export class OnlinePaymentsModule {}

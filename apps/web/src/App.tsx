@@ -26,6 +26,7 @@ import Settings from './pages/Settings'
 import Messages from './pages/Messages'
 import Timetable from './pages/Timetable'
 import StudentProfile from './pages/StudentProfile'
+import Billing from './pages/Billing'
 import DashboardLayout from './layouts/DashboardLayout'
 import SupportWidget from './components/SupportWidget'
 import { useAuthStore } from './store/authStore'
@@ -88,6 +89,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/timetable" element={<Timetable />} />
+          <Route path="/billing" element={<Billing />} />
         </Route>
       </Routes>
       {!isParent && <SupportWidget />}

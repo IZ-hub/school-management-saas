@@ -23,6 +23,7 @@ import { SchoolModule } from './modules/school/school.module';
 import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { StudentProfileModule } from './modules/student-profile/student-profile.module';
+import { BillingModule } from './modules/billing/billing.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { StudentProfileModule } from './modules/student-profile/student-profile.
     OnlinePaymentsModule,
     MessagesModule,
     StudentProfileModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

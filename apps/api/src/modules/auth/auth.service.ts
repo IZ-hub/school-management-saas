@@ -15,6 +15,7 @@ import { RateLimiter } from '../../common/rate-limit';
 import { createInvite, revokeSessions } from '../../common/invites';
 import { mailEnabled, sendMail } from '../../common/mailer';
 import { appOrigin } from '../../common/origins';
+import { TRIAL_DAYS } from '../../common/billing';
 import { forgetAccount } from './guards/jwt-auth.guard';
 
 // Two tabs may renew with the same token at the same moment; allow the second within this window.
@@ -318,6 +319,7 @@ export class AuthService {
       website: null,
       status: 'ACTIVE',
       subscriptionPlan: 'FREE',
+      billing: { trialEndsOn: new Date(now.getTime() + TRIAL_DAYS * 86_400_000).toISOString().slice(0, 10) },
       subscriptionEnd: null,
       settings: {},
       createdAt: now,

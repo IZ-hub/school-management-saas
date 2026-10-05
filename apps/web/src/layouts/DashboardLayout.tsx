@@ -37,11 +37,13 @@ import {
   SettingsOutlined as SettingsIcon,
   ForumOutlined as MessagesIcon,
   CalendarViewWeekOutlined as TimetableIcon,
+  CreditCardOutlined as BillingIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
 import { brand } from '../theme'
 import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
+import BillingBanner from '../components/BillingBanner'
 
 const DRAWER_WIDTH = 248
 
@@ -84,6 +86,7 @@ const navSections: { heading: string | null; items: { label: string; path: strin
     items: [
       { label: 'Messages', path: '/messages', icon: <MessagesIcon />, roles: [...ADMIN_ROLES, 'ACCOUNTANT'] },
       { label: 'School settings', path: '/settings', icon: <SettingsIcon />, roles: ADMIN_ROLES },
+      { label: 'Billing', path: '/billing', icon: <BillingIcon />, roles: ADMIN_ROLES },
     ],
   },
 ]
@@ -267,6 +270,7 @@ export default function DashboardLayout() {
           width: isMobile ? '100%' : `calc(100% - ${DRAWER_WIDTH}px)`,
         }}
       >
+        <BillingBanner />
         <Outlet />
       </Box>
     </Box>

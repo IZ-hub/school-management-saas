@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
   GlobalStyles,
   Box,
@@ -14,8 +14,6 @@ import {
   Alert,
   Tab,
   Tabs,
-  ToggleButton,
-  ToggleButtonGroup,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -123,38 +121,16 @@ const systemFeatures = [
 /* Offset for in-page anchors so the sticky navbar doesn't cover section headings */
 const anchorOffset = { scrollMarginTop: { xs: '72px', md: '80px' } }
 
-/* ─── Pricing data ─── */
-const pricingData = {
-  monthly: [
-    { name: 'Starter', sub: 'Up to 150 students', price: '\u20A629,000', period: '/mo', highlighted: false, features: ['Paystack payments \u2014 no chasing parents', 'Unlimited WhatsApp reminders, invoices & receipts', 'All-school broadcasts: \u20A6150/parent reached', 'See every payment the moment it clears', 'Student & staff management', 'Email notifications', 'Import your whole student list from Excel'] },
-    { name: 'Growth', sub: 'Up to 500 students', price: '\u20A686,000', period: '/mo', highlighted: true, features: ['Everything in Starter, plus:', '4 all-school broadcasts/term', 'Additional: \u20A6100/parent reached', 'SMS notifications', 'Attendance tracking', 'PDF report cards'] },
-    { name: 'Scale', sub: 'Up to 1,000 students', price: '\u20A6145,000', period: '/mo', highlighted: false, features: ['Everything in Growth, plus:', '8 all-school broadcasts/term', 'Additional: \u20A680/parent reached', 'AI report card comments', 'AI spots unusual fee payments'] },
-    { name: 'Professional', sub: 'Up to 2,000 students', price: '\u20A6230,000', period: '/mo', highlighted: false, features: ['Everything in Scale, plus:', '12 all-school broadcasts/term', 'Additional: \u20A660/parent reached', 'Multi-campus support', 'Smart search \u2014 just type what you\'re looking for'] },
-  ],
-  termly: [
-    { name: 'Starter', sub: 'Up to 150 students', price: '\u20A675,000', period: '/term', highlighted: false, features: ['Paystack payments \u2014 no chasing parents', 'Unlimited WhatsApp reminders, invoices & receipts', 'All-school broadcasts: \u20A6150/parent reached', 'See every payment the moment it clears', 'Student & staff management', 'Email notifications', 'Import your whole student list from Excel'] },
-    { name: 'Growth', sub: 'Up to 500 students', price: '\u20A6220,000', period: '/term', highlighted: true, features: ['Everything in Starter, plus:', '4 all-school broadcasts/term', 'Additional: \u20A6100/parent reached', 'SMS notifications', 'Attendance tracking', 'PDF report cards'] },
-    { name: 'Scale', sub: 'Up to 1,000 students', price: '\u20A6380,000', period: '/term', highlighted: false, features: ['Everything in Growth, plus:', '8 all-school broadcasts/term', 'Additional: \u20A680/parent reached', 'AI report card comments', 'AI spots unusual fee payments'] },
-    { name: 'Professional', sub: 'Up to 2,000 students', price: '\u20A6600,000', period: '/term', highlighted: false, features: ['Everything in Scale, plus:', '12 all-school broadcasts/term', 'Additional: \u20A660/parent reached', 'Multi-campus support', 'Smart search \u2014 just type what you\'re looking for'] },
-  ],
-  annual: [
-    { name: 'Starter', sub: 'Up to 150 students', price: '\u20A6196,000', period: '/yr', highlighted: false, features: ['Paystack payments \u2014 no chasing parents', 'Unlimited WhatsApp reminders, invoices & receipts', 'All-school broadcasts: \u20A6150/parent reached', 'See every payment the moment it clears', 'Student & staff management', 'Email notifications', 'Import your whole student list from Excel'] },
-    { name: 'Growth', sub: 'Up to 500 students', price: '\u20A6585,000', period: '/yr', highlighted: true, features: ['Everything in Starter, plus:', '4 all-school broadcasts/term', 'Additional: \u20A6100/parent reached', 'SMS notifications', 'Attendance tracking', 'PDF report cards'] },
-    { name: 'Scale', sub: 'Up to 1,000 students', price: '\u20A6990,000', period: '/yr', highlighted: false, features: ['Everything in Growth, plus:', '8 all-school broadcasts/term', 'Additional: \u20A680/parent reached', 'AI report card comments', 'AI spots unusual fee payments'] },
-    { name: 'Professional', sub: 'Up to 2,000 students', price: '\u20A61,560,000', period: '/yr', highlighted: false, features: ['Everything in Scale, plus:', '12 all-school broadcasts/term', 'Additional: \u20A660/parent reached', 'Multi-campus support', 'Smart search \u2014 just type what you\'re looking for'] },
-  ],
-}
-
-/* ─── Enterprise features ─── */
-const enterpriseFeatures = [
-  'Unlimited all-school broadcasts',
-  'Custom report card templates',
-  'Onboarding & data migration included',
-  'Quarterly business reviews',
-  'One secure login for your whole team, plus connections to your other tools',
-  'White-labeled parent app',
-  'Dedicated account manager',
-  'Custom integrations and a written service guarantee',
+/* ─── What every school gets ─── */
+const included = [
+  'Students, classes, subjects and staff accounts',
+  'Daily attendance registers, with absence alerts to parents',
+  'Exam timetables, score entry and printable report cards',
+  'Fees, receipts and online payment with Paystack into your own account',
+  'A parent page for each family: attendance, fees and report cards',
+  'Messages to parents on their page, with optional SMS',
+  'Class timetables with clash checks',
+  'Daily backups and secure, separate data for every school',
 ]
 
 /* ─── "Built for Nigerian schools" values ─── */
@@ -174,9 +150,9 @@ const faqs = [
   { q: 'How do parents pay fees?', a: 'Parents can pay via bank transfer, card, or USSD through our integrated Paystack payment gateway. Every payment is recorded instantly in your dashboard \u2014 no manual reconciliation needed.' },
   { q: "Is my school's data secure?", a: "Yes. Each school's data is completely isolated from every other school. We use industry-standard encryption, secure cloud infrastructure, and comply with Nigeria's Data Protection Regulation (NDPR)." },
   { q: 'Can I move from another school management tool?', a: 'Absolutely. We support data import from Excel and CSV files. Our support team can also help you migrate your existing records during onboarding.' },
-  { q: 'What happens after the 30-day pilot?', a: 'After your pilot ends, you choose a plan that fits your school. All your data from the pilot is preserved \u2014 nothing is lost. If you decide not to continue, you can export your data at any time.' },
-  { q: 'What does the pilot include?', a: 'The 30-day pilot gives you full access to all features on the Growth plan. No credit card required. Set up your school, add students, track fees, and see if SchoolBricks is right for you.' },
-  { q: "What's the difference between transactional and broadcast WhatsApp?", a: 'Transactional messages are automatic \u2014 fee reminders, payment receipts, report card alerts. These are unlimited on all paid plans. Broadcasts are custom messages you compose and send to all parents (e.g. "School resumes Monday"). Each broadcast is billed per parent reached.' },
+  { q: 'How much does SchoolBricks cost?', a: '\u20A61,500 per active student, per term, with every feature included. A school with 300 students pays \u20A6450,000 a term. Students who have left or graduated are not counted.' },
+  { q: 'What happens after the 14-day free trial?', a: 'You get an invoice for the current term, paid online with Paystack. There is then a 7-day grace period. If it is still unpaid after that, your school becomes read-only until payment: you can view and print everything, but not make changes. Nothing is ever deleted.' },
+  { q: 'Do text messages cost extra?', a: 'Messages to parents always appear free on their parent page. SMS is optional and goes through your school\'s own Termii account, so you pay Termii directly for the texts you send.' },
 ]
 
 export default function LandingPage() {
@@ -186,29 +162,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
   const [demoStep, setDemoStep] = useState(0)
-  const [pricingPeriod, setPricingPeriod] = useState<'monthly' | 'termly' | 'annual'>('monthly')
-  const [contactForm, setContactForm] = useState({ name: '', email: '', school: '', message: '' })
-  const [contactSent, setContactSent] = useState(false)
-  const [planIndex, setPlanIndex] = useState(0)
-  const plansRef = useRef<HTMLDivElement>(null)
-
-  /* On phones the plans are a swipeable row; track which card is in view for the dots */
-  const planCards = () => Array.from(plansRef.current?.children ?? []) as HTMLElement[]
-  const handlePlanScroll = () => {
-    const el = plansRef.current
-    const cards = planCards()
-    if (!el || cards.length === 0) return
-    const start = cards[0].offsetLeft
-    let closest = 0
-    cards.forEach((c, i) => {
-      if (Math.abs(c.offsetLeft - start - el.scrollLeft) < Math.abs(cards[closest].offsetLeft - start - el.scrollLeft)) closest = i
-    })
-    setPlanIndex(closest)
-  }
-  const scrollToPlan = (i: number) => {
-    const cards = planCards()
-    plansRef.current?.scrollTo({ left: cards[i].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' })
-  }
+  const [studentCount, setStudentCount] = useState('300')
 
   const navLinks = [
     { label: 'Features', href: '#features' },
@@ -217,8 +171,8 @@ export default function LandingPage() {
     { label: 'About', href: '#about' },
     { label: 'Contact', href: '#contact' },
   ]
-
-  const currentPlans = pricingData[pricingPeriod]
+  const [contactForm, setContactForm] = useState({ name: '', email: '', school: '', message: '' })
+  const [contactSent, setContactSent] = useState(false)
 
   return (
     // overflowX 'clip' (not 'hidden') keeps decorative shapes from widening the page
@@ -289,7 +243,7 @@ export default function LandingPage() {
         <Stack spacing={1.25} sx={{ p: 2.5, borderTop: '1px solid #eee' }}>
           <Button fullWidth variant="contained" size="large" onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
             sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, fontWeight: 700, py: 1.4, boxShadow: 'none', '&:hover': { bgcolor: '#7cb342' } }}>
-            Start free 30-day pilot
+            Start 14-day free trial
           </Button>
           <Button fullWidth variant="outlined" size="large" onClick={() => { setMobileMenuOpen(false); navigate('/login') }}
             sx={{ borderColor: '#ddd', color: '#111', textTransform: 'none', borderRadius: 2, fontWeight: 600, py: 1.4 }}>
@@ -327,7 +281,7 @@ export default function LandingPage() {
                 </Button>
               </Stack>
               <Stack direction="row" sx={{ flexWrap: 'wrap', columnGap: 2, rowGap: 1 }}>
-                {['No credit card', 'Setup in 15 minutes', 'Free 30-day pilot'].map((b) => (
+                {['No credit card', 'Setup in 15 minutes', '14-day free trial'].map((b) => (
                   <Stack direction="row" spacing={0.5} alignItems="center" key={b}>
                     <CheckIcon sx={{ fontSize: 16, color: '#8bc34a' }} />
                     <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>{b}</Typography>
@@ -619,158 +573,52 @@ export default function LandingPage() {
             </Typography>
           </Box>
 
-          {/* Period toggle */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, px: { xs: 1, sm: 0 } }}>
-            <ToggleButtonGroup
-              value={pricingPeriod}
-              exclusive
-              onChange={(_, v) => v && setPricingPeriod(v)}
-              sx={{
-                bgcolor: '#f5f5f5', borderRadius: 2, flexWrap: { xs: 'wrap', sm: 'nowrap' }, justifyContent: 'center',
-                '& .MuiToggleButton-root': { textTransform: 'none', fontWeight: 600, px: { xs: 2, sm: 3 }, py: 0.75, border: 'none', borderRadius: '8px !important', color: '#666', fontSize: { xs: '0.8rem', sm: '0.875rem' } },
-                '& .Mui-selected': { bgcolor: '#111 !important', color: '#fff !important' },
-              }}
-            >
-              <ToggleButton value="monthly">Monthly</ToggleButton>
-              <ToggleButton value="termly">Termly</ToggleButton>
-              <ToggleButton value="annual">
-                Annual <Chip label="-15%" size="small" sx={{ ml: 0.75, height: 20, fontSize: '0.65rem', bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 700 }} />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-
-          <Typography variant="body2" sx={{ textAlign: 'center', color: '#888', mb: { xs: 3, sm: 5 } }}>
-            First 50 schools: 50% off your first term, any plan.
+          <Typography sx={{ textAlign: 'center', color: '#666', mb: { xs: 4, sm: 5 }, fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>
+            One price for everything. You only pay for students who are actually enrolled.
           </Typography>
 
-          {/* Plan cards: a swipeable row on phones, a bordered grid from tablet up */}
-          <Box
-            ref={plansRef}
-            onScroll={handlePlanScroll}
-            sx={{
-              display: 'flex',
-              flexWrap: { xs: 'nowrap', sm: 'wrap' },
-              gap: { xs: 1.5, sm: 0 },
-              overflowX: { xs: 'auto', sm: 'visible' },
-              scrollSnapType: { xs: 'x mandatory', sm: 'none' },
-              scrollPaddingLeft: { xs: 16, sm: 0 },
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              '&::-webkit-scrollbar': { display: 'none' },
-              // Bleed to the screen edges on phones so the next card peeks in
-              mx: { xs: -2, sm: 0 },
-              px: { xs: 2, sm: 0 },
-              pt: { xs: 1.5, sm: 0 },
-              pb: { xs: 1, sm: 0 },
-              border: { sm: '1px solid #e0e0e0' },
-              borderRadius: { sm: 2 },
-            }}
-          >
-            {currentPlans.map((plan, idx) => (
-              <Box key={plan.name} sx={{
-                flex: { xs: '0 0 84%', sm: '0 0 50%', md: '0 0 25%' },
-                maxWidth: { xs: 340, sm: 'none' },
-                scrollSnapAlign: 'start',
-                display: 'flex',
-              }}>
-                <Box sx={{
-                  p: { xs: 2.5, sm: 3 }, width: '100%', display: 'flex', flexDirection: 'column',
-                  position: 'relative', bgcolor: '#fff',
-                  // Phones: separate rounded cards
-                  border: { xs: '1px solid #e0e0e0', sm: 'none' },
-                  borderRadius: { xs: 3, sm: 0 },
-                  // Tablet/desktop: dividers between cells of the grid
-                  borderRight: { sm: idx % 2 === 0 ? '1px solid #e0e0e0' : 'none', md: idx < 3 ? '1px solid #e0e0e0' : 'none' },
-                  borderBottom: { sm: idx < 2 ? '1px solid #e0e0e0' : 'none', md: 'none' },
-                  ...(plan.highlighted ? {
-                    border: '2px solid #2e7d32',
-                    borderRadius: { xs: 3, sm: 0 },
-                    m: { sm: '-1px' },
-                    zIndex: 1,
-                    boxShadow: { xs: '0 10px 30px rgba(46,125,50,0.15)', sm: 'none' },
-                  } : {}),
-                }}>
-                  {plan.highlighted && (
-                    <Chip label="Most Popular" size="small" sx={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%) translateY(-50%)', bgcolor: '#2e7d32', color: '#fff', fontWeight: 700, fontSize: '0.7rem' }} />
-                  )}
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#111' }}>{plan.name}</Typography>
-                  <Typography variant="body2" sx={{ color: '#888', mb: 1.5 }}>{plan.sub}</Typography>
-                  <Stack direction="row" alignItems="baseline" spacing={0.5} sx={{ mb: 2.5 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#111', fontSize: '1.75rem' }}>{plan.price}</Typography>
-                    <Typography variant="body2" sx={{ color: '#888' }}>{plan.period}</Typography>
-                  </Stack>
-                  <Divider sx={{ mb: 2 }} />
-                  <Stack spacing={1.25} sx={{ flex: 1, mb: 3 }}>
-                    {plan.features.map((f) => (
-                      <Stack direction="row" spacing={1} alignItems="flex-start" key={f}>
-                        <CheckIcon sx={{ fontSize: 16, color: plan.highlighted ? '#2e7d32' : '#111', mt: 0.25, flexShrink: 0 }} />
-                        <Typography variant="body2" sx={{ color: '#555', fontSize: '0.82rem', lineHeight: 1.5 }}>{f}</Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
-                  <Button variant={plan.highlighted ? 'contained' : 'outlined'} fullWidth onClick={() => navigate('/register')}
-                    sx={{
-                      py: 1.25, borderRadius: 2, fontWeight: 600, textTransform: 'none',
-                      ...(plan.highlighted
-                        ? { bgcolor: '#111', color: '#fff', '&:hover': { bgcolor: '#333' } }
-                        : { borderColor: '#111', color: '#111', '&:hover': { bgcolor: '#f5f5f5' } }),
-                    }}>
-                    Start 30-Day Pilot
-                  </Button>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-
-          {/* Swipe position dots (phones only) */}
-          <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.5} sx={{ display: { xs: 'flex', sm: 'none' }, mt: 1.5 }}>
-            {currentPlans.map((plan, i) => (
-              <Box key={plan.name} component="button" type="button" aria-label={`Show ${plan.name} plan`} onClick={() => scrollToPlan(i)}
-                sx={{ p: 0, border: 0, bgcolor: 'transparent', cursor: 'pointer', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Box sx={{ width: planIndex === i ? 22 : 8, height: 8, borderRadius: 4, bgcolor: planIndex === i ? '#111' : '#d0d0d0', transition: 'all 0.25s' }} />
-              </Box>
-            ))}
-          </Stack>
-          <Typography variant="caption" sx={{ display: { xs: 'block', sm: 'none' }, textAlign: 'center', color: '#999' }}>
-            Swipe to compare plans
-          </Typography>
-
-          {/* Enterprise section */}
-          <Paper elevation={0} sx={{ mt: 4, p: { xs: 3, md: 5 }, bgcolor: '#111', borderRadius: 3, color: '#fff' }}>
-            <Grid container spacing={4} alignItems="center">
-              <Grid item xs={12} md={4}>
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>Enterprise</Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 1.5 }}>2,000+ students</Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, fontFamily: 'monospace' }}>Custom pricing</Typography>
-              </Grid>
-              <Grid item xs={12} md={5}>
-                <Grid container spacing={1}>
-                  {enterpriseFeatures.map((f) => (
-                    <Grid item xs={12} sm={6} key={f}>
-                      <Stack direction="row" spacing={1} alignItems="flex-start">
-                        <CheckIcon sx={{ fontSize: 16, color: '#4caf50', mt: 0.25, flexShrink: 0 }} />
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.82rem', lineHeight: 1.5 }}>{f}</Typography>
-                      </Stack>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Grid>
-              <Grid item xs={12} md={3} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                <Button variant="outlined" size="large" onClick={() => navigate('/register')}
-                  sx={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', textTransform: 'none', borderRadius: 2, px: 4, py: 1.25, fontWeight: 600, width: { xs: '100%', md: 'auto' }, '&:hover': { borderColor: '#fff' } }}>
-                  Talk to Sales
+          <Paper elevation={0} sx={{ maxWidth: 920, mx: 'auto', border: '1px solid #e0e0e0', borderRadius: 3, overflow: 'hidden' }}>
+            <Grid container>
+              <Grid item xs={12} md={6} sx={{ p: { xs: 3, md: 5 }, bgcolor: '#0d3b2e', color: '#fff' }}>
+                <Typography variant="overline" sx={{ color: '#aed581', fontWeight: 700, letterSpacing: '0.12em' }}>Per student, per term</Typography>
+                <Typography sx={{ fontSize: { xs: '2.75rem', md: '3.5rem' }, fontWeight: 800, letterSpacing: '-1.5px', lineHeight: 1.1 }}>₦1,500</Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.75)', mb: 3 }}>for each active student, billed at the start of each term.</Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600, mb: 1 }}>Work out your cost</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                  <TextField
+                    value={studentCount}
+                    onChange={(e) => setStudentCount(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                    inputProps={{ inputMode: 'numeric', 'aria-label': 'Number of students' }}
+                    size="small"
+                    sx={{ width: 120, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 } }}
+                  />
+                  <Typography sx={{ color: 'rgba(255,255,255,0.85)' }}>students</Typography>
+                </Stack>
+                <Typography sx={{ fontSize: '1.4rem', fontWeight: 800 }}>
+                  ₦{(Number(studentCount || 0) * 1500).toLocaleString('en-NG')} <Box component="span" sx={{ fontSize: '0.95rem', fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>per term</Box>
+                </Typography>
+                <Button variant="contained" size="large" onClick={() => navigate('/register')}
+                  sx={{ mt: 3, bgcolor: '#8bc34a', color: '#0d3b2e', textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 4, '&:hover': { bgcolor: '#9ccc65' } }}>
+                  Start 14-day free trial
                 </Button>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', mt: 1.25 }}>No card needed to start.</Typography>
+              </Grid>
+              <Grid item xs={12} md={6} sx={{ p: { xs: 3, md: 5 } }}>
+                <Typography sx={{ fontWeight: 700, color: '#111', mb: 2 }}>Everything is included</Typography>
+                <Stack spacing={1.25}>
+                  {included.map((f) => (
+                    <Stack key={f} direction="row" spacing={1.25} alignItems="flex-start">
+                      <CheckIcon sx={{ fontSize: 18, color: '#2e7d32', mt: 0.25, flexShrink: 0 }} />
+                      <Typography variant="body2" sx={{ color: '#333', lineHeight: 1.55 }}>{f}</Typography>
+                    </Stack>
+                  ))}
+                </Stack>
               </Grid>
             </Grid>
           </Paper>
 
-          <Typography variant="body2" sx={{ textAlign: 'center', color: '#888', mt: 4, maxWidth: 700, mx: 'auto', lineHeight: 1.7 }}>
-            <strong>Transactional messages</strong> (reminders, invoices, receipts, report-card alerts) are <strong>unlimited</strong> on every paid plan.{' '}
-            <strong>Broadcasts</strong> are admin-composed all-school messages — 1 broadcast counts as 1 parent reached for billing.
-          </Typography>
-
           <Typography variant="body2" sx={{ textAlign: 'center', color: '#999', mt: 2 }}>
-            Start with a 30-day free pilot. No card required.
+            Start with a 14-day free trial. No card required.
           </Typography>
         </Container>
       </Box>
@@ -862,7 +710,7 @@ export default function LandingPage() {
                     {i < 3 ? (
                       <Button variant="contained" onClick={() => setDemoStep(i + 1)} endIcon={<ArrowIcon />} sx={{ bgcolor: '#111', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, boxShadow: 'none', flex: { xs: 2, sm: 'none' }, '&:hover': { bgcolor: '#333' } }}>Next Step</Button>
                     ) : (
-                      <Button variant="contained" onClick={() => navigate('/register')} endIcon={<ArrowIcon />} sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, fontWeight: 700, boxShadow: 'none', flex: { xs: 2, sm: 'none' }, '&:hover': { bgcolor: '#7cb342' } }}>Start Your Pilot</Button>
+                      <Button variant="contained" onClick={() => navigate('/register')} endIcon={<ArrowIcon />} sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', borderRadius: 2, minHeight: 42, px: 2.5, fontWeight: 700, boxShadow: 'none', flex: { xs: 2, sm: 'none' }, '&:hover': { bgcolor: '#7cb342' } }}>Start Free Trial</Button>
                     )}
                   </Stack>
                 </Box>
@@ -1200,7 +1048,7 @@ export default function LandingPage() {
           </Typography>
           <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />}
             sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', px: 5, py: 1.5, fontWeight: 700, borderRadius: 2, width: { xs: '100%', sm: 'auto' }, boxShadow: 'none', '&:hover': { bgcolor: '#7cb342' } }}>
-            Start 30-Day Pilot
+            Start 14-Day Free Trial
           </Button>
           <Typography variant="caption" sx={{ display: 'block', mt: 2, opacity: 0.5 }}>No card required. Set up in under 10 minutes.</Typography>
         </Container>

@@ -31,7 +31,7 @@ interface DashboardStats {
   nextExam?: { id: string; name: string; startDate: string; endDate: string; inProgress: boolean } | null
   totalExams: number
   totalResults: number
-  feesTerm?: { term: string; session: string; expected: number; collected: number; outstanding: number; rate: number | null; owing: number; feesSet: boolean } | null
+  feesTerm?: { term: string; session: string; expected: number; collected: number; outstanding: number; rate: number | null; feesSet: boolean } | null
 }
 
 const card = {
@@ -283,7 +283,7 @@ export default function Dashboard() {
                     label: 'Still owed',
                     value: `₦${stats.feesTerm.outstanding.toLocaleString('en-NG')}`,
                     to: '/fees',
-                    hint: `${stats.feesTerm.owing} ${stats.feesTerm.owing === 1 ? 'student' : 'students'} owing`,
+                    hint: stats.feesTerm.feesSet ? 'See who owes on the Fees page' : 'Set fees to start tracking',
                   },
                 ]}
               />

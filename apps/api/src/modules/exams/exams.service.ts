@@ -4,6 +4,7 @@ import { getOwnedDoc } from '../../common/tenant';
 import { isIsoDate, schoolToday } from '../../common/school-date';
 import { AddPapersDto, CreateExamSeriesDto, TERM_LABEL, UpdateExamSeriesDto } from './dto/exam-series.dto';
 import { UpdatePaperDto } from './dto/update-paper.dto';
+import { countOf } from '../../common/aggregate';
 
 export type SeriesStatus = 'DRAFT' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED';
 
@@ -144,6 +145,7 @@ export class ExamsService {
           startTime: null,
           durationMinutes: series.defaultDurationMinutes,
           maxScore: series.defaultMaxScore,
+          scoreStats: { complete: 0, started: 0, sum: 0 },
           createdAt: now,
           updatedAt: now,
         });
@@ -406,7 +408,6 @@ export class ExamsService {
   }
 
   async count(schoolId: string) {
-    const snapshot = await this.col.where('schoolId', '==', schoolId).get();
-    return snapshot.size;
+    return countOf(this.col.where('schoolId', '==', schoolId));
   }
 }

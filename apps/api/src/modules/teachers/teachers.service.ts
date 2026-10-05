@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import { countOf } from '../../common/aggregate';
 
 @Injectable()
 export class TeachersService {
@@ -104,10 +105,8 @@ export class TeachersService {
   }
 
   async count(schoolId: string) {
-    const snapshot = await this.col
+    return countOf(this.col
       .where('schoolId', '==', schoolId)
-      .where('status', '==', 'ACTIVE')
-      .get();
-    return snapshot.size;
+      .where('status', '==', 'ACTIVE'));
   }
 }

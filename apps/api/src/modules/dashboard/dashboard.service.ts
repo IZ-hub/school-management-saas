@@ -8,6 +8,7 @@ import { ExamsService } from '../exams/exams.service';
 import { ResultsService } from '../results/results.service';
 import { FeesService } from '../fees/fees.service';
 import { AttendanceService } from '../attendance/attendance.service';
+import { countOf } from '../../common/aggregate';
 
 @Injectable()
 export class DashboardService {
@@ -28,29 +29,24 @@ export class DashboardService {
    * students have no class (or are still linked to a deleted class).
    */
   async classSizes(schoolId: string) {
-    const [classSnap, studentSnap] = await Promise.all([
-      this.firebase.firestore.collection('classes').where('schoolId', '==', schoolId).get(),
-      this.firebase.firestore.collection('students').where('schoolId', '==', schoolId).get(),
-    ]);
+    const db = this.firebase.firestore;
+    const activeStudents = db.collection('students').where('schoolId', '==', schoolId).where('status', '==', 'ACTIVE');
+    const classSnap = await db.collection('classes').where('schoolId', '==', schoolId).get();
     const activeClasses = classSnap.docs.filter((d) => d.data().status !== 'INACTIVE');
-    const counts = new Map<string, number>(activeClasses.map((d) => [d.id, 0]));
-    let withoutClass = 0;
-    let totalStudents = 0;
-    for (const doc of studentSnap.docs) {
-      const st = doc.data();
-      if (st.status === 'INACTIVE') continue;
-      totalStudents++;
-      if (st.classId && counts.has(st.classId)) counts.set(st.classId, counts.get(st.classId)! + 1);
-      else withoutClass++;
-    }
+    // Counted on the database side: one read per class instead of one per student.
+    const [totalStudents, sizes] = await Promise.all([
+      countOf(activeStudents),
+      Promise.all(activeClasses.map((d) => countOf(activeStudents.where('classId', '==', d.id)))),
+    ]);
     const classes = activeClasses
-      .map((d) => ({
+      .map((d, i) => ({
         id: d.id,
         name: String(d.data().name ?? ''),
         capacity: typeof d.data().capacity === 'number' && d.data().capacity > 0 ? d.data().capacity : null,
-        students: counts.get(d.id) ?? 0,
+        students: sizes[i],
       }))
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const withoutClass = Math.max(0, totalStudents - sizes.reduce((x, y) => x + y, 0));
     return { classes, withoutClass, totalStudents };
   }
 

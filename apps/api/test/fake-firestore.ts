@@ -3,9 +3,12 @@
  * services use: collection/doc/add/where/get/update/delete/batch/runTransaction.
  */
 type Data = Record<string, any>;
-type Store = Map<string, Map<string, Data>>;
+type Store = Map<string, Map<string, Data>> & { reads?: number };
 
 let nextId = 1;
+
+const matches = (actual: any, op: string, v: any) =>
+  op === '==' ? actual === v : op === '>=' ? actual >= v : op === '<=' ? actual <= v : op === '>' ? actual > v : op === '<' ? actual < v : false;
 
 class FakeDocRef {
   constructor(private store: Store, private colName: string, public id: string) {}
@@ -16,6 +19,7 @@ class FakeDocRef {
   }
 
   async get() {
+    this.store.reads = (this.store.reads ?? 0) + 1;
     const data = this.col.get(this.id);
     return {
       id: this.id,
@@ -44,22 +48,54 @@ class FakeQuery {
   constructor(
     protected store: Store,
     protected colName: string,
-    private filters: [string, any][] = [],
+    private filters: [string, string, any][] = [],
     private max = Infinity,
   ) {}
 
-  where(field: string, _op: '==', value: any) {
-    return new FakeQuery(this.store, this.colName, [...this.filters, [field, value]], this.max);
+  where(field: string, op: '==' | '>=' | '<=' | '>' | '<', value: any) {
+    return new FakeQuery(this.store, this.colName, [...this.filters, [field, op, value]], this.max);
   }
 
   limit(n: number) {
     return new FakeQuery(this.store, this.colName, this.filters, n);
   }
 
-  async get() {
-    const rows = [...(this.store.get(this.colName) ?? new Map()).entries()]
-      .filter(([, d]) => this.filters.every(([f, v]) => d[f] === v))
+  private rows() {
+    return [...(this.store.get(this.colName) ?? new Map()).entries()]
+      .filter(([, d]) => this.filters.every(([f, op, v]) => matches(d[f], op, v)))
       .slice(0, this.max);
+  }
+
+  /** Aggregates (sum/count): billed like Firestore, one read per 1,000 documents. */
+  aggregate(spec: Record<string, { aggregateType: string; _field?: string }>) {
+    return {
+      get: async () => {
+        const rows = this.rows();
+        this.store.reads = (this.store.reads ?? 0) + Math.max(1, Math.ceil(rows.length / 1000));
+        const out: Record<string, number> = {};
+        for (const [k, f] of Object.entries(spec)) {
+          out[k] = f.aggregateType === 'count' ? rows.length : rows.reduce((a, [, d]) => a + (typeof d[f._field!] === 'number' ? d[f._field!] : 0), 0);
+        }
+        return { data: () => out };
+      },
+    };
+  }
+
+  /** Aggregate count: Firestore bills one read per 1,000 documents counted. */
+  count() {
+    return {
+      get: async () => {
+        const n = this.rows().length;
+        this.store.reads = (this.store.reads ?? 0) + Math.max(1, Math.ceil(n / 1000));
+        return { data: () => ({ count: n }) };
+      },
+    };
+  }
+
+  async get() {
+    const rows = this.rows();
+    // Firestore bills a query that returns nothing as one read.
+    this.store.reads = (this.store.reads ?? 0) + Math.max(1, rows.length);
     const docs = rows.map(([id, d]) => ({
       id,
       data: () => ({ ...d }),

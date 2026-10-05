@@ -4,12 +4,21 @@ import { getOwnedDoc } from '../../common/tenant';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { TeachingScope } from '../../common/teaching-scope';
 import { SaveSheetDto } from './dto/save-sheet.dto';
+import { countOf } from '../../common/aggregate';
 
 /** A 70–100, B 60–69, C 50–59, D 45–49, E 40–44, F below 40 (totals are out of 100). */
 export const gradeFor = (total: number) =>
   total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : total >= 40 ? 'E' : 'F';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** A paper's scoring summary, kept on the paper so progress pages needn't read every result. */
+export interface ScoreStats { complete: number; started: number; sum: number }
+const statsOf = (students: { ca: number | null; exam: number | null; total: number | null }[]): ScoreStats => ({
+  complete: students.filter((x) => x.total !== null).length,
+  started: students.filter((x) => x.ca !== null || x.exam !== null).length,
+  sum: round1(students.reduce((a, x) => a + (x.total ?? 0), 0)),
+});
 
 /** Total and grade once every part is in; CA is skipped when the exam is out of 100. */
 export function scoreSummary(ca: number | null, exam: number | null, caMax: number) {
@@ -148,44 +157,67 @@ export class ResultsService {
       changed++;
     }
     if (changed > 0) await batch.commit();
-    return { ...(await this.getSheet(schoolId, dto.examId, user)), changed };
+    const sheet = await this.getSheet(schoolId, dto.examId, user);
+    if (changed > 0) await this.db.collection('exams').doc(dto.examId).update({ scoreStats: statsOf(sheet.students) });
+    return { ...sheet, changed };
   }
 
   /** Progress for every paper in an exam series: how many students are scored, and the class average. */
   async progress(schoolId: string, seriesId: string, user?: JwtPayload) {
     await getOwnedDoc(this.db.collection('examSeries'), seriesId, schoolId, 'Exam not found');
     const scope = user ? await TeachingScope.load(this.db as any, user) : null;
-    const [paperSnap, resultSnap, studentSnap] = await Promise.all([
-      this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
-      this.col.where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
-      this.db.collection('students').where('schoolId', '==', schoolId).get(),
-    ]);
-    const active = studentSnap.docs.filter((d) => d.data().status !== 'INACTIVE');
-    const classOf = new Map(active.map((d) => [d.id, d.data().classId as string]));
-    const classSize = new Map<string, number>();
-    active.forEach((d) => classSize.set(d.data().classId, (classSize.get(d.data().classId) ?? 0) + 1));
+    const paperSnap = await this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get();
+    const papers = paperSnap.docs.filter((d) => !scope || scope.canViewClass(d.data().classId));
+    // Class sizes are counted on the database side; each paper carries its own scoring summary.
+    const classIds = [...new Set(papers.map((d) => d.data().classId as string))];
+    const activeStudents = this.db.collection('students').where('schoolId', '==', schoolId).where('status', '==', 'ACTIVE');
+    const sizes = new Map(await Promise.all(classIds.map(async (c) => [c, await countOf(activeStudents.where('classId', '==', c))] as const)));
+    const missing = papers.filter((d) => !d.data().scoreStats);
+    const filled = missing.length ? await this.backfillStats(schoolId, seriesId, missing) : new Map<string, ScoreStats>();
+    const stats = papers.map((d) => (d.data().scoreStats as ScoreStats | undefined) ?? filled.get(d.id)!);
 
-    return paperSnap.docs
-      .filter((d) => !scope || scope.canViewClass(d.data().classId))
-      .map((d) => {
+    return papers
+      .map((d, i) => {
         const p = d.data();
-        // Only count students still in the class, so leavers don't inflate progress.
-        const results = resultSnap.docs.map((r) => r.data()).filter((r) => r.examId === d.id && classOf.get(r.studentId) === p.classId);
-        const totals = results.map((r) => r.score).filter((t): t is number => typeof t === 'number');
+        const st = stats[i];
         return {
           examId: d.id,
           classId: p.classId as string,
           subjectId: p.subjectId as string,
           subject: p.title as string,
-          students: classSize.get(p.classId) ?? 0,
-          complete: totals.length,
-          started: results.length,
-          average: totals.length ? round1(totals.reduce((a, b) => a + b, 0) / totals.length) : null,
+          students: sizes.get(p.classId) ?? 0,
+          complete: st.complete,
+          started: st.started,
+          average: st.complete ? round1(st.sum / st.complete) : null,
           mine: scope ? scope.canScore(p.classId, p.subjectId) && !scope.all : false,
           canEdit: scope ? scope.canScore(p.classId, p.subjectId) : true,
         };
       })
       .sort((a, b) => a.subject.localeCompare(b.subject));
+  }
+
+  /**
+   * Works out score summaries for papers scored before summaries were kept, in one pass over the
+   * exam's results, and stores them so later views are cheap. Only current students in each class count.
+   */
+  private async backfillStats(schoolId: string, seriesId: string, papers: FirebaseFirestore.QueryDocumentSnapshot[]) {
+    const classIds = [...new Set(papers.map((p) => p.data().classId as string))];
+    const [resultSnap, ...classStudents] = await Promise.all([
+      this.col.where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
+      ...classIds.map((c) => this.db.collection('students').where('schoolId', '==', schoolId).where('classId', '==', c).where('status', '==', 'ACTIVE').get()),
+    ]);
+    const inClass = new Map(classIds.map((c, i) => [c, new Set(classStudents[i].docs.map((d) => d.id))]));
+    const out = new Map<string, ScoreStats>();
+    const batch = this.db.batch();
+    for (const p of papers) {
+      const members = inClass.get(p.data().classId)!;
+      const rows = resultSnap.docs.map((r) => r.data()).filter((r) => r.examId === p.id && members.has(r.studentId));
+      const st = statsOf(rows.map((r) => ({ ca: r.ca ?? null, exam: r.exam ?? null, total: typeof r.score === 'number' ? r.score : null })));
+      out.set(p.id, st);
+      batch.update(p.ref, { scoreStats: st });
+    }
+    await batch.commit();
+    return out;
   }
 
   /** Highest scores entered for a paper, so its max score can't be lowered below them. */
@@ -206,7 +238,6 @@ export class ResultsService {
   }
 
   async count(schoolId: string) {
-    const snapshot = await this.col.where('schoolId', '==', schoolId).get();
-    return snapshot.size;
+    return countOf(this.col.where('schoolId', '==', schoolId));
   }
 }

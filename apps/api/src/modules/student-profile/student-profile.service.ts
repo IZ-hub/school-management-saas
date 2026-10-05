@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES } from '../../common/roles';
 import { TermCalendar } from '../../common/term-calendar';
+import { inDateRange } from '../../common/aggregate';
 import { TeachingScope } from '../../common/teaching-scope';
 import { schoolToday } from '../../common/school-date';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
@@ -77,8 +78,8 @@ export class StudentProfileService {
 
   private async attendance(schoolId: string, studentId: string, calendar: TermCalendar, ts: { term: string; session: string }) {
     const { from, to } = calendar.range(ts.term, ts.session);
-    const snap = await this.db.collection('attendance').where('schoolId', '==', schoolId).where('studentId', '==', studentId).get();
-    const marks = snap.docs.map((d) => d.data()).filter((m) => m.date >= from && m.date <= to && m.date <= schoolToday());
+    const docs = await inDateRange(this.db.collection('attendance').where('schoolId', '==', schoolId).where('studentId', '==', studentId), 'date', from, to);
+    const marks = docs.map((d) => d.data()).filter((m) => m.date <= schoolToday());
     const count = (st: string) => marks.filter((m) => m.status === st).length;
     const expected = count('PRESENT') + count('LATE') + count('ABSENT');
     return {
@@ -97,12 +98,14 @@ export class StudentProfileService {
     for (const d of snap.docs) if (d.data().seriesId) bySeries.set(d.data().seriesId, [...(bySeries.get(d.data().seriesId) ?? []), d.data()]);
     const exams = await Promise.all(
       [...bySeries.entries()].map(async ([seriesId, rows]) => {
-        const [series, papers] = await Promise.all([
+        // Just this student's papers (one per subject), not the whole exam's.
+        const [series, ...paperDocs] = await Promise.all([
           this.db.collection('examSeries').doc(seriesId).get(),
-          this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
+          ...[...new Set(rows.map((r) => r.examId as string))].map((id) => this.db.collection('exams').doc(id).get()),
         ]);
+        const papers = { docs: paperDocs.filter((p) => p.exists) };
         if (!series.exists || series.data()!.schoolId !== schoolId) return null;
-        const title = new Map(papers.docs.map((p) => [p.id, String(p.data().title ?? 'Subject')]));
+        const title = new Map(papers.docs.map((p) => [p.id, String(p.data()!.title ?? 'Subject')]));
         const subjects = rows
           .map((r) => ({ subject: title.get(r.examId) ?? 'Subject', ca: r.ca ?? null, exam: r.exam ?? null, total: r.score ?? null, grade: r.grade ?? null }))
           .sort((a, b) => a.subject.localeCompare(b.subject));

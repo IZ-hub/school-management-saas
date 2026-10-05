@@ -3,7 +3,7 @@
  * services use: collection/doc/add/where/get/update/delete/batch/runTransaction.
  */
 type Data = Record<string, any>;
-type Store = Map<string, Map<string, Data>> & { reads?: number };
+type Store = Map<string, Map<string, Data>> & { reads?: number; refuseAggregates?: boolean };
 
 let nextId = 1;
 
@@ -70,6 +70,7 @@ class FakeQuery {
   aggregate(spec: Record<string, { aggregateType: string; _field?: string }>) {
     return {
       get: async () => {
+        if (this.store.refuseAggregates) throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
         const rows = this.rows();
         this.store.reads = (this.store.reads ?? 0) + Math.max(1, Math.ceil(rows.length / 1000));
         const out: Record<string, number> = {};
@@ -85,6 +86,7 @@ class FakeQuery {
   count() {
     return {
       get: async () => {
+        if (this.store.refuseAggregates) throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
         const n = this.rows().length;
         this.store.reads = (this.store.reads ?? 0) + Math.max(1, Math.ceil(n / 1000));
         return { data: () => ({ count: n }) };

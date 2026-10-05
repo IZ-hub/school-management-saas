@@ -175,6 +175,17 @@ describe('Fees and payments (e2e)', () => {
     expect(teacher.feesTerm).toBeNull();
   });
 
+  it('keeps the dashboard working when Firestore lacks an index for counts or totals', async () => {
+    const t = currentTermSession();
+    await api.post('/api/v1/fees/schedules', { ...t, classIds: ['jss1'], items }).expect(201);
+    await api.post('/api/v1/payments', { studentId: 's1', ...t, amount: 30000, method: 'CASH', paidOn: '2026-09-15' }).expect(201);
+    db.store.refuseAggregates = true;
+    const stats = (await api.get('/api/v1/dashboard/stats').expect(200)).body.data;
+    expect(stats.feesTerm).toMatchObject({ expected: 200000, collected: 30000, outstanding: 170000 });
+    expect(stats.totalStudents).toBe(4);
+    await api.get('/api/v1/dashboard/class-sizes').expect(200);
+  });
+
   it('lets accountants manage fees but not teachers or parents, and keeps schools apart', async () => {
     const acc = as(token('ACCOUNTANT', 'acc-1'));
     await acc.post('/api/v1/fees/schedules', { ...term, classIds: ['jss1'], items }).expect(201);

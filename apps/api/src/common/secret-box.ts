@@ -6,6 +6,8 @@ import { getJwtSecret } from './jwt-secret';
  * server's JWT secret with a separate label, so stored values are useless without the server's environment.
  * Rotating the JWT secret makes old values unreadable; schools then re-enter their key.
  */
+// 'schoolful' is the product's original name. It is part of the key itself, so it must never change,
+// or every stored Paystack and SMS key becomes unreadable.
 const key = () => Buffer.from(crypto.hkdfSync('sha256', getJwtSecret(), 'schoolful', 'school-secrets-v1', 32));
 
 export function seal(plain: string): string {

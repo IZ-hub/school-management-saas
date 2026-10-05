@@ -231,8 +231,8 @@ function LinkDialog({ invite, schoolName, onClose }: { invite: StaffInvite & { n
   const [copied, setCopied] = useState(false)
   const url = invite.reset ? `${window.location.origin}/reset#${invite.code}` : staffSetupLink(invite.code)
   const message = invite.reset
-    ? `Hello ${invite.name}. Here is a link to choose a new Schoolful LMS password (it works once and expires in 3 days): ${url}`
-    : `Hello ${invite.name}. ${schoolName || 'Your school'} has invited you to Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${url}`
+    ? `Hello ${invite.name}. Here is a link to choose a new SchoolBricks password (it works once and expires in 3 days): ${url}`
+    : `Hello ${invite.name}. ${schoolName || 'Your school'} has invited you to SchoolBricks. Open this link to set your password (it works once and expires in 7 days): ${url}`
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>Send this {invite.reset ? 'reset' : 'setup'} link to {invite.name}</DialogTitle>

@@ -86,7 +86,7 @@ const featureTabs = [
     label: 'SETUP',
     step: '01',
     title: 'Your school, configured in minutes',
-    desc: 'Add your school details, create classes, set up terms and sessions. Import existing student data or start fresh. No IT team needed — if you can use WhatsApp, you can set up Schoolful LMS.',
+    desc: 'Add your school details, create classes, set up terms and sessions. Import existing student data or start fresh. No IT team needed — if you can use WhatsApp, you can set up SchoolBricks.',
     highlights: ['School profile & branding', 'Class & section setup', 'Term & session management', 'Staff onboarding'],
   },
   {
@@ -168,14 +168,14 @@ const nigerianValues = [
 
 /* ─── FAQ data ─── */
 const faqs = [
-  { q: 'What types of schools is Schoolful LMS for?', a: 'Schoolful LMS is built for nursery, primary, and secondary schools in Nigeria. Whether you run a single campus or a group of schools, our platform adapts to your structure \u2014 classes, terms, fee types, and all.' },
+  { q: 'What types of schools is SchoolBricks for?', a: 'SchoolBricks is built for nursery, primary, and secondary schools in Nigeria. Whether you run a single campus or a group of schools, our platform adapts to your structure \u2014 classes, terms, fee types, and all.' },
   { q: 'How long does setup take?', a: 'Most schools are fully set up in under 15 minutes. Just add your school details, create your classes, and start enrolling students. You can also import your existing student list from Excel.' },
   { q: 'Do parents need to download an app?', a: 'No. Parents receive invoices, reminders, receipts, and report card alerts via WhatsApp and email. No app download required \u2014 we meet parents where they already are.' },
   { q: 'How do parents pay fees?', a: 'Parents can pay via bank transfer, card, or USSD through our integrated Paystack payment gateway. Every payment is recorded instantly in your dashboard \u2014 no manual reconciliation needed.' },
   { q: "Is my school's data secure?", a: "Yes. Each school's data is completely isolated from every other school. We use industry-standard encryption, secure cloud infrastructure, and comply with Nigeria's Data Protection Regulation (NDPR)." },
   { q: 'Can I move from another school management tool?', a: 'Absolutely. We support data import from Excel and CSV files. Our support team can also help you migrate your existing records during onboarding.' },
   { q: 'What happens after the 30-day pilot?', a: 'After your pilot ends, you choose a plan that fits your school. All your data from the pilot is preserved \u2014 nothing is lost. If you decide not to continue, you can export your data at any time.' },
-  { q: 'What does the pilot include?', a: 'The 30-day pilot gives you full access to all features on the Growth plan. No credit card required. Set up your school, add students, track fees, and see if Schoolful LMS is right for you.' },
+  { q: 'What does the pilot include?', a: 'The 30-day pilot gives you full access to all features on the Growth plan. No credit card required. Set up your school, add students, track fees, and see if SchoolBricks is right for you.' },
   { q: "What's the difference between transactional and broadcast WhatsApp?", a: 'Transactional messages are automatic \u2014 fee reminders, payment receipts, report card alerts. These are unlimited on all paid plans. Broadcasts are custom messages you compose and send to all parents (e.g. "School resumes Monday"). Each broadcast is billed per parent reached.' },
 ]
 
@@ -232,7 +232,7 @@ export default function LandingPage() {
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ py: { xs: 1, md: 1.5 } }}>
             <Box sx={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#111', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-                Schoolful LMS
+                SchoolBricks
               </Typography>
               <Typography variant="caption" sx={{ color: '#888', fontSize: '0.65rem', letterSpacing: '0.5px' }}>
                 Everything School. One Platform.
@@ -272,7 +272,7 @@ export default function LandingPage() {
       >
         <Box sx={{ px: 2.5, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#0d3b2e', color: '#fff' }}>
           <Box>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.2 }}>Schoolful LMS</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.2 }}>SchoolBricks</Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)' }}>Everything School. One Platform.</Typography>
           </Box>
           <IconButton aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} sx={{ color: '#fff', width: 44, height: 44 }}><CloseIcon /></IconButton>
@@ -343,12 +343,12 @@ export default function LandingPage() {
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ffbd2e' }} />
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#28c840' }} />
                   <Box sx={{ flex: 1, ml: 1, px: 1.5, py: 0.3, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
-                    <Typography variant="caption" sx={{ color: '#999', fontSize: '0.65rem' }}>schoolful.app/dashboard</Typography>
+                    <Typography variant="caption" sx={{ color: '#999', fontSize: '0.65rem' }}>schoolbricks.app/dashboard</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', minHeight: 340, bgcolor: '#fafafa' }}>
                   <Box sx={{ width: 150, bgcolor: '#1b5e20', py: 2, px: 1.5, display: { xs: 'none', sm: 'block' } }}>
-                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>Schoolful LMS</Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>SchoolBricks</Typography>
                     {['Dashboard','Students','Teachers','Classes','Attendance','Exams','Fees','Payments'].map((item, i) => (
                       <Box key={item} sx={{ px: 1, py: 0.5, borderRadius: 1, mb: 0.25, bgcolor: i === 0 ? 'rgba(255,255,255,0.15)' : 'transparent' }}>
                         <Typography variant="caption" sx={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{item}</Typography>
@@ -495,7 +495,7 @@ export default function LandingPage() {
       <Box sx={{ py: { xs: 5, md: 10 }, bgcolor: '#fafafa' }}>
         <Container maxWidth="md">
           <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', textAlign: 'center', fontSize: { xs: '1.4rem', md: '2.25rem' }, letterSpacing: '-0.5px' }}>
-            Schoolful LMS gives each of them a system that works.
+            SchoolBricks gives each of them a system that works.
           </Typography>
         </Container>
       </Box>
@@ -805,7 +805,7 @@ export default function LandingPage() {
               From sign-up to fully running — in 4 steps
             </Typography>
             <Typography variant="body1" sx={{ color: '#888', maxWidth: 500, mx: 'auto' }}>
-              Click through each step to see how Schoolful LMS gets your school ready.
+              Click through each step to see how SchoolBricks gets your school ready.
             </Typography>
           </Box>
 
@@ -878,7 +878,7 @@ export default function LandingPage() {
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#28c840' }} />
                   <Box sx={{ flex: 1, ml: 1, px: 1.5, py: 0.3, bgcolor: '#fff', borderRadius: 0.5, border: '1px solid #e0e0e0' }}>
                     <Typography variant="caption" sx={{ color: '#999', fontSize: '0.65rem' }}>
-                      {demoStep === 0 ? 'schoolful.app/register' : 'schoolful.app/dashboard'}
+                      {demoStep === 0 ? 'schoolbricks.app/register' : 'schoolbricks.app/dashboard'}
                     </Typography>
                   </Box>
                 </Box>
@@ -913,7 +913,7 @@ export default function LandingPage() {
                 {demoStep === 1 && (
                   <Box sx={{ display: 'flex', minHeight: 360 }}>
                     <Box sx={{ width: 140, bgcolor: '#111', py: 2, px: 1.5, display: { xs: 'none', sm: 'block' } }}>
-                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>Schoolful LMS</Typography>
+                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>SchoolBricks</Typography>
                       {['Dashboard', 'Students', 'Teachers', 'Classes'].map((item, i) => (
                         <Box key={item} sx={{ px: 1, py: 0.5, borderRadius: 1, mb: 0.25, bgcolor: i === 3 ? 'rgba(255,255,255,0.15)' : 'transparent' }}>
                           <Typography variant="caption" sx={{ color: i === 3 ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{item}</Typography>
@@ -948,7 +948,7 @@ export default function LandingPage() {
                 {demoStep === 2 && (
                   <Box sx={{ display: 'flex', minHeight: 360 }}>
                     <Box sx={{ width: 140, bgcolor: '#111', py: 2, px: 1.5, display: { xs: 'none', sm: 'block' } }}>
-                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>Schoolful LMS</Typography>
+                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>SchoolBricks</Typography>
                       {['Dashboard', 'Students', 'Teachers', 'Classes'].map((item, i) => (
                         <Box key={item} sx={{ px: 1, py: 0.5, borderRadius: 1, mb: 0.25, bgcolor: i === 1 ? 'rgba(255,255,255,0.15)' : 'transparent' }}>
                           <Typography variant="caption" sx={{ color: i === 1 ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{item}</Typography>
@@ -986,7 +986,7 @@ export default function LandingPage() {
                 {demoStep === 3 && (
                   <Box sx={{ display: 'flex', minHeight: 360 }}>
                     <Box sx={{ width: 140, bgcolor: '#111', py: 2, px: 1.5, display: { xs: 'none', sm: 'block' } }}>
-                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>Schoolful LMS</Typography>
+                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, display: 'block', mb: 2, px: 0.5 }}>SchoolBricks</Typography>
                       {['Dashboard', 'Students', 'Teachers', 'Classes', 'Attendance', 'Exams', 'Fees', 'Payments'].map((item, i) => (
                         <Box key={item} sx={{ px: 1, py: 0.5, borderRadius: 1, mb: 0.25, bgcolor: i === 0 ? 'rgba(255,255,255,0.15)' : 'transparent' }}>
                           <Typography variant="caption" sx={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{item}</Typography>
@@ -1045,7 +1045,7 @@ export default function LandingPage() {
                   Book a free 30-minute walkthrough on Google Meet.
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#666', lineHeight: 1.7 }}>
-                  We'll show you the dashboard, answer your questions, and help you decide if Schoolful LMS is the right fit for your school.
+                  We'll show you the dashboard, answer your questions, and help you decide if SchoolBricks is the right fit for your school.
                 </Typography>
               </Grid>
               <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -1067,7 +1067,7 @@ export default function LandingPage() {
               We're building the operating system for African schools
             </Typography>
             <Typography variant="body1" sx={{ color: '#666', lineHeight: 1.8, maxWidth: 560, mx: 'auto' }}>
-              Schoolful LMS was born from a simple observation: schools spend too much time on paperwork and not enough on education. We're a team of educators and engineers building the most intuitive, affordable school management platform for schools across Africa.
+              SchoolBricks was born from a simple observation: schools spend too much time on paperwork and not enough on education. We're a team of educators and engineers building the most intuitive, affordable school management platform for schools across Africa.
             </Typography>
           </Box>
           <Grid container spacing={{ xs: 1.5, md: 3 }}>
@@ -1124,7 +1124,7 @@ export default function LandingPage() {
             <Grid item xs={12} md={5}>
               <Stack spacing={{ xs: 1.5, md: 3 }}>
                 {[
-                  { icon: <EmailIcon sx={{ fontSize: 20 }} />, title: 'Email', lines: [{ text: 'hello@schoolful.app', href: 'mailto:hello@schoolful.app' }, { text: 'support@schoolful.app', href: 'mailto:support@schoolful.app' }] },
+                  { icon: <EmailIcon sx={{ fontSize: 20 }} />, title: 'Email', lines: [{ text: 'hello@schoolbricks.app', href: 'mailto:hello@schoolbricks.app' }, { text: 'support@schoolbricks.app', href: 'mailto:support@schoolbricks.app' }] },
                   { icon: <PhoneIcon sx={{ fontSize: 20 }} />, title: 'Phone', lines: [{ text: '0706 110 2797', href: 'tel:+2347061102797' }, { text: 'Mon - Fri, 8am - 6pm WAT' }] },
                   { icon: <LocationIcon sx={{ fontSize: 20 }} />, title: 'Office', lines: [{ text: 'Lagos, Nigeria' }, { text: 'Serving schools across Africa' }] },
                 ].map((c) => (
@@ -1181,7 +1181,7 @@ export default function LandingPage() {
       <Box sx={{ py: { xs: 3, md: 4 }, bgcolor: '#fbc02d', color: '#111', textAlign: 'center' }}>
         <Container maxWidth="md">
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5, fontSize: { xs: '1rem', md: '1.3rem' } }}>
-            Schools using Schoolful LMS save 10 hours a week on admin work.
+            Schools using SchoolBricks save 10 hours a week on admin work.
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.85 }}>
             Fees, attendance, report cards, and parent messages — all in one place.
@@ -1196,7 +1196,7 @@ export default function LandingPage() {
             Your school's operations should run like a system, not a scramble.
           </Typography>
           <Typography variant="body1" sx={{ mb: 4, opacity: 0.7 }}>
-            Join schools already using Schoolful LMS to save time, reduce errors, and focus on education.
+            Join schools already using SchoolBricks to save time, reduce errors, and focus on education.
           </Typography>
           <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />}
             sx={{ bgcolor: '#8bc34a', color: '#fff', textTransform: 'none', px: 5, py: 1.5, fontWeight: 700, borderRadius: 2, width: { xs: '100%', sm: 'auto' }, boxShadow: 'none', '&:hover': { bgcolor: '#7cb342' } }}>
@@ -1211,7 +1211,7 @@ export default function LandingPage() {
         <Container maxWidth="lg">
           <Grid container spacing={4}>
             <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#fff', mb: 1 }}>Schoolful LMS</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#fff', mb: 1 }}>SchoolBricks</Typography>
               <Typography variant="body2" sx={{ maxWidth: 240 }}>
                 The modern school management platform. Simplifying education administration for schools of every size.
               </Typography>
@@ -1251,7 +1251,7 @@ export default function LandingPage() {
           </Grid>
           <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.08)' }} />
           <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" spacing={1}>
-            <Typography variant="caption">&copy; {new Date().getFullYear()} Schoolful LMS. All rights reserved.</Typography>
+            <Typography variant="caption">&copy; {new Date().getFullYear()} SchoolBricks. All rights reserved.</Typography>
             <Typography variant="caption">Built with care for Nigerian schools.</Typography>
           </Stack>
         </Container>

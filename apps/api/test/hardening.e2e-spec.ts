@@ -62,7 +62,7 @@ describe('Password resets, login lockout and instant sign-out (e2e)', () => {
     const res = await http.post('/api/v1/auth/forgot-password').set('Origin', 'http://localhost:5173').send({ email: 'Owner@A.ng' }).expect(200);
     expect(res.body.data).toEqual({ sent: true, emailEnabled: true });
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({ to: 'owner@a.ng', subject: 'Reset your Schoolful LMS password' });
+    expect(sent[0]).toMatchObject({ to: 'owner@a.ng', subject: 'Reset your SchoolBricks password' });
     expect(sent[0].text).toContain('http://localhost:5173/reset#');
     const code = codeFrom(sent[0].text);
     expect((await http.get(`/api/v1/auth/invite?code=${encodeURIComponent(code)}`).expect(200)).body.data).toMatchObject({ purpose: 'RESET', email: 'owner@a.ng' });

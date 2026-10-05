@@ -48,7 +48,7 @@ export default function ParentSetup() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: brand.page, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2, py: 4 }}>
       <Paper sx={{ width: '100%', maxWidth: 420, p: { xs: 3, sm: 4 } }}>
-        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em', mb: 1 }}>SCHOOLFUL LMS</Typography>
+        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em', mb: 1 }}>SCHOOLBRICKS</Typography>
         {!invite && !loadError && <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={26} /></Box>}
         {loadError && (
           <>
@@ -65,7 +65,7 @@ export default function ParentSetup() {
                 ? 'Your new password replaces the old one, and you will be signed out on other devices.'
                 : invite.role === 'PARENT'
                 ? `${invite.schoolName} has given you access to ${childText}'s attendance, fees and report cards. Choose a password to finish.`
-                : `${invite.schoolName} has invited you to Schoolful LMS as ${ROLE_LABEL[invite.role]?.toLowerCase() === 'accountant' ? 'an' : 'a'} ${ROLE_LABEL[invite.role]?.toLowerCase() ?? 'staff member'}. Choose a password to finish.`}
+                : `${invite.schoolName} has invited you to SchoolBricks as ${ROLE_LABEL[invite.role]?.toLowerCase() === 'accountant' ? 'an' : 'a'} ${ROLE_LABEL[invite.role]?.toLowerCase() ?? 'staff member'}. Choose a password to finish.`}
             </Typography>
             <Stack spacing={2}>
               {error && <Alert severity="error">{error}</Alert>}

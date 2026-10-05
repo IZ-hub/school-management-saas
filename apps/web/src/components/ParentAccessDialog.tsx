@@ -68,8 +68,8 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
 
   const link = result?.status === 'INVITED' ? (result.reset ? resetLinkUrl(result.code) : setupLink(result.code)) : ''
   const message = result?.reset
-    ? `Hello. Here is a link to choose a new Schoolful LMS password (it works once and expires in 3 days): ${link}`
-    : `Hello. ${schoolName || 'Our school'} has given you access to ${student.firstName}'s attendance, fees and report cards on Schoolful LMS. Open this link to set your password (it works once and expires in 7 days): ${link}`
+    ? `Hello. Here is a link to choose a new SchoolBricks password (it works once and expires in 3 days): ${link}`
+    : `Hello. ${schoolName || 'Our school'} has given you access to ${student.firstName}'s attendance, fees and report cards on SchoolBricks. Open this link to set your password (it works once and expires in 7 days): ${link}`
   const copy = () => navigator.clipboard?.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {})
   const valid = /^\S+@\S+\.\S+$/.test(email.trim()) && firstName.trim() && lastName.trim()
 

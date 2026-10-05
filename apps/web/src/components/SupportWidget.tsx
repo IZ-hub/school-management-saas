@@ -48,9 +48,9 @@ function save(data: Saved) {
 }
 
 const whatsappLink = (text?: string) =>
-  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text ? `Hi Schoolful LMS, ${text}` : 'Hi Schoolful LMS, I have a question.')}`
+  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text ? `Hi SchoolBricks, ${text}` : 'Hi SchoolBricks, I have a question.')}`
 
-/** "Schoolful LMS Support" chat launcher and panel, fixed to the bottom-right corner. */
+/** "SchoolBricks Support" chat launcher and panel, fixed to the bottom-right corner. */
 export default function SupportWidget() {
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
@@ -161,7 +161,7 @@ export default function SupportWidget() {
       {!open && showLauncher && (
         <ButtonBase
           onClick={() => setOpen(true)}
-          aria-label="Open Schoolful LMS support chat"
+          aria-label="Open SchoolBricks support chat"
           sx={{
             position: 'fixed', right: 20, bottom: { xs: 16, sm: 12 }, zIndex: 1250,
             height: 50, px: 2.5, borderRadius: 999, bgcolor: BRAND, color: '#fff',
@@ -180,7 +180,7 @@ export default function SupportWidget() {
       {open && (
         <Box
           role="dialog"
-          aria-label="Schoolful LMS Support"
+          aria-label="SchoolBricks Support"
           onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
           sx={{
             position: 'fixed', zIndex: 1250, bottom: 16,
@@ -196,7 +196,7 @@ export default function SupportWidget() {
           {/* Header */}
           <Box sx={{ bgcolor: BRAND, color: '#fff', height: 44, display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
             <Typography sx={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: '15px', px: 9 }}>
-              Schoolful LMS Support
+              SchoolBricks Support
             </Typography>
             <Stack direction="row" sx={{ position: 'absolute', right: 6 }}>
               <IconButton

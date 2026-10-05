@@ -102,7 +102,7 @@ export default function ParentHome() {
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
             {schoolLogo && <Box component="img" src={schoolLogo} alt="" sx={{ height: 36, width: 36, objectFit: 'contain' }} />}
             <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: '12px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em' }}>SCHOOLFUL LMS</Typography>
+              <Typography sx={{ fontSize: '12px', fontWeight: 700, color: brand.green, letterSpacing: '0.04em' }}>SCHOOLBRICKS</Typography>
               <Typography noWrap sx={{ fontSize: '15px', fontWeight: 700 }}>{schoolName || ' '}</Typography>
             </Box>
           </Stack>

@@ -17,7 +17,7 @@ export const authColors = {
 
 const authFont = '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif'
 
-/** Schoolful LMS logo mark and name. */
+/** SchoolBricks logo mark and name. */
 export function BrandLogo() {
   return (
     <Stack component={Link} to="/" direction="row" spacing={1} alignItems="center" sx={{ textDecoration: 'none' }}>
@@ -25,7 +25,7 @@ export function BrandLogo() {
         <SchoolIcon sx={{ fontSize: 20, color: '#fff' }} />
       </Avatar>
       <Typography sx={{ fontWeight: 800, fontSize: '20px', color: authColors.brand, letterSpacing: '-0.2px' }}>
-        Schoolful LMS
+        SchoolBricks
       </Typography>
     </Stack>
   )
@@ -154,7 +154,7 @@ export const primaryButtonSx = {
 /** Turns an API or network failure into a message a user can act on. */
 export function describeError(err: any, fallback: string): string {
   if (!err?.response) {
-    return "Couldn't reach Schoolful LMS. Check your internet connection and try again."
+    return "Couldn't reach SchoolBricks. Check your internet connection and try again."
   }
   const message = err.response.data?.message
   if (Array.isArray(message)) return message.join('. ')

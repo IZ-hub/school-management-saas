@@ -114,7 +114,7 @@ function Logo() {
       <Avatar sx={{ bgcolor: '#1b5e20', width: 32, height: 32 }}>
         <LogoIcon sx={{ fontSize: 18, color: '#fff' }} />
       </Avatar>
-      <Typography sx={{ fontWeight: 800, fontSize: '17px', color: brand.green, letterSpacing: '-0.2px' }}>Schoolful LMS</Typography>
+      <Typography sx={{ fontWeight: 800, fontSize: '17px', color: brand.green, letterSpacing: '-0.2px' }}>SchoolBricks</Typography>
     </Stack>
   )
 }

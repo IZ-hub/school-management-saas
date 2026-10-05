@@ -264,11 +264,11 @@ export class AuthService {
     const lines = links.map((l) => (links.length > 1 ? `${l.school}: ${l.url}` : l.url));
     await sendMail(
       accounts[0].data().email,
-      'Reset your Schoolful LMS password',
-      `Hello ${name},\n\nUse this link to choose a new password. It works once and expires in 1 hour:\n\n${lines.join('\n')}\n\nIf you didn't ask for this, you can ignore this email; your password won't change.\n\nSchoolful LMS`,
+      'Reset your SchoolBricks password',
+      `Hello ${name},\n\nUse this link to choose a new password. It works once and expires in 1 hour:\n\n${lines.join('\n')}\n\nIf you didn't ask for this, you can ignore this email; your password won't change.\n\nSchoolBricks`,
       `<p>Hello ${escapeHtml(name)},</p><p>Use this link to choose a new password. It works once and expires in 1 hour:</p>${links
         .map((l) => `<p>${links.length > 1 ? `<b>${escapeHtml(l.school)}</b><br>` : ''}<a href="${l.url}">Reset my password</a></p>`)
-        .join('')}<p>If you didn't ask for this, you can ignore this email; your password won't change.</p><p>Schoolful LMS</p>`,
+        .join('')}<p>If you didn't ask for this, you can ignore this email; your password won't change.</p><p>SchoolBricks</p>`,
     );
     return done;
   }

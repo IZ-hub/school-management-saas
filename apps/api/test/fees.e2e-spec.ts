@@ -170,7 +170,7 @@ describe('Fees and payments (e2e)', () => {
     const t = currentTermSession();
     await api.post('/api/v1/fees/schedules', { ...t, classIds: ['jss1'], items }).expect(201);
     const owner = (await api.get('/api/v1/dashboard/stats').expect(200)).body.data;
-    expect(owner.feesTerm).toMatchObject({ ...t, expected: 200000, collected: 0, owing: 2, feesSet: true });
+    expect(owner.feesTerm).toMatchObject({ ...t, expected: 200000, collected: 0, outstanding: 200000, rate: 0, feesSet: true });
     const teacher = (await as(token('TEACHER', 't-1')).get('/api/v1/dashboard/stats').expect(200)).body.data;
     expect(teacher.feesTerm).toBeNull();
   });

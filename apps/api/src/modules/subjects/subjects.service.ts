@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
+import { countOf } from '../../common/aggregate';
 
 /** "Basic Science", "basic-science" and "BasicScience" are the same subject name. */
 const nameKey = (v: string) => v.toLowerCase().replace(/[\s\-_.]+/g, '');
@@ -141,10 +142,8 @@ export class SubjectsService {
   }
 
   async count(schoolId: string) {
-    const snapshot = await this.col
+    return countOf(this.col
       .where('schoolId', '==', schoolId)
-      .where('status', '==', 'ACTIVE')
-      .get();
-    return snapshot.size;
+      .where('status', '==', 'ACTIVE'));
   }
 }

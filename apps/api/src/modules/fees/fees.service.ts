@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { isIsoDate, Term, TERMS } from '../../common/school-date';
 import { TermCalendar } from '../../common/term-calendar';
+import { countOf, sumOf } from '../../common/aggregate';
 import { SaveDiscountDto, SaveScheduleDto } from './dto/fees.dto';
 
 export type FeeStatus = 'PAID' | 'PART' | 'UNPAID' | 'NO_FEES';
@@ -218,9 +219,40 @@ export class FeesService {
     };
   }
 
-  /** Collected vs expected for the current term, for the dashboard. */
+  /**
+   * Collected vs expected for the current term, for the dashboard. Uses counts and sums on the
+   * database side instead of loading every student and payment (the Fees page has the full detail).
+   */
   async termSummary(schoolId: string) {
-    const o = await this.overview(schoolId);
-    return { term: o.term, session: o.session, expected: o.totals.expected, collected: o.totals.collected, outstanding: o.totals.outstanding, rate: o.totals.rate, owing: o.totals.owing, feesSet: o.classes.some((c) => c.scheduleId) };
+    const ts = await this.resolveTerm(schoolId);
+    const [classSnap, scheduleSnap, discountSnap] = await Promise.all([
+      this.db.collection('classes').where('schoolId', '==', schoolId).get(),
+      this.schedules.where('schoolId', '==', schoolId).where('term', '==', ts.term).where('session', '==', ts.session).get(),
+      this.discounts.where('schoolId', '==', schoolId).where('term', '==', ts.term).where('session', '==', ts.session).get(),
+    ]);
+    const active = new Set(classSnap.docs.filter((d) => d.data().status !== 'INACTIVE').map((d) => d.id));
+    const scheduled = scheduleSnap.docs.filter((d) => active.has(d.data().classId));
+    const students = this.db.collection('students').where('schoolId', '==', schoolId).where('status', '==', 'ACTIVE');
+    const [sizes, collected, discountStudents] = await Promise.all([
+      Promise.all(scheduled.map((d) => countOf(students.where('classId', '==', d.data().classId)))),
+      sumOf(this.db.collection('feePayments').where('schoolId', '==', schoolId).where('term', '==', ts.term).where('session', '==', ts.session).where('voided', '==', false), 'amount'),
+      Promise.all(discountSnap.docs.map((d) => this.db.collection('students').doc(d.data().studentId).get())),
+    ]);
+    const totalOf = new Map(scheduled.map((d) => [d.data().classId, d.data().total as number]));
+    // Discounts only count for current students in a class that has fees.
+    const discounts = discountSnap.docs.reduce((sum, d, i) => {
+      const st = discountStudents[i];
+      return st.exists && st.data()!.status === 'ACTIVE' && totalOf.has(st.data()!.classId) ? sum + d.data().amount : sum;
+    }, 0);
+    const expected = scheduled.reduce((sum, d, i) => sum + d.data().total * sizes[i], 0) - discounts;
+    return {
+      ...ts,
+      expected,
+      collected,
+      outstanding: Math.max(0, expected - collected),
+      rate: expected ? Math.min(100, Math.round((collected / expected) * 100)) : null,
+      feesSet: scheduled.length > 0,
+    };
   }
+
 }

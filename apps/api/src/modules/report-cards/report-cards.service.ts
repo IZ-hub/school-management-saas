@@ -7,6 +7,7 @@ import { TeachingScope } from '../../common/teaching-scope';
 import { gradeFor } from '../results/results.service';
 import { fixedTermRange } from '../../common/school-date';
 import { TermCalendar } from '../../common/term-calendar';
+import { inDateRange } from '../../common/aggregate';
 import { SaveRemarksDto } from './dto/save-remarks.dto';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -47,15 +48,20 @@ export class ReportCardsService {
     scope?.requireClass(classId, classDoc.data()!.name);
     const { from, to } = (await TermCalendar.load(this.db as any, schoolId)).range(series.term, series.session);
 
-    const [school, papersSnap, resultsSnap, studentsSnap, attendanceSnap, remarksSnap, teachersSnap] = await Promise.all([
+    // Only this class's papers and results, and only this term's attendance.
+    const [school, papersSnap, resultsSnap, studentsSnap, attendanceDocs, formTeacher] = await Promise.all([
       this.db.collection('schools').doc(schoolId).get(),
-      this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
-      this.db.collection('examResults').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
+      this.db.collection('exams').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).where('classId', '==', classId).get(),
+      this.db.collection('examResults').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).where('classId', '==', classId).get(),
       this.db.collection('students').where('schoolId', '==', schoolId).where('classId', '==', classId).get(),
-      this.db.collection('attendance').where('schoolId', '==', schoolId).where('classId', '==', classId).get(),
-      this.db.collection('reportRemarks').where('schoolId', '==', schoolId).where('seriesId', '==', seriesId).get(),
-      this.db.collection('teachers').where('schoolId', '==', schoolId).get(),
+      inDateRange(this.db.collection('attendance').where('schoolId', '==', schoolId).where('classId', '==', classId), 'date', from, to),
+      classDoc.data()!.teacherId ? this.db.collection('teachers').doc(classDoc.data()!.teacherId).get() : Promise.resolve(null),
     ]);
+    const remarkDocs = await Promise.all(
+      studentsSnap.docs.filter((d) => d.data().status !== 'INACTIVE').map((d) => this.db.collection('reportRemarks').doc(this.remarksId(seriesId, d.id)).get()),
+    );
+    const remarksSnap = { docs: remarkDocs.filter((d) => d.exists && d.data()!.schoolId === schoolId) };
+    const attendanceSnap = { docs: attendanceDocs };
 
     const papers = papersSnap.docs
       .filter((d) => d.data().classId === classId)
@@ -66,7 +72,7 @@ export class ReportCardsService {
       .map((d) => ({ id: d.id, firstName: d.data().firstName ?? '', lastName: d.data().lastName ?? '', admissionNumber: d.data().admissionNumber ?? '', gender: d.data().gender ?? null }))
       .sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
     const resultOf = new Map(resultsSnap.docs.map((d) => [`${d.data().examId}|${d.data().studentId}`, d.data()]));
-    const remarksOf = new Map(remarksSnap.docs.map((d) => [d.data().studentId, d.data()]));
+    const remarksOf = new Map(remarksSnap.docs.map((d) => [d.data()!.studentId, d.data()!]));
 
     // Subject statistics across the class (completed totals only).
     const subjectStats = new Map(
@@ -138,13 +144,13 @@ export class ReportCardsService {
     cards.forEach((c) => (c.position = positions.get(c) ?? null));
     const ranked = cards.filter((c) => c.position !== null).length;
 
-    const formTeacher = teachersSnap.docs.find((d) => d.id === classDoc.data()!.teacherId);
+
     const averages = cards.map((c) => c.average).filter((a): a is number => a !== null);
     const sch = school.exists ? school.data()! : {};
     return {
       school: { name: sch.name ?? '', address: [sch.address, sch.city, sch.state].filter(Boolean).join(', '), phone: sch.phone ?? '', email: sch.email ?? '', logo: sch.logo ?? null, motto: sch.motto ?? '', principalName: sch.principalName ?? '' },
       series: { id: seriesId, name: series.name, term: series.term, session: series.session, startDate: series.startDate, endDate: series.endDate },
-      class: { id: classId, name: classDoc.data()!.name, formTeacher: formTeacher ? `${formTeacher.data().firstName ?? ''} ${formTeacher.data().lastName ?? ''}`.trim() : null },
+      class: { id: classId, name: classDoc.data()!.name, formTeacher: formTeacher?.exists && formTeacher.data()!.schoolId === schoolId ? `${formTeacher.data()!.firstName ?? ''} ${formTeacher.data()!.lastName ?? ''}`.trim() : null },
       attendancePeriod: { from, to },
       classSize: students.length,
       ranked,

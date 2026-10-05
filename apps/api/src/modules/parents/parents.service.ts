@@ -5,6 +5,7 @@ import { createInvite, revokeSessions } from '../../common/invites';
 import { forgetAccount } from '../auth/guards/jwt-auth.guard';
 import { schoolToday } from '../../common/school-date';
 import { TermCalendar } from '../../common/term-calendar';
+import { inDateRange } from '../../common/aggregate';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { FeesService } from '../fees/fees.service';
 import { ReportCardsService } from '../report-cards/report-cards.service';
@@ -155,12 +156,12 @@ export class ParentsService {
     const calendar = await TermCalendar.load(this.db as any, user.schoolId);
     const ts = calendar.current();
     const { from, to } = calendar.range(ts.term, ts.session);
-    const [marksSnap, statement, seriesSnap] = await Promise.all([
-      this.db.collection('attendance').where('schoolId', '==', user.schoolId).where('studentId', '==', studentId).get(),
+    const [markDocs, statement, seriesSnap] = await Promise.all([
+      inDateRange(this.db.collection('attendance').where('schoolId', '==', user.schoolId).where('studentId', '==', studentId), 'date', from, to),
       this.fees.statement(user.schoolId, studentId, ts.term, ts.session),
       this.db.collection('examSeries').where('schoolId', '==', user.schoolId).get(),
     ]);
-    const marks = marksSnap.docs.map((d) => d.data()).filter((m) => m.date >= from && m.date <= to && m.date <= schoolToday());
+    const marks = markDocs.map((d) => d.data()).filter((m) => m.date <= schoolToday());
     const count = (s: string) => marks.filter((m) => m.status === s).length;
     const expected = count('PRESENT') + count('LATE') + count('ABSENT');
     const classId = child.data()!.classId;

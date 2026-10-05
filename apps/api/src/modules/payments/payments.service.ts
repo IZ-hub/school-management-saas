@@ -38,6 +38,7 @@ export class PaymentsService {
 
     return this.insert(schoolId, {
       studentId: dto.studentId,
+      ...this.names(statement.student),
       classId: statement.student.classId,
       term: dto.term,
       session: dto.session,
@@ -59,6 +60,7 @@ export class PaymentsService {
     const statement = await this.fees.statement(schoolId, p.studentId, p.term, p.session);
     return this.insert(schoolId, {
       studentId: p.studentId,
+      ...this.names(statement.student),
       classId: statement.student.classId,
       term: p.term,
       session: p.session,
@@ -70,6 +72,11 @@ export class PaymentsService {
       recordedBy: 'paystack',
       recordedByName: 'Paystack (online)',
     });
+  }
+
+  /** Kept on the payment so the payments list doesn't have to look up every student. */
+  private names(st: { firstName: string; lastName: string; admissionNumber: string; className: string | null }) {
+    return { studentName: `${st.firstName} ${st.lastName}`.trim(), admissionNumber: st.admissionNumber, className: st.className };
   }
 
   /** Saves a payment with the next receipt number for its year. */
@@ -119,22 +126,27 @@ export class PaymentsService {
 
   async list(schoolId: string, query: { term?: string; session?: string; studentId?: string }) {
     const ts = await this.fees.resolveTerm(schoolId, query.term, query.session);
-    const [paySnap, studentSnap, classSnap] = await Promise.all([
+    const [paySnap, classSnap] = await Promise.all([
       this.col.where('schoolId', '==', schoolId).where('term', '==', ts.term).where('session', '==', ts.session).get(),
-      this.db.collection('students').where('schoolId', '==', schoolId).get(),
       this.db.collection('classes').where('schoolId', '==', schoolId).get(),
     ]);
-    const students = new Map(studentSnap.docs.map((d) => [d.id, d.data()]));
     const classes = new Map(classSnap.docs.map((d) => [d.id, d.data().name]));
-    const payments = paySnap.docs
-      .filter((d) => !query.studentId || d.data().studentId === query.studentId)
+    const docs = paySnap.docs.filter((d) => !query.studentId || d.data().studentId === query.studentId);
+    // Payments recorded before names were stored on them: look up just those students.
+    const missing = [...new Set(docs.filter((d) => !d.data().studentName).map((d) => d.data().studentId as string))];
+    const looked = new Map(
+      (await Promise.all(missing.map((id) => this.db.collection('students').doc(id).get())))
+        .filter((d) => d.exists && d.data()!.schoolId === schoolId)
+        .map((d) => [d.id, d.data()!]),
+    );
+    const payments = docs
       .map((d) => {
         const p = d.data();
-        const s = students.get(p.studentId);
+        const s = looked.get(p.studentId);
         return {
           id: d.id, receiptNumber: p.receiptNumber, studentId: p.studentId,
-          studentName: s ? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() : 'Unknown student',
-          admissionNumber: s?.admissionNumber ?? '', className: classes.get(p.classId) ?? null,
+          studentName: p.studentName ?? (s ? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() : 'Unknown student'),
+          admissionNumber: p.admissionNumber ?? s?.admissionNumber ?? '', className: p.className ?? classes.get(p.classId) ?? null,
           amount: p.amount, method: p.method, reference: p.reference, paidOn: p.paidOn,
           recordedByName: p.recordedByName, voided: !!p.voided, voidReason: p.voidReason ?? null,
         };

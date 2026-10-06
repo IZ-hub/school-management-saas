@@ -7,6 +7,17 @@ type Store = Map<string, Map<string, Data>> & { reads?: number; refuseAggregates
 
 let nextId = 1;
 
+/** Firestore only stores plain data: it rejects class instances (anything made with `new`, except dates). */
+function assertPlain(value: any, path = 'data') {
+  if (value === null || value === undefined || typeof value !== 'object' || value instanceof Date) return;
+  if (Array.isArray(value)) return value.forEach((v, i) => assertPlain(v, `${path}.${i}`));
+  const proto = Object.getPrototypeOf(value);
+  if (proto !== Object.prototype && proto !== null) {
+    throw new Error(`Value for argument "data" is not a valid Firestore document. Couldn't serialize object of type "${value.constructor?.name}" (found in field "${path}").`);
+  }
+  for (const [k, v] of Object.entries(value)) assertPlain(v, k === path ? k : `${path === 'data' ? '' : `${path}.`}${k}`);
+}
+
 const matches = (actual: any, op: string, v: any) =>
   op === '==' ? actual === v : op === '>=' ? actual >= v : op === '<=' ? actual <= v : op === '>' ? actual > v : op === '<' ? actual < v : false;
 
@@ -30,10 +41,12 @@ class FakeDocRef {
   }
 
   async set(data: Data) {
+    assertPlain(data);
     this.col.set(this.id, { ...data });
   }
 
   async update(data: Data) {
+    assertPlain(data);
     const existing = this.col.get(this.id);
     if (!existing) throw new Error(`NOT_FOUND: ${this.colName}/${this.id}`);
     this.col.set(this.id, { ...existing, ...data });
@@ -129,8 +142,8 @@ export class FakeFirestore {
   batch() {
     const ops: (() => Promise<void>)[] = [];
     return {
-      set: (ref: FakeDocRef, data: Data) => ops.push(() => ref.set(data)),
-      update: (ref: FakeDocRef, data: Data) => ops.push(() => ref.update(data)),
+      set: (ref: FakeDocRef, data: Data) => { assertPlain(data); ops.push(() => ref.set(data)); },
+      update: (ref: FakeDocRef, data: Data) => { assertPlain(data); ops.push(() => ref.update(data)); },
       delete: (ref: FakeDocRef) => ops.push(() => ref.delete()),
       commit: async () => {
         for (const op of ops) await op();

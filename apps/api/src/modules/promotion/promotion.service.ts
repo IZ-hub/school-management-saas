@@ -98,7 +98,10 @@ export class PromotionService {
     const [y1, y2] = dto.toSession.split('/').map(Number);
     if (y2 !== y1 + 1) throw new BadRequestException('Session must be two consecutive years, like 2027/2028.');
     const done = (await this.log.where('schoolId', '==', schoolId).where('toSession', '==', dto.toSession).get()).docs.filter((d) => !d.data().undone);
-    if (done.length) throw new BadRequestException(`Students have already been promoted into ${dto.toSession}. Undo that first if you need to redo it.`);
+    // Each moved student also carries the session they were promoted into, so a second run is refused
+    // even if the promotion record itself were ever missing.
+    const marked = await this.db.collection('students').where('schoolId', '==', schoolId).where('promotedInto', '==', dto.toSession).limit(1).get();
+    if (done.length || !marked.empty) throw new BadRequestException(`Students have already been promoted into ${dto.toSession}. Undo that first if you need to redo it.`);
 
     const [classSnap, studentSnap, me] = await Promise.all([
       this.db.collection('classes').where('schoolId', '==', schoolId).get(),
@@ -131,16 +134,22 @@ export class PromotionService {
       graduated: changes.filter((c) => c.graduated).length,
       stayed: students.length - changes.length,
     };
+    const byName = me.exists ? `${me.data()!.firstName ?? ''} ${me.data()!.lastName ?? ''}`.trim() : user.email;
+    // Save the record first (as plain data), so Undo and the duplicate check work even if moving fails partway.
+    const ref = await this.log.add({
+      schoolId, toSession: dto.toSession, at: now, by: user.sub, byName,
+      moves: dto.moves.map((m) => ({ fromClassId: m.fromClassId, to: m.to })),
+      changes, counts, undone: false, status: 'APPLYING',
+    });
     const col = this.db.collection('students');
     await this.commitInChunks(
       changes.map((c) => (b: FirebaseFirestore.WriteBatch) =>
         b.update(col.doc(c.studentId), c.graduated
-          ? { status: 'INACTIVE', leftReason: 'GRADUATED', leftSession: dto.toSession, leftAt: now, updatedAt: now }
-          : { classId: c.toClassId, updatedAt: now }),
+          ? { status: 'INACTIVE', leftReason: 'GRADUATED', leftSession: dto.toSession, leftAt: now, promotedInto: dto.toSession, updatedAt: now }
+          : { classId: c.toClassId, promotedInto: dto.toSession, updatedAt: now }),
       ),
     );
-    const byName = me.exists ? `${me.data()!.firstName ?? ''} ${me.data()!.lastName ?? ''}`.trim() : user.email;
-    const ref = await this.log.add({ schoolId, toSession: dto.toSession, at: now, by: user.sub, byName, moves: dto.moves, changes, counts, undone: false });
+    await ref.update({ status: 'DONE' });
     return { id: ref.id, toSession: dto.toSession, counts };
   }
 
@@ -156,8 +165,8 @@ export class PromotionService {
     await this.commitInChunks(
       changes.map((c) => (b: FirebaseFirestore.WriteBatch) =>
         b.update(col.doc(c.studentId), c.graduated
-          ? { status: 'ACTIVE', classId: c.fromClassId, leftReason: null, leftSession: null, leftAt: null, updatedAt: now }
-          : { classId: c.fromClassId, updatedAt: now }),
+          ? { status: 'ACTIVE', classId: c.fromClassId, leftReason: null, leftSession: null, leftAt: null, promotedInto: null, updatedAt: now }
+          : { classId: c.fromClassId, promotedInto: null, updatedAt: now }),
       ),
     );
     await doc.ref.update({ undone: true, undoneAt: now, undoneBy: user.sub });

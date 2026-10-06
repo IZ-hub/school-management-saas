@@ -136,6 +136,18 @@ describe('Staff accounts, promotion and school settings (e2e)', () => {
       await owner.post('/api/v1/promotion/apply', { toSession: '2027/2028', moves, holdBack: [] }).expect(201);
     });
 
+    it('refuses a second promotion into the same session even if its record were missing', async () => {
+      const plan = (await owner.get('/api/v1/promotion/plan').expect(200)).body.data;
+      const moves = plan.classes.map((c: any) => ({ fromClassId: c.classId, to: c.suggested }));
+      const res = (await owner.post('/api/v1/promotion/apply', { toSession: '2027/2028', moves, holdBack: [] }).expect(201)).body.data;
+      expect(db.peek('promotions', res.id)).toMatchObject({ status: 'DONE', moves: expect.any(Array) });
+      expect(student('a')).toMatchObject({ classId: 'jss2', promotedInto: '2027/2028' });
+      db.store.get('promotions')!.delete(res.id); // simulate the record going missing
+      const again = await owner.post('/api/v1/promotion/apply', { toSession: '2027/2028', moves, holdBack: [] }).expect(400);
+      expect(again.body.message).toMatch(/already been promoted into 2027\/2028/);
+      expect(student('a').classId).toBe('jss2'); // not moved twice
+    });
+
     it('validates moves and is admin-only', async () => {
       await owner.post('/api/v1/promotion/apply', { toSession: '2027/2028', moves: [{ fromClassId: 'jss1', to: 'nowhere' }], holdBack: [] }).expect(400);
       await owner.post('/api/v1/promotion/apply', { toSession: '2027/2028', moves: [{ fromClassId: 'jss1', to: 'STAY' }], holdBack: [] }).expect(400);

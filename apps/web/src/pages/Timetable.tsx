@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Alert,
   Box,
@@ -115,6 +115,8 @@ export default function Timetable() {
   }
 
   const [classes, setClasses] = useState<ClassRow[]>([])
+  const [classesLoaded, setClassesLoaded] = useState(false)
+  const navigate = useNavigate()
   const [teachers, setTeachers] = useState<TeacherRow[]>([])
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof getOverview>> | null>(null)
   const [classWeek, setClassWeek] = useState<ClassWeek | null>(null)
@@ -130,16 +132,20 @@ export default function Timetable() {
 
   const loadOverview = useCallback(() => { getOverview().then(setOverview).catch(() => {}) }, [])
   useEffect(() => {
-    api.get('/classes').then((r) => setClasses(r.data.data)).catch(() => {})
+    api.get('/classes')
+      .then((r) => setClasses(r.data.data))
+      .catch((err) => setError(errorText(err, "We couldn't load your classes. Refresh the page to try again.")))
+      .finally(() => setClassesLoaded(true))
     api.get('/teachers').then((r) => setTeachers(r.data.data.filter((t: TeacherRow) => t.status !== 'INACTIVE'))).catch(() => {})
     loadOverview()
   }, [loadOverview])
 
-  // Pick the first class by default.
+  // Pick the first class by default, or when the chosen class no longer exists.
   useEffect(() => {
-    if (view === 'class' && !classId && activeClasses[0]) setParam({ class: activeClasses[0].id })
+    if (view !== 'class' || !classesLoaded || !activeClasses[0]) return
+    if (!classId || !activeClasses.some((c) => c.id === classId)) setParam({ class: activeClasses[0].id })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, classId, activeClasses])
+  }, [view, classId, activeClasses, classesLoaded])
 
   const loadWeek = useCallback(() => {
     setError('')
@@ -234,8 +240,16 @@ export default function Timetable() {
         </Stack>
 
         {!week ? (
-          view === 'teacher' && !teacherId ? <Typography sx={{ color: brand.muted, fontSize: '14px', py: 3, textAlign: 'center' }}>Choose a teacher to see their week.</Typography>
-            : error ? null : <Skeleton variant="rounded" height={360} />
+          view === 'teacher' && !teacherId ? (
+            <Typography sx={{ color: brand.muted, fontSize: '14px', py: 3, textAlign: 'center' }}>
+              {teachers.length ? 'Choose a teacher to see their week.' : 'Add teachers on the Teachers page to see their timetables.'}
+            </Typography>
+          ) : view === 'class' && classesLoaded && activeClasses.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography sx={{ color: brand.muted, fontSize: '14px', mb: 1.5 }}>Create your classes first. Each class gets its own weekly timetable.</Typography>
+              {isAdmin && <Button variant="outlined" onClick={() => navigate('/classes')}>Go to Classes</Button>}
+            </Box>
+          ) : error ? null : <Skeleton variant="rounded" height={360} />
         ) : (
           <>
             <WeekGrid setup={week.setup} lessons={week.lessons} show={view === 'class' ? 'teacher' : 'class'} onCell={view === 'class' && isAdmin ? (day, period, el) => setPicker({ el, day, period }) : undefined} />

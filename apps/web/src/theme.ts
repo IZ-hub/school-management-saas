@@ -15,6 +15,21 @@ export const brand = {
   font: '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif',
 }
 
+/**
+ * One calm colour per area of the app, used for icon badges and charts (never big blocks).
+ * Hues come from a colour-blind-safe validated palette; `ink` is the darker step for icons and
+ * text (5.4:1 or better on its tint), `solid` is for chart marks, `tint` for soft backgrounds.
+ */
+export const areas = {
+  students: { solid: '#1baf7a', ink: '#0b6644', tint: '#e3f5ee' },
+  teachers: { solid: '#4a3aa7', ink: '#4a3aa7', tint: '#ebe9f7' },
+  classes: { solid: '#eda100', ink: '#7d5300', tint: '#fdf2d9' },
+  attendance: { solid: '#3a9a5b', ink: '#1e6b3a', tint: '#e5f3ea' },
+  fees: { solid: '#2a78d6', ink: '#1a569e', tint: '#e6eefa' },
+  exams: { solid: '#eb6834', ink: '#a83f16', tint: '#fcebe3' },
+} as const
+export type Area = keyof typeof areas
+
 const theme = createTheme({
   palette: {
     primary: {

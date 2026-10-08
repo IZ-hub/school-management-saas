@@ -131,6 +131,7 @@ export class AttendanceService {
       counts,
     });
 
+    await this.refreshDay(schoolId, dto.date);
     return this.getRegister(schoolId, dto.classId, dto.date, user);
   }
 
@@ -171,6 +172,37 @@ export class AttendanceService {
     };
   }
 
+  /** One small summary per school per day, so the dashboard's trend reads a handful of records. */
+  private dayId = (schoolId: string, date: string) => `${schoolId}__${date}`;
+
+  /** Recomputes a day's school-wide totals from that day's class registers and stores them. */
+  async refreshDay(schoolId: string, date: string) {
+    const regs = await this.registers.where('schoolId', '==', schoolId).where('date', '==', date).get();
+    const counts = emptyCounts();
+    for (const r of regs.docs) (Object.keys(counts) as AttendanceStatus[]).forEach((k) => (counts[k] += r.data().counts?.[k] ?? 0));
+    const day = { schoolId, date, counts, classesTaken: regs.size, rate: attendanceRate(counts), updatedAt: new Date() };
+    await this.db.collection('attendanceDays').doc(this.dayId(schoolId, date)).set(day);
+    return day;
+  }
+
+  /** The school's attendance rate for each of the last `days` weekdays, oldest first. */
+  async trend(schoolId: string, days = 14) {
+    const dates: string[] = [];
+    for (let d = new Date(`${schoolToday()}T12:00:00Z`); dates.length < days; d = new Date(d.getTime() - 86_400_000)) {
+      if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) dates.unshift(d.toISOString().slice(0, 10));
+    }
+    const col = this.db.collection('attendanceDays');
+    const docs = await Promise.all(dates.map((d) => col.doc(this.dayId(schoolId, d)).get()));
+    // Days recorded before summaries existed are worked out once and stored.
+    const out = await Promise.all(
+      dates.map(async (date, i) => {
+        const day = docs[i].exists && docs[i].data()!.schoolId === schoolId ? docs[i].data()! : await this.refreshDay(schoolId, date);
+        return { date, rate: day.rate as number | null, classesTaken: day.classesTaken as number };
+      }),
+    );
+    return out;
+  }
+
   /** Whether this school has ever taken a register (for the setup checklist). */
   async everTaken(schoolId: string) {
     const snap = await this.registers.where('schoolId', '==', schoolId).limit(1).get();
@@ -201,6 +233,7 @@ export class AttendanceService {
       counts[previous.status as AttendanceStatus] = Math.max(0, (counts[previous.status as AttendanceStatus] ?? 0) - 1);
       counts[dto.status]++;
       await summaryRef.update({ counts });
+      await this.refreshDay(schoolId, previous.date);
     }
     return { id, ...previous, status: dto.status };
   }

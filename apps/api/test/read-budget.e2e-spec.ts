@@ -43,6 +43,7 @@ function seedBigSchool(db: FakeFirestore) {
       put('teachingAssignments', `${cid}-sub${j}`, { classId: cid, subjectId: `sub${j}`, teacherId: `t${(c + j) % 40}` });
       put('exams', `ser__${cid}__sub${j}`, { seriesId: 'ser', classId: cid, subjectId: `sub${j}`, title: `Subject ${j}`, maxScore: 60, date: null, startTime: null, durationMinutes: 120, scoreStats: { complete: PER_CLASS, started: PER_CLASS, sum: 70 * PER_CLASS } });
     }
+    if (c === 0) for (const d of days) put('attendanceDays', `${S}__${d}`, { date: d, classesTaken: CLASSES, rate: 100, counts: { PRESENT: CLASSES * PER_CLASS, ABSENT: 0, LATE: 0, EXCUSED: 0 } });
     for (const d of days) put('attendanceRegisters', `${S}__${cid}__${d}`, { classId: cid, date: d, takenAt: new Date(), counts: { PRESENT: PER_CLASS, ABSENT: 0, LATE: 0, EXCUSED: 0 } });
     for (let k = 0; k < PER_CLASS; k++) {
       const sid = `${cid}-s${k}`;

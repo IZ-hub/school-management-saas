@@ -41,13 +41,13 @@ import {
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
-import { brand } from '../theme'
+import { Area, areas, brand } from '../theme'
 import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
 import BillingBanner from '../components/BillingBanner'
 
 const DRAWER_WIDTH = 248
 
-const navSections: { heading: string | null; items: { label: string; path: string; icon: JSX.Element; roles: string[] }[] }[] = [
+const navSections: { heading: string | null; items: { label: string; path: string; icon: JSX.Element; roles: string[]; area?: Area }[] }[] = [
   {
     heading: null,
     items: [{ label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, roles: STAFF_ROLES }],
@@ -55,30 +55,30 @@ const navSections: { heading: string | null; items: { label: string; path: strin
   {
     heading: 'People',
     items: [
-      { label: 'Students', path: '/students', icon: <PeopleIcon />, roles: STAFF_ROLES },
-      { label: 'Teachers', path: '/teachers', icon: <SchoolIcon />, roles: STAFF_ROLES },
-      { label: 'Staff accounts', path: '/staff', icon: <StaffIcon />, roles: ADMIN_ROLES },
+      { label: 'Students', path: '/students', icon: <PeopleIcon />, roles: STAFF_ROLES, area: 'students' },
+      { label: 'Teachers', path: '/teachers', icon: <SchoolIcon />, roles: STAFF_ROLES, area: 'teachers' },
+      { label: 'Staff accounts', path: '/staff', icon: <StaffIcon />, roles: ADMIN_ROLES, area: 'teachers' },
     ],
   },
   {
     heading: 'Academics',
     items: [
-      { label: 'Classes', path: '/classes', icon: <ClassIcon />, roles: STAFF_ROLES },
-      { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon />, roles: STAFF_ROLES },
-      { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon />, roles: STAFF_ROLES },
-      { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES },
-      { label: 'Exams', path: '/exams', icon: <ExamsIcon />, roles: ACADEMIC_ROLES },
-      { label: 'Results', path: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES },
-      { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon />, roles: ACADEMIC_ROLES },
-      { label: 'Timetable', path: '/timetable', icon: <TimetableIcon />, roles: STAFF_ROLES },
-      { label: 'Promotion', path: '/promotion', icon: <PromotionIcon />, roles: ADMIN_ROLES },
+      { label: 'Classes', path: '/classes', icon: <ClassIcon />, roles: STAFF_ROLES, area: 'classes' },
+      { label: 'Subjects', path: '/subjects', icon: <SubjectsIcon />, roles: STAFF_ROLES, area: 'classes' },
+      { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon />, roles: STAFF_ROLES, area: 'classes' },
+      { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES, area: 'attendance' },
+      { label: 'Exams', path: '/exams', icon: <ExamsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },
+      { label: 'Results', path: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },
+      { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },
+      { label: 'Timetable', path: '/timetable', icon: <TimetableIcon />, roles: STAFF_ROLES, area: 'classes' },
+      { label: 'Promotion', path: '/promotion', icon: <PromotionIcon />, roles: ADMIN_ROLES, area: 'students' },
     ],
   },
   {
     heading: 'Finance',
     items: [
-      { label: 'Fees', path: '/fees', icon: <FeesIcon />, roles: FINANCE_ROLES },
-      { label: 'Payments', path: '/payments', icon: <PaymentsIcon />, roles: FINANCE_ROLES },
+      { label: 'Fees', path: '/fees', icon: <FeesIcon />, roles: FINANCE_ROLES, area: 'fees' },
+      { label: 'Payments', path: '/payments', icon: <PaymentsIcon />, roles: FINANCE_ROLES, area: 'fees' },
     ],
   },
   {
@@ -172,7 +172,7 @@ export default function DashboardLayout() {
                   onClick={() => go(item.path)}
                   sx={itemSx}
                 >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemIcon sx={item.area ? { color: `${areas[item.area].ink} !important` } : undefined}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
                 </ListItemButton>
               ))}

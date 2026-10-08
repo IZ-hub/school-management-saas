@@ -100,11 +100,12 @@ const itemSx = {
   '& .MuiListItemIcon-root': { minWidth: 34, color: brand.subtle, '& svg': { fontSize: 20 } },
   '&:hover': { bgcolor: '#f4f3ee' },
   '&.Mui-selected': {
-    bgcolor: brand.greenSoft,
+    bgcolor: brand.lemonSoft,
     color: brand.green,
+    boxShadow: `inset 3px 0 0 ${brand.lemon}`,
     '& .MuiListItemIcon-root': { color: brand.green },
     '& .MuiListItemText-primary': { fontWeight: 600 },
-    '&:hover': { bgcolor: '#e6eee3' },
+    '&:hover': { bgcolor: '#e4f3d4' },
   },
 }
 
@@ -235,7 +236,7 @@ export default function DashboardLayout() {
             <MenuIcon />
           </IconButton>
           <Box sx={{ flex: 1 }}><Logo /></Box>
-          <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: brand.greenSoft, color: brand.green, fontSize: '12.5px', fontWeight: 700 }}>
+          <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: brand.lemon, color: brand.green, fontSize: '12.5px', fontWeight: 700 }}>
             {initials(user?.firstName, user?.lastName)}
           </Avatar>
         </Box>

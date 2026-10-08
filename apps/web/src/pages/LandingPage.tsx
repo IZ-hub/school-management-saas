@@ -36,16 +36,20 @@ import {
 import { api } from '../lib/api'
 import { brand } from '../theme'
 
-/* ─── Palette: the app's deep green and lemon on a warm cream page ─── */
+/* ─── Palette: deep green, fresh mint and a warm gold on a cream page ─── */
+// Mint carries dark text (6:1), deep green carries white (8:1), gold carries dark text (7.6:1).
 const C = {
-  green: brand.green,
-  green2: '#14523f',
-  night: '#08241c',
-  lemon: brand.lemon,
-  lemonHover: brand.lemonHover,
-  lemonSoft: brand.lemonSoft,
-  lemonInk: brand.lemonInk,
-  link: '#2f7a12',
+  green: '#0e5c43',
+  green2: '#0b4a36',
+  night: '#0f2a24',
+  lemon: '#3fb68b',
+  lemonHover: '#52c79b',
+  lemonSoft: '#e3f4ec',
+  lemonInk: '#0b4a36',
+  gold: '#e0a52e',
+  goldSoft: '#f7ecd3',
+  slate: '#13262b',
+  link: '#0e5c43',
   ink: '#10241c',
   body: '#3f4a44',
   muted: '#5f6a63',
@@ -56,7 +60,7 @@ const C = {
 const WHATSAPP = '2347061102797'
 
 const btn = { textTransform: 'none', fontWeight: 700, borderRadius: '999px', boxShadow: 'none', '&:hover': { boxShadow: 'none' } } as const
-const lemonBtn = { ...btn, bgcolor: C.lemon, color: C.green, '&:hover': { bgcolor: C.lemonHover, boxShadow: 'none' } }
+const lemonBtn = { ...btn, bgcolor: C.lemon, color: C.night, '&:hover': { bgcolor: C.lemonHover, boxShadow: 'none' } }
 const greenBtn = { ...btn, bgcolor: C.green, color: '#fff', '&:hover': { bgcolor: C.green2, boxShadow: 'none' } }
 
 /* ─── Content ─── */
@@ -145,10 +149,128 @@ const pill = {
   border: '1px solid rgba(16,36,28,0.08)', boxShadow: '0 6px 24px -10px rgba(4,24,18,0.35)', borderRadius: '999px',
 }
 
+/* ─── Pricing tables ─── */
+const PRICE = 1500
+const naira = (n: number) => `₦${n.toLocaleString('en-NG')}`
+
+/**
+ * Every school pays the same ₦1,500 per active student per term with everything included,
+ * so the cards show worked examples by school size, not different plans.
+ */
+function PricingTables({ onStart }: { onStart: () => void }) {
+  const [period, setPeriod] = useState<'term' | 'year'>('term')
+  const [custom, setCustom] = useState('450')
+  const mult = period === 'term' ? 1 : 3
+  const per = period === 'term' ? '/term' : '/year'
+  const tiers: { name: string; students?: number; badge?: string; popular?: boolean; points: string[]; cta: string }[] = [
+    { name: 'Free trial', badge: 'Start here', points: ['Every feature switched on', 'Any number of students', 'No card needed', 'Help setting up'], cta: 'Start free trial' },
+    { name: 'Small school', students: 100, points: ['Everything included', 'Attendance and report cards', 'Fees with Paystack payments', 'A parent page for every family'], cta: 'Start free trial' },
+    { name: 'Growing school', students: 300, badge: 'Most popular', popular: true, points: ['Everything included', 'Teachers see only their classes', 'Receipts for every payment', 'Class timetables with clash checks', 'Optional SMS through Termii'], cta: 'Start free trial' },
+    { name: 'Large school', students: 800, points: ['Everything included', 'Excel import for big lists', 'Accountant and principal roles', 'Daily backups'], cta: 'Start free trial' },
+  ]
+  const customCount = Number(custom || 0)
+
+  return (
+    <Box id="pricing" component="section" aria-labelledby="pricing-title" sx={{ py: { xs: 7, md: 10 }, scrollMarginTop: '80px' }}>
+      <Container maxWidth="lg">
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography id="pricing-title" component="h2" sx={{ fontWeight: 800, color: C.ink, fontSize: { xs: '1.9rem', md: '2.6rem' }, letterSpacing: '-1px', lineHeight: 1.15 }}>
+            Simple, honest <Box component="span" sx={{ color: C.green, fontStyle: 'italic' }}>pricing.</Box>
+          </Typography>
+          <Typography sx={{ color: C.muted, mt: 1.25, fontSize: { xs: '1rem', md: '1.08rem' } }}>
+            ₦1,500 per active student, per term. Everything included. No hidden fees.
+          </Typography>
+          <Box role="group" aria-label="Show prices" sx={{ display: 'inline-flex', gap: 0.5, mt: 3, p: 0.5, borderRadius: '999px', bgcolor: '#fff', border: `1px solid ${C.line}` }}>
+            {(['term', 'year'] as const).map((p) => (
+              <Button key={p} onClick={() => setPeriod(p)} aria-pressed={period === p}
+                sx={{ ...btn, height: 40, px: 2.75, fontSize: '0.92rem', bgcolor: period === p ? C.green : 'transparent', color: period === p ? '#fff' : C.body, '&:hover': { bgcolor: period === p ? C.green2 : C.lemonSoft } }}>
+                {p === 'term' ? 'Per term' : 'Per year'}
+                {p === 'year' && <Box component="span" sx={{ ml: 0.75, fontSize: '0.75rem', fontWeight: 700, color: period === p ? C.gold : '#9a6a0c' }}>3 terms</Box>}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(5, minmax(0, 1fr))' }, gap: { xs: 1.75, md: 2 }, alignItems: 'stretch' }}>
+          {tiers.map((t) => (
+            <Box key={t.name} sx={{
+              position: 'relative', display: 'flex', flexDirection: 'column', p: { xs: 3, lg: 2.5 }, borderRadius: '20px', bgcolor: C.slate, color: '#cfd8d6',
+              border: t.popular ? `2px solid ${C.lemon}` : '2px solid transparent',
+              boxShadow: t.popular ? '0 24px 50px -20px rgba(63,182,139,0.55)' : '0 18px 40px -24px rgba(15,42,36,0.6)',
+              transform: { lg: t.popular ? 'translateY(-6px)' : 'none' },
+            }}>
+              <Box sx={{ minHeight: 30, mb: 1 }}>
+                {t.badge && (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', px: 1.25, py: 0.35, borderRadius: '999px', bgcolor: C.gold }}>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', color: C.night, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{t.popular ? '★ ' : ''}{t.badge}</Typography>
+                  </Box>
+                )}
+              </Box>
+              <Typography sx={{ fontWeight: 800, letterSpacing: '2px', fontSize: '12.5px', color: C.lemon, textTransform: 'uppercase' }}>{t.name}</Typography>
+              <Typography sx={{ mt: 1, color: '#fff', fontWeight: 800, fontSize: { xs: '1.9rem', lg: '1.4rem' }, letterSpacing: '-0.6px', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+                {t.students ? naira(t.students * PRICE * mult) : '₦0'}
+                <Box component="span" sx={{ fontSize: '0.85rem', fontWeight: 500, color: '#93a39f', letterSpacing: 0 }}>{t.students ? per : ' / 14 days'}</Box>
+              </Typography>
+              <Typography sx={{ fontSize: '0.88rem', color: '#93a39f', mt: 0.5 }}>{t.students ? `${t.students.toLocaleString('en-NG')} active students` : 'Try it with your real school'}</Typography>
+              <Box sx={{ height: '1px', bgcolor: 'rgba(255,255,255,0.1)', my: 2.25 }} />
+              <Stack spacing={1.25} sx={{ flex: 1 }}>
+                {t.points.map((pt) => (
+                  <Stack key={pt} direction="row" spacing={1.25} alignItems="flex-start">
+                    <CheckIcon sx={{ fontSize: 17, color: C.lemon, mt: 0.2, flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: '0.92rem', lineHeight: 1.5, color: '#e3e9e7' }}>{pt}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+              <Button fullWidth onClick={onStart} variant={t.popular ? 'contained' : 'outlined'}
+                sx={{ ...(t.popular ? lemonBtn : { ...btn, color: '#fff', border: `1px solid rgba(63,182,139,0.55)`, '&:hover': { bgcolor: 'rgba(63,182,139,0.12)', borderColor: C.lemon } }), mt: 3, height: 48 }}>
+                {t.cta}
+              </Button>
+            </Box>
+          ))}
+
+          {/* Your own number */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', p: { xs: 3, lg: 2.5 }, borderRadius: '20px', bgcolor: C.slate, color: '#cfd8d6', border: '2px solid transparent', boxShadow: '0 18px 40px -24px rgba(15,42,36,0.6)' }}>
+            <Box sx={{ minHeight: 30, mb: 1 }} />
+            <Typography sx={{ fontWeight: 800, letterSpacing: '2px', fontSize: '12.5px', color: C.lemon, textTransform: 'uppercase' }}>Your school</Typography>
+            <Typography sx={{ mt: 1, color: '#fff', fontWeight: 800, fontSize: { xs: '1.9rem', lg: '1.4rem' }, letterSpacing: '-0.6px', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+              {naira(customCount * PRICE * mult)}
+              <Box component="span" sx={{ fontSize: '0.85rem', fontWeight: 500, color: '#93a39f', letterSpacing: 0 }}>{per}</Box>
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+              <TextField value={custom} onChange={(e) => setCustom(e.target.value.replace(/\D/g, '').slice(0, 5))} size="small"
+                inputProps={{ inputMode: 'numeric', 'aria-label': 'Number of active students' }}
+                sx={{ width: 96, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: '10px', fontWeight: 700, height: 36 } }} />
+              <Typography sx={{ fontSize: '0.88rem', color: '#93a39f' }}>students</Typography>
+            </Stack>
+            <Box sx={{ height: '1px', bgcolor: 'rgba(255,255,255,0.1)', my: 2.25 }} />
+            <Stack spacing={1.25} sx={{ flex: 1 }}>
+              {['Type your number of students', 'Only active students count', 'Left or graduated? Not charged', 'Questions? Send us a message'].map((pt) => (
+                <Stack key={pt} direction="row" spacing={1.25} alignItems="flex-start">
+                  <CheckIcon sx={{ fontSize: 17, color: C.lemon, mt: 0.2, flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: '0.92rem', lineHeight: 1.5, color: '#e3e9e7' }}>{pt}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+            <Button fullWidth href="#contact" sx={{ ...btn, mt: 3, height: 48, color: '#fff', border: `1px solid rgba(63,182,139,0.55)`, '&:hover': { bgcolor: 'rgba(63,182,139,0.12)', borderColor: C.lemon } }}>
+              Talk to us
+            </Button>
+          </Box>
+        </Box>
+
+        <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ mt: 3, p: { xs: 2, md: 2.5 }, borderRadius: '16px', bgcolor: C.goldSoft, border: '1px solid #ecd9a8' }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: C.gold, mt: 0.9, flexShrink: 0 }} />
+          <Typography sx={{ color: C.ink, lineHeight: 1.65, fontSize: '0.96rem' }}>
+            <Box component="strong">Every school pays the same rate:</Box> ₦1,500 per active student, per term, with every feature included. The cards above are worked examples by school size. After your 14-day free trial you get one invoice per term, paid online with Paystack.
+          </Typography>
+        </Stack>
+      </Container>
+    </Box>
+  )
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [studentCount, setStudentCount] = useState('300')
   const [contactForm, setContactForm] = useState({ name: '', email: '', school: '', message: '', website: '' })
   const [contactState, setContactState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
@@ -204,7 +326,7 @@ export default function LandingPage() {
               Sign in
             </Button>
             <Button variant="contained" onClick={() => navigate('/register')} endIcon={<ArrowIcon sx={{ fontSize: '17px !important' }} />}
-              sx={{ ...lemonBtn, height: 44, px: { xs: 1.75, sm: 2.25 }, fontSize: '14px', whiteSpace: 'nowrap', boxShadow: '0 6px 20px -8px rgba(122,199,53,0.8)', '& .MuiButton-endIcon': { display: { xs: 'none', sm: 'inherit' } } }}>
+              sx={{ ...lemonBtn, height: 44, px: { xs: 1.75, sm: 2.25 }, fontSize: '14px', whiteSpace: 'nowrap', boxShadow: '0 6px 20px -8px rgba(63,182,139,0.8)', '& .MuiButton-endIcon': { display: { xs: 'none', sm: 'inherit' } } }}>
               Get started
             </Button>
             <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)} sx={{ ...pill, display: { xs: 'inline-flex', md: 'none' }, width: 44, height: 44, color: C.ink, '&:hover': { bgcolor: '#fff' } }}>
@@ -238,8 +360,8 @@ export default function LandingPage() {
       <Box sx={{
         position: 'relative', color: '#fff', bgcolor: C.night,
         backgroundImage: `
-          radial-gradient(ellipse 55% 80% at 15% 30%, rgba(122,199,53,0.13), rgba(122,199,53,0) 70%),
-          radial-gradient(ellipse 45% 70% at 95% 0%, rgba(122,199,53,0.12), rgba(122,199,53,0) 70%),
+          radial-gradient(ellipse 55% 80% at 15% 30%, rgba(63,182,139,0.13), rgba(63,182,139,0) 70%),
+          radial-gradient(ellipse 45% 70% at 95% 0%, rgba(63,182,139,0.12), rgba(63,182,139,0) 70%),
           linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`,
         backgroundSize: 'auto, auto, 48px 48px, 48px 48px',
@@ -251,10 +373,10 @@ export default function LandingPage() {
             <Typography sx={{ fontSize: '14px', color: '#fff' }}>School management software in Nigeria</Typography>
           </Stack>
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2.5 }}>
-            <Box sx={{ width: 30, height: 30, borderRadius: '9px', bgcolor: 'rgba(122,199,53,0.16)', border: '1px solid rgba(122,199,53,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <GuideIcon sx={{ fontSize: 16, color: C.lemon }} />
+            <Box sx={{ width: 30, height: 30, borderRadius: '9px', bgcolor: 'rgba(224,165,46,0.14)', border: '1px solid rgba(224,165,46,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <GuideIcon sx={{ fontSize: 16, color: C.gold }} />
             </Box>
-            <Typography sx={{ fontSize: '13px', fontWeight: 800, letterSpacing: '2.5px', color: C.lemon, textTransform: 'uppercase' }}>2026 buyer's guide</Typography>
+            <Typography sx={{ fontSize: '13px', fontWeight: 800, letterSpacing: '2.5px', color: C.gold, textTransform: 'uppercase' }}>2026 buyer's guide</Typography>
           </Stack>
           <Typography component="h1" sx={{ fontWeight: 800, fontSize: { xs: '2.35rem', sm: '3.1rem', md: '3.6rem' }, lineHeight: 1.06, letterSpacing: { xs: '-1.2px', md: '-2px' }, mb: 2.5, maxWidth: 720 }}>
             School management software built for{' '}
@@ -276,7 +398,7 @@ export default function LandingPage() {
 
       {/* ══════════════ Article ══════════════ */}
       <Box component="main">
-        <Container maxWidth="md" sx={{ pt: { xs: 5, md: 7 }, pb: { xs: 8, md: 11 } }}>
+        <Container maxWidth="md" sx={{ pt: { xs: 5, md: 7 } }}>
           <Box sx={{ maxWidth: 770 }}>
             <P>
               Nigeria has a fast-growing choice of school management platforms, and they are not all built for the same kind of school. Instead of ranking vendors, this guide gives you a checklist to judge any option, including <A href="#where-schoolbricks-fits">SchoolBricks</A>, so you can choose what genuinely fits your school.
@@ -294,7 +416,7 @@ export default function LandingPage() {
             <Stack spacing={2.25} sx={{ mt: 1 }}>
               {criteria.map((c) => (
                 <Stack key={c.title} direction="row" spacing={1.75} alignItems="flex-start">
-                  <Box sx={{ width: 24, height: 24, borderRadius: '7px', bgcolor: C.lemonSoft, border: '1px solid #d5ecbd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.4 }}>
+                  <Box sx={{ width: 24, height: 24, borderRadius: '7px', bgcolor: C.lemonSoft, border: '1px solid #c5e8d8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.4 }}>
                     <CheckIcon sx={{ fontSize: 15, color: C.lemonInk }} />
                   </Box>
                   <Typography sx={{ color: C.body, fontSize: { xs: '1rem', md: '1.06rem' }, lineHeight: 1.75 }}>
@@ -308,7 +430,7 @@ export default function LandingPage() {
             <Stack component="ul" spacing={1.4} sx={{ listStyle: 'none', p: 0, m: 0 }}>
               {vendorQuestions.map((q) => (
                 <Stack component="li" key={q} direction="row" spacing={1.75} alignItems="flex-start">
-                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: C.lemon, flexShrink: 0, mt: 1.2 }} />
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: C.gold, flexShrink: 0, mt: 1.2 }} />
                   <Typography sx={{ color: C.body, fontSize: { xs: '1rem', md: '1.06rem' }, lineHeight: 1.7 }}>{q}</Typography>
                 </Stack>
               ))}
@@ -319,7 +441,7 @@ export default function LandingPage() {
             <Box component="ol" sx={{ listStyle: 'none', p: 0, m: 0, borderRadius: '18px', bgcolor: '#fff', border: `1px solid ${C.line}`, overflow: 'hidden' }}>
               {steps.map((s, i) => (
                 <Stack component="li" key={s.title} direction="row" spacing={2} alignItems="flex-start" sx={{ p: { xs: 2, md: 2.5 }, borderTop: i ? `1px solid ${C.line}` : 'none' }}>
-                  <Box sx={{ width: 34, height: 34, borderRadius: '10px', bgcolor: i === steps.length - 1 ? C.lemon : C.green, color: i === steps.length - 1 ? C.green : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Box sx={{ width: 34, height: 34, borderRadius: '10px', bgcolor: i === steps.length - 1 ? C.gold : C.green, color: i === steps.length - 1 ? C.night : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>{i + 1}</Typography>
                   </Box>
                   <Box>
@@ -330,37 +452,13 @@ export default function LandingPage() {
               ))}
             </Box>
 
-            <H2 id="pricing">What it should cost</H2>
-            <P>
-              Ask for a price in Naira that you can work out yourself, and a free trial before you pay anything. SchoolBricks costs <Box component="strong" sx={{ color: C.ink }}>₦1,500 per active student, per term</Box>, with every feature included, and starts with a 14-day free trial. No card is needed to start.
-            </P>
-            <Box sx={{
-              p: { xs: 2.5, md: 3.5 }, borderRadius: '22px', color: '#fff', bgcolor: C.green, mt: 1,
-              backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(122,199,53,0.3), rgba(122,199,53,0) 55%)',
-            }}>
-              <Grid container spacing={3} alignItems="center">
-                <Grid item xs={12} sm={6}>
-                  <Typography sx={{ color: C.lemon, fontWeight: 800, letterSpacing: '2px', fontSize: '12px', textTransform: 'uppercase' }}>Work out your cost</Typography>
-                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1.5 }}>
-                    <TextField
-                      value={studentCount}
-                      onChange={(e) => setStudentCount(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                      inputProps={{ inputMode: 'numeric', 'aria-label': 'Number of students' }}
-                      size="small"
-                      sx={{ width: 120, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: '12px', fontWeight: 700 } }}
-                    />
-                    <Typography sx={{ color: 'rgba(255,255,255,0.88)' }}>students</Typography>
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem' }, fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.1 }}>
-                    ₦{(Number(studentCount || 0) * 1500).toLocaleString('en-NG')}
-                  </Typography>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.75)' }}>per term, everything included</Typography>
-                </Grid>
-              </Grid>
-            </Box>
+          </Box>
+        </Container>
 
+        <PricingTables onStart={() => navigate('/register')} />
+
+        <Container maxWidth="md" sx={{ pb: { xs: 8, md: 11 } }}>
+          <Box sx={{ maxWidth: 770 }}>
             <H2 id="where-schoolbricks-fits">Where SchoolBricks fits</H2>
             <P>
               We build SchoolBricks around exactly the checklist above: online fees in Naira straight into your own Paystack account, report cards worked out for you, a design that works on everyday phones, a clear per-student price, and records kept private and backed up daily. If that matches what your school needs, start free and decide for yourself. If your priorities are different, use this guide to judge whichever option you consider.
@@ -379,7 +477,7 @@ export default function LandingPage() {
               {faqs.map((f) => (
                 <Accordion key={f.q} elevation={0} disableGutters
                   sx={{ borderRadius: '14px !important', border: `1px solid ${C.line}`, bgcolor: '#fff', boxShadow: '0 1px 2px rgba(16,36,28,0.04)', '&:before': { display: 'none' },
-                    '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': { transform: 'rotate(45deg)' }, '&.Mui-expanded': { borderColor: '#cfe7b5' } }}>
+                    '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': { transform: 'rotate(45deg)' }, '&.Mui-expanded': { borderColor: '#bfe3d1' } }}>
                   <AccordionSummary expandIcon={<PlusIcon sx={{ color: C.link }} />} sx={{ px: { xs: 2, sm: 2.5 }, minHeight: 60 }}>
                     <Typography sx={{ fontWeight: 700, color: C.ink, fontSize: { xs: '0.98rem', md: '1.03rem' }, pr: 1 }}>{f.q}</Typography>
                   </AccordionSummary>
@@ -443,9 +541,9 @@ export default function LandingPage() {
           <Box sx={{ p: { xs: 2.75, md: 4 }, borderRadius: '22px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', mb: { xs: 6, md: 8 } }}>
             <Grid container spacing={3} alignItems="center">
               <Grid item xs={12} md={7}>
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.25, py: 0.4, borderRadius: '999px', border: '1px solid rgba(122,199,53,0.4)', mb: 1.5 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: C.lemon }} />
-                  <Typography sx={{ fontSize: '11.5px', fontWeight: 800, letterSpacing: '2px', color: C.lemon, textTransform: 'uppercase' }}>14 days free</Typography>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.25, py: 0.4, borderRadius: '999px', border: '1px solid rgba(224,165,46,0.45)', mb: 1.5 }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: C.gold }} />
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 800, letterSpacing: '2px', color: C.gold, textTransform: 'uppercase' }}>14 days free</Typography>
                 </Box>
                 <Typography sx={{ fontWeight: 800, color: '#fff', fontSize: { xs: '1.45rem', md: '1.75rem' }, letterSpacing: '-0.5px', lineHeight: 1.25 }}>
                   Run your whole school from one calm dashboard.

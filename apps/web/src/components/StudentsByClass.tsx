@@ -19,9 +19,9 @@ interface ClassSizes {
 }
 
 // One hue for "how full": fill and a lighter step of the same green for the track.
-// Over capacity switches to amber, always with an icon and words (validated pair: #1f6f43 / #e8a019).
-const FILL = '#1f6f43'
-const TRACK = '#e2ede5'
+// Brand lemon fill; over capacity switches to amber, always with an icon and words so colour is never the only cue.
+const FILL = '#7ac735'
+const TRACK = '#eaf1e2'
 const OVER = '#e8a019'
 
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString('en-NG')} ${n === 1 ? one : many}`

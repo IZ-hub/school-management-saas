@@ -5,13 +5,19 @@ export const brand = {
   green: '#0d3b2e',
   greenHover: '#14523f',
   greenSoft: '#eef3ec',
-  accent: '#8bc34a',
+  accent: '#7ac735',
+  /** Lemon green highlight: fills, bars and buttons (always with dark green text on it, 6:1). */
+  lemon: '#7ac735',
+  lemonHover: '#8fd84b',
+  lemonDeep: '#419000',
+  lemonSoft: '#eef8e3',
+  lemonInk: '#2c5a06',
   page: '#f9f8f3',
   surface: '#ffffff',
   border: '#e8e6df',
   text: '#141a15',
-  muted: '#646b64',
-  subtle: '#8c928b',
+  muted: '#555c55',
+  subtle: '#6e746d',
   font: '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif',
 }
 
@@ -24,7 +30,7 @@ export const areas = {
   students: { solid: '#1baf7a', ink: '#0b6644', tint: '#e3f5ee' },
   teachers: { solid: '#4a3aa7', ink: '#4a3aa7', tint: '#ebe9f7' },
   classes: { solid: '#eda100', ink: '#7d5300', tint: '#fdf2d9' },
-  attendance: { solid: '#3a9a5b', ink: '#1e6b3a', tint: '#e5f3ea' },
+  attendance: { solid: '#3a9a5b', ink: '#2c5a06', tint: '#eef8e3' },
   fees: { solid: '#2a78d6', ink: '#1a569e', tint: '#e6eefa' },
   exams: { solid: '#eb6834', ink: '#a83f16', tint: '#fcebe3' },
 } as const

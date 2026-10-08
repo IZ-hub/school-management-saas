@@ -48,6 +48,7 @@ const card = {
   bgcolor: brand.surface,
   border: `1px solid ${brand.border}`,
   borderRadius: '14px',
+  boxShadow: '0 1px 2px rgba(16,32,20,0.05), 0 2px 6px rgba(16,32,20,0.03)',
 }
 
 const greeting = () => {
@@ -169,8 +170,7 @@ function AttendanceTrend({ days }: { days: TrendDay[] }) {
                   // Rounded at the data end, square on the baseline.
                   <path
                     d={`M${x0},${y(0)} V${top + r} Q${x0},${top} ${x0 + r},${top} H${x1 - r} Q${x1},${top} ${x1},${top + r} V${y(0)} Z`}
-                    fill={areas.attendance.solid}
-                    opacity={hover === null || active ? 1 : 0.45}
+                    fill={active ? brand.lemonDeep : brand.lemon}
                   />
                 ) : (
                   <line x1={x0 + 2} x2={x1 - 2} y1={y(0) - 2} y2={y(0) - 2} stroke="#d9d6cc" strokeWidth={2} strokeLinecap="round" />
@@ -334,27 +334,35 @@ function TodayPanel({ stats, isTeacher }: { stats: DashboardStats; isTeacher: bo
 
 function QuickActions({ role }: { role: string }) {
   const navigate = useNavigate()
-  const actions: { label: string; to: string; area: Area; icon: ReactNode; roles: string[] }[] = [
-    { label: 'Take attendance', to: '/attendance', area: 'attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES },
-    { label: 'Enter scores', to: '/results', area: 'exams', icon: <ResultsIcon />, roles: ACADEMIC_ROLES },
-    { label: 'Record payment', to: '/payments', area: 'fees', icon: <PayIcon />, roles: FINANCE_ROLES },
-    { label: 'Add student', to: '/students', area: 'students', icon: <AddStudentIcon />, roles: ADMIN_ROLES },
-    { label: 'Send message', to: '/messages', area: 'teachers', icon: <MessageIcon />, roles: [...ADMIN_ROLES, 'ACCOUNTANT'] },
+  const actions: { label: string; to: string; icon: ReactNode; roles: string[] }[] = [
+    { label: 'Take attendance', to: '/attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES },
+    { label: 'Enter scores', to: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES },
+    { label: 'Record payment', to: '/payments', icon: <PayIcon />, roles: FINANCE_ROLES },
+    { label: 'Add student', to: '/students', icon: <AddStudentIcon />, roles: ADMIN_ROLES },
+    { label: 'Send message', to: '/messages', icon: <MessageIcon />, roles: [...ADMIN_ROLES, 'ACCOUNTANT'] },
   ]
   const shown = actions.filter((a) => a.roles.includes(role))
   if (shown.length === 0) return null
   return (
     <Box
       component="nav" aria-label="Quick actions"
-      sx={{ display: 'flex', gap: 1, mb: { xs: 2, md: 2.5 }, overflowX: 'auto', pb: 0.5, mx: { xs: -2, sm: 0 }, px: { xs: 2, sm: 0 }, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}
+      sx={{ display: 'flex', gap: 1, mt: { xs: 2, sm: 2.5 }, overflowX: 'auto', pb: 0.25, mx: { xs: -2, sm: 0 }, px: { xs: 2, sm: 0 }, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}
     >
-      {shown.map((a) => (
+      {shown.map((a, i) => (
         <ButtonBase
           key={a.label} onClick={() => navigate(a.to)}
-          sx={{ ...card, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1, pl: 0.75, pr: 1.75, py: 0.75, borderRadius: '12px', transition: 'border-color 0.15s', '&:hover': { borderColor: areas[a.area].solid } }}
+          sx={{
+            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.75, px: 1.75, height: 40, borderRadius: '999px',
+            fontFamily: brand.font, fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', transition: 'background-color 0.15s',
+            '& svg': { fontSize: 18 },
+            '&:focus-visible': { outline: `2px solid ${brand.lemon}`, outlineOffset: 2 },
+            ...(i === 0
+              ? { bgcolor: brand.lemon, color: brand.green, '&:hover': { bgcolor: brand.lemonHover } }
+              : { bgcolor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)', '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' } }),
+          }}
         >
-          <AreaIcon area={a.area} size={28}>{a.icon}</AreaIcon>
-          <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: brand.text, whiteSpace: 'nowrap' }}>{a.label}</Typography>
+          {a.icon}
+          {a.label}
         </ButtonBase>
       ))}
     </Box>
@@ -429,31 +437,39 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
-      {/* Header */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1.5} sx={{ mb: { xs: 2.5, md: 3 } }}>
-        <Box>
-          <Typography sx={{ fontSize: '13px', color: brand.subtle, mb: 0.5 }}>{today}</Typography>
-          <Typography component="h1" sx={{ fontSize: { xs: '24px', sm: '28px' }, fontWeight: 800, letterSpacing: '-0.6px', color: brand.text }}>
-            {greeting()}, {user?.firstName}
-          </Typography>
-          <Typography sx={{ fontSize: '14.5px', color: brand.muted, mt: 0.5 }}>Here's how your school is doing today.</Typography>
-        </Box>
-        {user?.schoolId && (
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: brand.subtle }}>
-            <Typography sx={{ fontSize: '12.5px' }}>School ID</Typography>
-            <Typography sx={{ fontSize: '12.5px', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace !important', color: brand.muted, maxWidth: 180 }} noWrap>
-              {user.schoolId}
+      {/* Welcome banner */}
+      <Box
+        sx={{
+          position: 'relative', overflow: 'hidden', mb: { xs: 2, md: 2.5 }, borderRadius: '18px',
+          bgcolor: brand.green, color: '#fff', px: { xs: 2, sm: 3.5 }, py: { xs: 2.5, sm: 3.25 },
+          // A soft lemon glow in the corner.
+          backgroundImage: `radial-gradient(circle at 100% 0%, rgba(122,199,53,0.35), rgba(122,199,53,0) 55%)`,
+        }}
+      >
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-start' }} spacing={1}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: brand.lemon, mb: 0.5 }}>{today}</Typography>
+            <Typography component="h1" sx={{ fontSize: { xs: '24px', sm: '30px' }, fontWeight: 800, letterSpacing: '-0.6px', color: '#fff', lineHeight: 1.2 }}>
+              {greeting()}, {user?.firstName}
             </Typography>
-            <Tooltip title="Copy School ID">
-              <IconButton size="small" aria-label="Copy School ID" onClick={copySchoolId} sx={{ color: brand.subtle }}>
-                <CopyIcon sx={{ fontSize: 15 }} />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        )}
-      </Stack>
-
-      <QuickActions role={role} />
+            <Typography sx={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.82)', mt: 0.5 }}>Here's how your school is doing today.</Typography>
+          </Box>
+          {user?.schoolId && (
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: 'rgba(255,255,255,0.75)', flexShrink: 0 }}>
+              <Typography sx={{ fontSize: '12.5px' }}>School ID</Typography>
+              <Typography sx={{ fontSize: '12.5px', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace !important', color: '#fff', maxWidth: 180 }} noWrap>
+                {user.schoolId}
+              </Typography>
+              <Tooltip title="Copy School ID">
+                <IconButton size="small" aria-label="Copy School ID" onClick={copySchoolId} sx={{ color: 'rgba(255,255,255,0.75)', '&:hover': { color: '#fff' } }}>
+                  <CopyIcon sx={{ fontSize: 15 }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          )}
+        </Stack>
+        <QuickActions role={role} />
+      </Box>
 
       {failed && (
         <Box sx={{ ...card, p: 2, mb: 3, borderColor: '#f1c2bd', bgcolor: '#fdf6f5' }}>
@@ -484,15 +500,15 @@ export default function Dashboard() {
                 </Typography>} />,
               <StatTile key="c" area="classes" label="Classes" value={fmt(stats.totalClasses)} icon={<ClassIcon />} to="/classes"
                 footer={<Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{stats.totalSubjects} {stats.totalSubjects === 1 ? 'subject' : 'subjects'} offered</Typography>} />,
-              <StatTile key="a" area="attendance" label="Attendance today" value={at?.rate != null ? `${at.rate}%` : '—'} icon={<AttendanceIcon />} to="/attendance"
+              <StatTile key="a" area="attendance" label="Attendance" value={at?.rate != null ? `${at.rate}%` : '—'} icon={<AttendanceIcon />} to="/attendance"
                 footer={at && at.classesTaken > 0 ? (
                   <>
-                    <LinearProgress variant="determinate" value={Math.min(100, at.rate ?? 0)} aria-label="Attendance today"
-                      sx={{ height: 5, borderRadius: 3, mt: 0.25, bgcolor: areas.attendance.tint, '& .MuiLinearProgress-bar': { bgcolor: areas.attendance.solid, borderRadius: 3 } }} />
+                    <LinearProgress variant="determinate" value={Math.min(100, at.rate ?? 0)} aria-label="Attendance"
+                      sx={{ height: 5, borderRadius: 3, mt: 0.25, bgcolor: brand.lemonSoft, '& .MuiLinearProgress-bar': { bgcolor: brand.lemon, borderRadius: 3 } }} />
                     <Typography sx={{ fontSize: '12px', color: brand.subtle, mt: 0.75 }}>{at.classesTaken} of {at.classesTotal} classes marked</Typography>
                   </>
                 ) : (
-                  <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>No registers taken yet today</Typography>
+                  <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>No registers yet today</Typography>
                 )} />,
             ].map((tile) => (
               <Grid item xs={6} md={3} key={tile.key}>
@@ -512,13 +528,13 @@ export default function Dashboard() {
                   <Typography sx={{ fontSize: '13px', color: brand.muted }}>{doneCount} of {setupSteps.length} done</Typography>
                 </Stack>
                 <LinearProgress variant="determinate" value={(doneCount / setupSteps.length) * 100}
-                  sx={{ height: 5, borderRadius: 3, mb: 1.5, bgcolor: '#efeee8', '& .MuiLinearProgress-bar': { bgcolor: brand.green, borderRadius: 3 } }} />
+                  sx={{ height: 6, borderRadius: 3, mb: 1.5, bgcolor: brand.lemonSoft, '& .MuiLinearProgress-bar': { bgcolor: brand.lemon, borderRadius: 3 } }} />
                 <Grid container spacing={0.5}>
                   {setupSteps.map((s) => (
                     <Grid item xs={12} sm={6} md={4} key={s.label}>
                       <ButtonBase onClick={() => navigate(s.to)} disabled={s.done}
                         sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.25, px: 1, py: 1, borderRadius: '10px', '&:hover': { bgcolor: '#f7f6f1' } }}>
-                        {s.done ? <DoneIcon sx={{ fontSize: 19, color: brand.accent }} /> : <TodoIcon sx={{ fontSize: 19, color: '#c9c7bd' }} />}
+                        {s.done ? <DoneIcon sx={{ fontSize: 19, color: brand.lemon }} /> : <TodoIcon sx={{ fontSize: 19, color: '#c9c7bd' }} />}
                         <Typography sx={{ fontSize: '14px', color: s.done ? brand.subtle : brand.text, textDecoration: s.done ? 'line-through' : 'none' }}>
                           {s.label}
                         </Typography>

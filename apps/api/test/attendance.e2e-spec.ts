@@ -119,6 +119,17 @@ describe('Attendance register (e2e)', () => {
     await save({ s1: 'PRESENT', s2: 'PRESENT', s3: 'ABSENT', }).expect(200);
     stats = (await api.get('/api/v1/dashboard/stats').expect(200)).body.data;
     expect(stats).toMatchObject({ attendanceRate: 67, attendanceEverTaken: true, attendanceToday: { rate: 67, classesTaken: 1, classesTotal: 2 } });
+    // The two-week trend: 14 weekdays, today last; it follows corrections.
+    expect(stats.attendanceTrend).toHaveLength(14);
+    const isWeekend = [0, 6].includes(new Date(`${today}T12:00:00Z`).getUTCDay());
+    if (!isWeekend) {
+      expect(stats.attendanceTrend.at(-1)).toEqual({ date: today, rate: 67, classesTaken: 1 });
+      const absentId = [...db.store.get('attendance')!.entries()].find(([, m]) => m.status === 'ABSENT')![0];
+      await api.patch(`/api/v1/attendance/${absentId}`, { status: 'PRESENT' }).expect(200);
+      const after = (await api.get('/api/v1/dashboard/stats').expect(200)).body.data;
+      expect(after.attendanceTrend.at(-1)).toMatchObject({ date: today, rate: 100 });
+    }
+    expect(stats.attendanceTrend.every((d: any) => ![0, 6].includes(new Date(`${d.date}T12:00:00Z`).getUTCDay()))).toBe(true);
   });
 
   it('lets teachers take registers but not accountants or parents', async () => {

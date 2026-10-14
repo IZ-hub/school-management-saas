@@ -210,13 +210,13 @@ function InviteDialog({ teachers, roles, onClose, onInvited }: {
           </TextField>
           {role === 'TEACHER' && teachers.length > 0 && (
             <Autocomplete options={teachers} value={teacher} onChange={(_, t) => pickTeacher(t)} getOptionLabel={(t) => `${t.firstName} ${t.lastName}`}
-              renderInput={(p) => <TextField {...p} label="From the Teachers page (optional)" helperText="Fills in their name and email" />} />
+              renderInput={(p) => <TextField {...p} InputLabelProps={{ ...p.InputLabelProps, shrink: true }} label="From the Teachers page (optional)" placeholder="Start typing a teacher’s name" helperText="Fills in their name and email" />} />
           )}
           <Stack direction="row" spacing={1.5}>
-            <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
-            <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
+            <TextField label="First name" placeholder="e.g. Tunde" value={firstName} onChange={(e) => setFirstName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
+            <TextField label="Last name" placeholder="e.g. Bakare" value={lastName} onChange={(e) => setLastName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
           </Stack>
-          <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputProps={{ maxLength: 120 }} helperText="They'll sign in with this email" />
+          <TextField label="Email" placeholder="e.g. tunde.bakare@greenfield.ng" type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputProps={{ maxLength: 120 }} helperText="They'll sign in with this email" />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
@@ -260,7 +260,7 @@ function LinkTeacherDialog({ member, teachers, onClose, onSave }: { member: Staf
           A teacher can only work on the classes and subjects given to their record in Class subjects, and the classes they are form teacher of.
         </Typography>
         <Autocomplete options={teachers} value={teacher} onChange={(_, t) => setTeacher(t)} getOptionLabel={(t) => `${t.firstName} ${t.lastName}`}
-          renderInput={(p) => <TextField {...p} label="Teacher record" />} />
+          renderInput={(p) => <TextField {...p} InputLabelProps={{ ...p.InputLabelProps, shrink: true }} label="Teacher record" placeholder="Start typing a teacher’s name" />} />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         {member.teacherId && <Button color="error" onClick={() => onSave(null)} sx={{ mr: 'auto' }}>Unlink</Button>}

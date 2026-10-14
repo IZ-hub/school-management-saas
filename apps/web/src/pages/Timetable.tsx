@@ -339,7 +339,7 @@ function SetupDialog({ setup, onClose, onSaved }: { setup: Setup; onClose: () =>
         <Stack spacing={1}>
           {periods.map((p, i) => (
             <Stack key={p.id} direction="row" spacing={1} alignItems="center">
-              <TextField size="small" value={p.label} onChange={(e) => update(i, 'label', e.target.value)} inputProps={{ maxLength: 30, 'aria-label': 'Name' }} sx={{ flex: 1, '& input': { fontWeight: p.kind === 'BREAK' ? 400 : 600, fontStyle: p.kind === 'BREAK' ? 'italic' : 'normal' } }} />
+              <TextField size="small" placeholder="e.g. Period 1" value={p.label} onChange={(e) => update(i, 'label', e.target.value)} inputProps={{ maxLength: 30, 'aria-label': 'Name' }} sx={{ flex: 1, '& input': { fontWeight: p.kind === 'BREAK' ? 400 : 600, fontStyle: p.kind === 'BREAK' ? 'italic' : 'normal' } }} />
               <TextField size="small" type="time" value={p.start} onChange={(e) => update(i, 'start', e.target.value)} inputProps={{ 'aria-label': 'Starts' }} sx={{ width: 120 }} />
               <TextField size="small" type="time" value={p.end} onChange={(e) => update(i, 'end', e.target.value)} inputProps={{ 'aria-label': 'Ends' }} sx={{ width: 120 }} />
               <IconButton size="small" aria-label={`Remove ${p.label}`} onClick={() => setPeriods((ps) => ps.filter((_, j) => j !== i))} disabled={periods.length === 1}><RemoveIcon sx={{ fontSize: 18 }} /></IconButton>

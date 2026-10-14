@@ -125,11 +125,11 @@ export default function ParentAccessDialog({ student, onClose }: { student: Stud
                 They'll see only {student.firstName}'s attendance, fees and published report cards.
               </Typography>
               <Stack direction="row" spacing={1.5}>
-                <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth autoFocus />
-                <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
+                <TextField label="First name" placeholder="e.g. Ngozi" value={firstName} onChange={(e) => setFirstName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth autoFocus />
+                <TextField label="Last name" placeholder="e.g. Okafor" value={lastName} onChange={(e) => setLastName(e.target.value)} inputProps={{ maxLength: 60 }} fullWidth />
               </Stack>
-              <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputProps={{ maxLength: 120 }} helperText="They'll sign in with this email" />
-              <TextField label="Phone (for WhatsApp, optional)" value={phone} onChange={(e) => setPhone(e.target.value)} inputProps={{ maxLength: 30 }} />
+              <TextField label="Email" placeholder="e.g. ngozi.okafor@gmail.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputProps={{ maxLength: 120 }} helperText="They'll sign in with this email" />
+              <TextField label="Phone (for WhatsApp, optional)" placeholder="e.g. 0803 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} inputProps={{ maxLength: 30 }} />
             </>
           )}
         </Stack>

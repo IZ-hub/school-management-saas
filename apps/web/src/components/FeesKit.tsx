@@ -338,7 +338,7 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
                 </Box>
               </li>
             )}
-            renderInput={(params) => <TextField {...params} label="Student" placeholder="Search by name or admission number" autoFocus={!presetStudent} />}
+            renderInput={(params) => <TextField {...params} InputLabelProps={{ ...params.InputLabelProps, shrink: true }} label="Student" placeholder="Search by name or admission number" autoFocus={!presetStudent} />}
           />
 
           {loadingStatement && <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}><CircularProgress size={22} /></Box>}
@@ -360,7 +360,7 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
           {statement?.feesSet && statement.balance > 0 && (
             <>
               <Stack direction="row" spacing={1.5}>
-                <TextField label="Amount (₦)" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }} fullWidth
+                <TextField label="Amount (₦)" placeholder="e.g. 45,000" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }} fullWidth
                   error={tooMuch || (amount !== '' && value === null)}
                   helperText={tooMuch ? `Balance is ${naira(statement.balance)}` : value ? naira(value) : ' '} />
                 <TextField select label="Method" value={method} onChange={(e) => setMethod(e.target.value as Method)} helperText=" " fullWidth>
@@ -402,7 +402,7 @@ export function ReceiptDialog({ receipt, onClose, onVoid }: { receipt: Receipt |
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <ReceiptSheet receipt={receipt} />
         {voiding && (
-          <TextField label="Why is this payment being voided?" value={reason} onChange={(e) => setReason(e.target.value)} fullWidth multiline minRows={2} sx={{ mt: 2.5 }}
+          <TextField label="Why is this payment being voided?" placeholder="e.g. Entered twice by mistake" value={reason} onChange={(e) => setReason(e.target.value)} fullWidth multiline minRows={2} sx={{ mt: 2.5 }}
             inputProps={{ maxLength: 200 }} helperText="The receipt is kept and marked void. Its amount stops counting." autoFocus />
         )}
       </DialogContent>
@@ -477,7 +477,7 @@ export function StatementDialog({ studentId, term, session, onClose, onChanged, 
             <StatementSheet statement={statement} />
             {statement.feesSet && editingDiscount && (
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2.5 }}>
-                <TextField label="Discount (₦)" value={discount} onChange={(e) => setDiscount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }}
+                <TextField label="Discount (₦)" placeholder="e.g. 10,000" value={discount} onChange={(e) => setDiscount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }}
                   error={value === null} helperText="Leave empty or 0 to remove" sx={{ width: { sm: 180 } }} />
                 <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Sibling discount, scholarship" inputProps={{ maxLength: 100 }} helperText=" " fullWidth />
                 <Stack direction="row" spacing={1} sx={{ pt: { sm: 1 } }}>

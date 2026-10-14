@@ -293,7 +293,7 @@ export default function Teachers() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
             <TextField
               fullWidth
-              label="First Name"
+              label="First Name" placeholder="e.g. Tunde"
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
               required
@@ -301,7 +301,7 @@ export default function Teachers() {
             />
             <TextField
               fullWidth
-              label="Last Name"
+              label="Last Name" placeholder="e.g. Bakare"
               value={form.lastName}
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
               required
@@ -325,7 +325,7 @@ export default function Teachers() {
           </Stack>
           <TextField
             fullWidth
-            label="Employee Number"
+            label="Employee Number" placeholder="e.g. GFA-T-007"
             value={form.employeeNumber}
             onChange={(e) => setForm({ ...form, employeeNumber: e.target.value })}
             required
@@ -334,7 +334,7 @@ export default function Teachers() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               fullWidth
-              label="Email"
+              label="Email" placeholder="e.g. tunde.bakare@greenfield.ng"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -343,7 +343,7 @@ export default function Teachers() {
             />
             <TextField
               fullWidth
-              label="Phone"
+              label="Phone" placeholder="e.g. 0803 123 4567"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               required
@@ -353,14 +353,14 @@ export default function Teachers() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               fullWidth
-              label="Qualification"
+              label="Qualification" placeholder="e.g. B.Sc. (Ed) Mathematics"
               value={form.qualification}
               onChange={(e) => setForm({ ...form, qualification: e.target.value })}
               margin="dense"
             />
             <TextField
               fullWidth
-              label="Department"
+              label="Department" placeholder="e.g. Sciences"
               value={form.department}
               onChange={(e) => setForm({ ...form, department: e.target.value })}
               margin="dense"
@@ -378,7 +378,7 @@ export default function Teachers() {
             />
             <TextField
               fullWidth
-              label="Salary"
+              label="Salary" placeholder="e.g. 150000"
               type="number"
               value={form.salary}
               onChange={(e) => setForm({ ...form, salary: e.target.value })}
@@ -387,7 +387,7 @@ export default function Teachers() {
           </Stack>
           <TextField
             fullWidth
-            label="Address"
+            label="Address" placeholder="e.g. 4 Allen Avenue, Ikeja, Lagos"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
             margin="dense"

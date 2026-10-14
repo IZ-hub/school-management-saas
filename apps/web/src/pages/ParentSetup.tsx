@@ -69,9 +69,9 @@ export default function ParentSetup() {
             </Typography>
             <Stack spacing={2}>
               {error && <Alert severity="error">{error}</Alert>}
-              <TextField label="Email" value={invite.email} disabled helperText="You'll sign in with this email" />
-              <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" helperText="At least 8 characters" autoFocus />
-              <TextField label="Confirm password" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+              <TextField label="Email" placeholder="e.g. ngozi.okafor@gmail.com" value={invite.email} disabled helperText="You'll sign in with this email" />
+              <TextField label="Password" placeholder="At least 6 characters" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" helperText="At least 8 characters" autoFocus />
+              <TextField label="Confirm password" placeholder="Type the password again" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
               <Button type="submit" variant="contained" size="large" disabled={saving}>{saving ? 'Saving…' : invite.purpose === 'RESET' ? 'Save new password' : 'Finish setup'}</Button>
             </Stack>
           </form>

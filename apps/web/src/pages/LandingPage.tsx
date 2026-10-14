@@ -500,16 +500,16 @@ export default function LandingPage() {
                   sx={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }} />
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Your name" required inputProps={{ maxLength: 100 }} value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+                    <TextField fullWidth label="Your name" placeholder="e.g. Mrs Ada Obi" required inputProps={{ maxLength: 100 }} value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Email" required type="email" inputProps={{ maxLength: 200 }} value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+                    <TextField fullWidth label="Email" placeholder="e.g. ada@greenfield.ng" required type="email" inputProps={{ maxLength: 200 }} value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
                   </Grid>
                   <Grid item xs={12}>
-                    <TextField fullWidth label="School name" inputProps={{ maxLength: 120 }} value={contactForm.school} onChange={(e) => setContactForm({ ...contactForm, school: e.target.value })} />
+                    <TextField fullWidth label="School name" placeholder="e.g. Greenfield Academy" inputProps={{ maxLength: 120 }} value={contactForm.school} onChange={(e) => setContactForm({ ...contactForm, school: e.target.value })} />
                   </Grid>
                   <Grid item xs={12}>
-                    <TextField fullWidth label="Message" required multiline rows={4} inputProps={{ maxLength: 1800 }} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
+                    <TextField fullWidth label="Message" placeholder="e.g. I would like a demo for our 300-student school." required multiline rows={4} inputProps={{ maxLength: 1800 }} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
                   </Grid>
                   <Grid item xs={12}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>

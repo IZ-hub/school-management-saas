@@ -51,19 +51,24 @@ export default function DateOfBirthField({ label = 'Date of Birth', value, onCha
   }
 
   const incomplete = !!(parts.y || parts.mo || parts.d) && !(parts.y && parts.mo && parts.d)
-  const menu = { MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }
+  // An empty list shows a faded example, like the text fields do.
+  const menu = (example: string, show: (v: string) => string = (v) => v) => ({
+    MenuProps: { PaperProps: { sx: { maxHeight: 300 } } },
+    displayEmpty: true,
+    renderValue: (v: unknown) => (v ? show(String(v)) : <Box component="span" sx={{ opacity: 0.42 }}>{example}</Box>),
+  })
 
   return (
     <Box sx={{ width: '100%', mt: 1.25, mb: 2 }}>
       <FormLabel required={required} sx={{ fontSize: '0.85rem', display: 'block', mb: 1.25 }}>{label}</FormLabel>
       <Stack direction="row" spacing={1}>
-        <TextField select label="Day" value={parts.d} onChange={(e) => update({ ...parts, d: e.target.value })} SelectProps={menu} sx={{ flex: '0 0 26%' }}>
+        <TextField select label="Day" value={parts.d} onChange={(e) => update({ ...parts, d: e.target.value })} SelectProps={menu('e.g. 14')} sx={{ flex: '0 0 26%' }}>
           {Array.from({ length: maxDay }, (_, i) => <MenuItem key={i + 1} value={String(i + 1)}>{i + 1}</MenuItem>)}
         </TextField>
-        <TextField select label="Month" value={parts.mo} onChange={(e) => update({ ...parts, mo: e.target.value })} SelectProps={menu} sx={{ flex: 1, minWidth: 0 }}>
+        <TextField select label="Month" value={parts.mo} onChange={(e) => update({ ...parts, mo: e.target.value })} SelectProps={menu('e.g. March', (v) => MONTHS[Number(v) - 1])} sx={{ flex: 1, minWidth: 0 }}>
           {MONTHS.map((m, i) => <MenuItem key={m} value={String(i + 1)}>{m}</MenuItem>)}
         </TextField>
-        <TextField select label="Year" value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} SelectProps={menu} sx={{ flex: '0 0 30%' }}>
+        <TextField select label="Year" value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} SelectProps={menu('e.g. 2015')} sx={{ flex: '0 0 30%' }}>
           {years.map((y) => <MenuItem key={y} value={String(y)}>{y}</MenuItem>)}
         </TextField>
       </Stack>

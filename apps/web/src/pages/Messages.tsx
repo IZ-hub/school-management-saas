@@ -126,7 +126,7 @@ export default function Messages() {
                 <Chip key={t.label} label={t.label} size="small" variant="outlined" onClick={() => { setText(t.text); setAudience(t.audience) }} />
               ))}
             </Stack>
-            <TextField inputRef={textRef} label="Message" value={text} onChange={(e) => setText(e.target.value)} multiline minRows={4} fullWidth inputProps={{ maxLength: 612 }}
+            <TextField inputRef={textRef} label="Message" placeholder="e.g. Dear {parent}, school resumes on Monday 8 September. Thank you." value={text} onChange={(e) => setText(e.target.value)} multiline minRows={4} fullWidth inputProps={{ maxLength: 612 }}
               helperText={`${text.length}/612 characters${text ? ` · ${preview?.pages ?? 1} SMS ${preview?.pages === 1 ? 'page' : 'pages'} each` : ''}`} />
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
               <Typography sx={{ fontSize: '12.5px', color: brand.muted, mr: 0.5, alignSelf: 'center' }}>Insert:</Typography>

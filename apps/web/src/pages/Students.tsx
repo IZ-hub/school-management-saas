@@ -38,6 +38,7 @@ import { api } from '../lib/api'
 import { brand } from '../theme'
 import { classLabels } from '../lib/classLabels'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
+import DateOfBirthField from '../components/DateOfBirthField'
 import ParentAccessDialog from '../components/ParentAccessDialog'
 import { useAuthStore } from '../store/authStore'
 
@@ -442,17 +443,8 @@ export default function Students() {
               margin="dense"
             />
           </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <TextField
-              fullWidth
-              label="Date of Birth"
-              type="date"
-              value={form.dateOfBirth}
-              onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-              required
-              margin="dense"
-              InputLabelProps={{ shrink: true }}
-            />
+          <Stack spacing={0.5}>
+            <DateOfBirthField value={form.dateOfBirth} onChange={(v) => setForm({ ...form, dateOfBirth: v })} required />
             <TextField
               fullWidth
               select

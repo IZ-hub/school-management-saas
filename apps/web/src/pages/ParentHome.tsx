@@ -319,7 +319,7 @@ function PayDialog({ child, balance, onClose }: { child: ParentChild; balance: n
       <DialogTitle sx={{ fontWeight: 700 }}>Pay {child.firstName}'s fees</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <TextField label="Amount (₦)" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }}
+        <TextField label="Amount (₦)" placeholder="e.g. 25,000" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }}
           error={!!problem} helperText={problem || `Balance ${naira(balance)}. You can pay part now and the rest later.`} fullWidth autoFocus sx={{ mt: 1 }} />
         <Typography sx={{ fontSize: '12.5px', color: brand.subtle, mt: 1.5 }}>
           You'll pay securely on Paystack by card, bank transfer or USSD. The money goes straight to the school, and your receipt appears here.

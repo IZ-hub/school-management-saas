@@ -200,7 +200,7 @@ export default function Promotion() {
             <Typography sx={{ fontSize: '14px', mb: 1.5 }}>
               {plural(summary.promoted, 'student')} move up, {summary.graduated} graduate and leave the school, and {summary.stayed} stay. You can undo this afterwards.
             </Typography>
-            <TextField label='Type "PROMOTE" to confirm' value={typed} onChange={(e) => setTyped(e.target.value)} fullWidth autoFocus />
+            <TextField label='Type "PROMOTE" to confirm' placeholder="PROMOTE" value={typed} onChange={(e) => setTyped(e.target.value)} fullWidth autoFocus />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
             <Button onClick={() => setConfirming(false)}>Cancel</Button>

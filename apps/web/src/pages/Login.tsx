@@ -74,7 +74,7 @@ export default function Login() {
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <AuthField
             id="login-email"
-            label="Email"
+            label="Email" placeholder="e.g. you@yourschool.ng"
             type="email"
             autoComplete="email"
             inputMode="email"
@@ -85,7 +85,7 @@ export default function Login() {
           />
           <AuthField
             id="login-password"
-            label="Password"
+            label="Password" placeholder="Your password"
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             value={password}
@@ -108,7 +108,7 @@ export default function Login() {
           {needsSchoolId && (
             <AuthField
               id="login-school-id"
-              label="School ID"
+              label="School ID" placeholder="e.g. EfhpymwyU5a3GKxAziDQ"
               value={schoolId}
               onChange={(e) => setSchoolId(e.target.value)}
               error={fieldErrors.schoolId}

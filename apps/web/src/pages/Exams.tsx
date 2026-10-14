@@ -248,7 +248,7 @@ function NewExamDialog({ open, onClose, onCreated }: { open: boolean; onClose: (
               {sessions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </TextField>
           </Stack>
-          <TextField label="Name" value={name} inputProps={{ maxLength: 100 }}
+          <TextField label="Name" placeholder="e.g. First Term Examination" value={name} inputProps={{ maxLength: 100 }}
             onChange={(e) => { setName(e.target.value); setNameEdited(true) }}
             helperText={nameEdited && name !== autoName ? <ButtonBase onClick={() => setNameEdited(false)} sx={{ fontSize: 'inherit', color: brand.green, fontWeight: 600 }}>Use “{autoName}”</ButtonBase> : ' '} />
           <Stack direction="row" spacing={1.5}>
@@ -284,7 +284,7 @@ function NewExamDialog({ open, onClose, onCreated }: { open: boolean; onClose: (
           </Box>
 
           <Stack direction="row" spacing={1.5}>
-            <TextField label="Max score per paper" value={maxScore} onChange={(e) => setMaxScore(e.target.value.replace(/\D/g, ''))}
+            <TextField label="Max score per paper" placeholder="e.g. 60" value={maxScore} onChange={(e) => setMaxScore(e.target.value.replace(/\D/g, ''))}
               inputProps={{ inputMode: 'numeric' }} error={!scoreOk} helperText={scoreOk ? 'You can change it for any paper' : 'From 1 to 100'} fullWidth />
             <TextField select label="Usual length" value={duration} onChange={(e) => setDuration(Number(e.target.value))} helperText=" " fullWidth>
               {DURATIONS.map((m) => <MenuItem key={m} value={m}>{durationLabel(m)}</MenuItem>)}

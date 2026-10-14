@@ -46,7 +46,7 @@ export default function ForgotPassword() {
           </Box>
         ) : (
           <Box component="form" onSubmit={submit} noValidate>
-            <AuthField id="forgot-email" label="Email" type="email" autoComplete="email" inputMode="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} error={fieldError} />
+            <AuthField id="forgot-email" label="Email" placeholder="e.g. you@yourschool.ng" type="email" autoComplete="email" inputMode="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} error={fieldError} />
             <Button type="submit" fullWidth variant="contained" disabled={loading} sx={primaryButtonSx}>{loading ? 'Sending…' : 'Email me a reset link'}</Button>
           </Box>
         )}

@@ -209,7 +209,7 @@ export default function RegisterSchool() {
                   {nigeriaStates.map((s) => <option key={s} value={s}>{s}</option>)}
                 </AuthField>
               ) : (
-                <AuthField id="state" label="State / region" required autoComplete="address-level1" value={form.state} onChange={set('state')} error={errors.state} />
+                <AuthField id="state" label="State / region" placeholder="e.g. Greater Accra" required autoComplete="address-level1" value={form.state} onChange={set('state')} error={errors.state} />
               )}
               <AuthField id="city" label="City / town" required autoComplete="address-level2" value={form.city} onChange={set('city')} error={errors.city} placeholder="e.g. Lekki" />
               <AuthField id="address" label="Street address" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="e.g. 12 Admiralty Way" helperText="Optional" />
@@ -220,15 +220,15 @@ export default function RegisterSchool() {
             <>
               <Grid container columnSpacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <AuthField id="ownerFirstName" label="First name" required autoFocus autoComplete="given-name" value={form.ownerFirstName} onChange={set('ownerFirstName')} error={errors.ownerFirstName} />
+                  <AuthField id="ownerFirstName" label="First name" placeholder="e.g. Ada" required autoFocus autoComplete="given-name" value={form.ownerFirstName} onChange={set('ownerFirstName')} error={errors.ownerFirstName} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <AuthField id="ownerLastName" label="Last name" required autoComplete="family-name" value={form.ownerLastName} onChange={set('ownerLastName')} error={errors.ownerLastName} />
+                  <AuthField id="ownerLastName" label="Last name" placeholder="e.g. Obi" required autoComplete="family-name" value={form.ownerLastName} onChange={set('ownerLastName')} error={errors.ownerLastName} />
                 </Grid>
               </Grid>
-              <AuthField id="ownerEmail" label="Your email" required type="email" autoComplete="email" inputMode="email" value={form.ownerEmail} onChange={set('ownerEmail')} error={errors.ownerEmail} helperText="You'll log in with this email." />
-              <AuthField id="ownerPassword" label="Password" required type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.ownerPassword} onChange={set('ownerPassword')} error={errors.ownerPassword} helperText="At least 6 characters" InputProps={passwordAdornment} />
-              <AuthField id="confirmPassword" label="Confirm password" required type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} />
+              <AuthField id="ownerEmail" label="Your email" placeholder="e.g. ada.obi@gmail.com" required type="email" autoComplete="email" inputMode="email" value={form.ownerEmail} onChange={set('ownerEmail')} error={errors.ownerEmail} helperText="You'll log in with this email." />
+              <AuthField id="ownerPassword" label="Password" placeholder="At least 6 characters" required type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.ownerPassword} onChange={set('ownerPassword')} error={errors.ownerPassword} helperText="At least 6 characters" InputProps={passwordAdornment} />
+              <AuthField id="confirmPassword" label="Confirm password" placeholder="Type the password again" required type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} />
             </>
           )}
 

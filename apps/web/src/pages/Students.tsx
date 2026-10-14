@@ -428,7 +428,7 @@ export default function Students() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
             <TextField
               fullWidth
-              label="First Name"
+              label="First Name" placeholder="e.g. Chiamaka"
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
               required
@@ -436,7 +436,7 @@ export default function Students() {
             />
             <TextField
               fullWidth
-              label="Last Name"
+              label="Last Name" placeholder="e.g. Eze"
               value={form.lastName}
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
               required
@@ -460,13 +460,13 @@ export default function Students() {
           </Stack>
           <TextField
             fullWidth
-            label="Admission Number"
+            label="Admission Number" placeholder="e.g. GFA/2026/014"
             value={form.admissionNumber}
             onChange={(e) => setForm({ ...form, admissionNumber: e.target.value })}
             required
             margin="dense"
           />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: activeClasses.length === 0 ? 1.5 : 0 }}>
             <TextField
               fullWidth
               select
@@ -474,6 +474,7 @@ export default function Students() {
               value={form.classId}
               onChange={(e) => setForm({ ...form, classId: e.target.value })}
               margin="dense"
+              SelectProps={{ displayEmpty: true }}
               helperText={activeClasses.length === 0 ? 'Create classes on the Classes page first' : undefined}
             >
               <MenuItem value="">No class yet</MenuItem>
@@ -487,7 +488,7 @@ export default function Students() {
             </TextField>
             <TextField
               fullWidth
-              label="Section"
+              label="Section" placeholder="e.g. A"
               value={form.section}
               onChange={(e) => setForm({ ...form, section: e.target.value })}
               margin="dense"
@@ -496,7 +497,7 @@ export default function Students() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               fullWidth
-              label="Parent Email"
+              label="Parent Email" placeholder="e.g. parent@gmail.com"
               type="email"
               value={form.parentEmail}
               onChange={(e) => setForm({ ...form, parentEmail: e.target.value })}
@@ -504,7 +505,7 @@ export default function Students() {
             />
             <TextField
               fullWidth
-              label="Parent Phone"
+              label="Parent Phone" placeholder="e.g. 0803 123 4567"
               value={form.parentPhone}
               onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
               margin="dense"
@@ -512,7 +513,7 @@ export default function Students() {
           </Stack>
           <TextField
             fullWidth
-            label="Address"
+            label="Address" placeholder="e.g. 12 Admiralty Way, Lekki, Lagos"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
             margin="dense"

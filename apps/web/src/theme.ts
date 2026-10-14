@@ -62,6 +62,12 @@ const theme = createTheme({
     },
   },
   components: {
+    // Labels sit on the border from the start, so each field's faded example text is visible before you type.
+    MuiTextField: {
+      defaultProps: {
+        InputLabelProps: { shrink: true },
+      },
+    },
     MuiButton: {
       defaultProps: {
         disableElevation: true,

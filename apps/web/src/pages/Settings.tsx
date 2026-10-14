@@ -6,15 +6,15 @@ import { PaystackSettings, SchoolSettings, getPaystack, getSchool, removePaystac
 import { brand } from '../theme'
 import { SmsSettings, getSmsSettings, removeSmsSettings, saveSmsSettings } from '../lib/messagesApi'
 
-const FIELDS: { key: 'name' | 'motto' | 'principalName' | 'address' | 'city' | 'state' | 'phone' | 'email'; label: string; max: number; half?: boolean; hint?: string }[] = [
-  { key: 'name', label: 'School name', max: 100 },
-  { key: 'motto', label: 'Motto', max: 120, hint: 'Printed under the name on report cards and receipts' },
-  { key: 'principalName', label: "Principal's name", max: 80, hint: 'e.g. Mrs. A. Okon — printed beside the principal’s signature' },
-  { key: 'address', label: 'Address', max: 200 },
-  { key: 'city', label: 'City', max: 60, half: true },
-  { key: 'state', label: 'State', max: 60, half: true },
-  { key: 'phone', label: 'Phone', max: 30, half: true },
-  { key: 'email', label: 'Email', max: 120, half: true },
+const FIELDS: { key: 'name' | 'motto' | 'principalName' | 'address' | 'city' | 'state' | 'phone' | 'email'; label: string; max: number; half?: boolean; hint?: string; ph: string }[] = [
+  { key: 'name', label: 'School name', max: 100, ph: 'e.g. Greenfield Academy' },
+  { key: 'motto', label: 'Motto', max: 120, ph: 'e.g. Knowledge and Character', hint: 'Printed under the name on report cards and receipts' },
+  { key: 'principalName', label: "Principal's name", max: 80, ph: 'e.g. Mrs. A. Okon', hint: 'Printed beside the principal’s signature' },
+  { key: 'address', label: 'Address', max: 200, ph: 'e.g. 12 Admiralty Way, Lekki' },
+  { key: 'city', label: 'City', max: 60, half: true, ph: 'e.g. Lagos' },
+  { key: 'state', label: 'State', max: 60, half: true, ph: 'e.g. Lagos State' },
+  { key: 'phone', label: 'Phone', max: 30, half: true, ph: 'e.g. 0703 190 0023' },
+  { key: 'email', label: 'Email', max: 120, half: true, ph: 'e.g. office@greenfield.ng' },
 ]
 
 const errorText = (err: any, fallback: string) => {
@@ -121,7 +121,7 @@ export default function Settings() {
             <Grid container spacing={2}>
               {FIELDS.map((f) => (
                 <Grid item xs={12} sm={f.half ? 6 : 12} key={f.key}>
-                  <TextField label={f.label} value={form[f.key] ?? ''} onChange={(e) => setForm((x) => ({ ...x, [f.key]: e.target.value }))} inputProps={{ maxLength: f.max }}
+                  <TextField label={f.label} placeholder={f.ph} value={form[f.key] ?? ''} onChange={(e) => setForm((x) => ({ ...x, [f.key]: e.target.value }))} inputProps={{ maxLength: f.max }}
                     helperText={f.hint} fullWidth required={f.key === 'name'} error={f.key === 'name' && !form.name?.trim()} />
                 </Grid>
               ))}
@@ -281,9 +281,9 @@ function SmsSection({ onNotice, onError }: { onNotice: (m: string) => void; onEr
       )}
       {settings.needsNewKey && <Alert severity="warning" sx={{ mb: 2 }}>Your saved Termii key can no longer be read. Paste it again below.</Alert>}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'flex-start' }}>
-        <TextField size="small" type="password" label={settings.enabled ? 'Replace API key' : 'Termii API key'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} autoComplete="off"
+        <TextField size="small" type="password" label={settings.enabled ? 'Replace API key' : 'Termii API key'} placeholder="From your Termii dashboard" value={apiKey} onChange={(e) => setApiKey(e.target.value)} autoComplete="off"
           helperText="Termii dashboard → API settings. Stored encrypted." sx={{ flex: 1 }} />
-        <TextField size="small" label="Sender ID" value={senderId} onChange={(e) => setSenderId(e.target.value)} inputProps={{ maxLength: 11 }} helperText="e.g. Greenfield" sx={{ width: { sm: 160 } }} />
+        <TextField size="small" label="Sender ID" placeholder="e.g. GREENFIELD" value={senderId} onChange={(e) => setSenderId(e.target.value)} inputProps={{ maxLength: 11 }} helperText="e.g. Greenfield" sx={{ width: { sm: 160 } }} />
         <Button variant="contained" onClick={save} disabled={!valid || busy} sx={{ mt: { sm: '1px' } }}>{busy ? 'Checking…' : 'Connect'}</Button>
       </Stack>
     </Paper>

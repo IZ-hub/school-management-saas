@@ -501,7 +501,7 @@ function PaperDialog({
             <TextField select label="Length" value={duration} onChange={(e) => setDuration(Number(e.target.value))} fullWidth>
               {durations.map((m) => <MenuItem key={m} value={m}>{durationLabel(m)}</MenuItem>)}
             </TextField>
-            <TextField label="Max score" value={maxScore} onChange={(e) => setMaxScore(e.target.value.replace(/\D/g, ''))}
+            <TextField label="Max score" placeholder="e.g. 60" value={maxScore} onChange={(e) => setMaxScore(e.target.value.replace(/\D/g, ''))}
               inputProps={{ inputMode: 'numeric' }} error={!scoreOk} helperText={scoreOk ? ' ' : 'From 1 to 100'} sx={{ width: 150, flexShrink: 0 }} />
           </Stack>
 
@@ -572,7 +572,7 @@ function DetailsDialog({ series, onClose, onSaved }: { series: ExamSeriesDetail;
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error && <Alert severity="error">{error}</Alert>}
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} inputProps={{ maxLength: 100 }} />
+          <TextField label="Name" placeholder="e.g. First Term Examination" value={name} onChange={(e) => setName(e.target.value)} inputProps={{ maxLength: 100 }} />
           <Stack direction="row" spacing={1.5}>
             <TextField type="date" label="First paper" value={startDate} onChange={(e) => setStartDate(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
             <TextField type="date" label="Last paper" value={endDate} onChange={(e) => setEndDate(e.target.value)} InputLabelProps={{ shrink: true }}

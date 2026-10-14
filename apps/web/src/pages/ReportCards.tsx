@@ -316,9 +316,9 @@ export default function ReportCards() {
                         </Stack>
                       </Stack>
                       <Stack spacing={1.5}>
-                        <RemarkField label="Class teacher's remark" value={teacherRemark} onChange={setTeacherRemark} suggestions={suggestRemarks(card.average)}
+                        <RemarkField label="Class teacher's remark" placeholder="e.g. A hardworking pupil who takes part well in class." value={teacherRemark} onChange={setTeacherRemark} suggestions={suggestRemarks(card.average)}
                         disabled={report.canRemark === false} helper={report.canRemark === false ? "Only this class's form teacher can write this." : undefined} />
-                        <RemarkField label="Principal's remark" value={principalRemark} onChange={setPrincipalRemark} suggestions={suggestRemarks(card.average)}
+                        <RemarkField label="Principal's remark" placeholder="e.g. Good result. Keep it up next term." value={principalRemark} onChange={setPrincipalRemark} suggestions={suggestRemarks(card.average)}
                           disabled={!isAdmin} helper={isAdmin ? undefined : 'Only the principal or school admin can write this.'} />
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                           <Button onClick={() => handleSaveRemarks(false)} disabled={!remarksDirty || savingRemarks}>Save</Button>
@@ -357,12 +357,12 @@ export default function ReportCards() {
   )
 }
 
-function RemarkField({ label, value, onChange, suggestions, disabled, helper }: {
-  label: string; value: string; onChange: (v: string) => void; suggestions: string[]; disabled?: boolean; helper?: string
+function RemarkField({ label, value, onChange, suggestions, disabled, helper, placeholder }: {
+  label: string; placeholder?: string; value: string; onChange: (v: string) => void; suggestions: string[]; disabled?: boolean; helper?: string
 }) {
   return (
     <Box>
-      <TextField label={label} value={value} onChange={(e) => onChange(e.target.value)} fullWidth multiline minRows={2} disabled={disabled}
+      <TextField label={label} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} fullWidth multiline minRows={2} disabled={disabled}
         inputProps={{ maxLength: 300 }} helperText={helper ?? `${value.length}/300`} />
       {!disabled && suggestions.length > 0 && (
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}>

@@ -337,7 +337,7 @@ export default function Classes() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
             <TextField
               fullWidth
-              label="Name"
+              label="Name" placeholder="e.g. JSS 1A"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -345,7 +345,7 @@ export default function Classes() {
             />
             <TextField
               fullWidth
-              label="Grade Level"
+              label="Grade Level" placeholder="e.g. JSS 1"
               value={form.gradeLevel}
               onChange={(e) => setForm({ ...form, gradeLevel: e.target.value })}
               required
@@ -355,7 +355,7 @@ export default function Classes() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
               fullWidth
-              label="Capacity"
+              label="Capacity" placeholder="e.g. 40"
               type="number"
               value={form.capacity}
               onChange={(e) => setForm({ ...form, capacity: e.target.value })}
@@ -363,7 +363,7 @@ export default function Classes() {
             />
             <TextField
               fullWidth
-              label="Teacher ID"
+              label="Teacher ID" placeholder="Paste the class teacher’s ID (optional)"
               value={form.teacherId}
               onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
               margin="dense"

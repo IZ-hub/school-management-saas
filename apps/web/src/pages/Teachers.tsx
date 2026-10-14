@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
+import DateOfBirthField from '../components/DateOfBirthField'
 
 interface Teacher {
   id: string
@@ -307,17 +308,8 @@ export default function Teachers() {
               margin="dense"
             />
           </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <TextField
-              fullWidth
-              label="Date of Birth"
-              type="date"
-              value={form.dateOfBirth}
-              onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-              required
-              margin="dense"
-              InputLabelProps={{ shrink: true }}
-            />
+          <Stack spacing={0.5}>
+            <DateOfBirthField value={form.dateOfBirth} onChange={(v) => setForm({ ...form, dateOfBirth: v })} required minAge={16} maxAge={80} />
             <TextField
               fullWidth
               select

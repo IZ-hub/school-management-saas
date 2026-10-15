@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
-import { Avatar, Box, Stack, TextField, TextFieldProps, Typography } from '@mui/material'
-import { School as SchoolIcon } from '@mui/icons-material'
+import { Box, Stack, TextField, TextFieldProps, Typography } from '@mui/material'
+import { BrandMark, Wordmark } from '../Brand'
 import { Link } from 'react-router-dom'
 
 export const authColors = {
@@ -17,16 +17,12 @@ export const authColors = {
 
 const authFont = '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif'
 
-/** SchoolBricks logo mark and name. */
+/** School Precis logo mark and name. */
 export function BrandLogo() {
   return (
     <Stack component={Link} to="/" direction="row" spacing={1} alignItems="center" sx={{ textDecoration: 'none' }}>
-      <Avatar sx={{ bgcolor: authColors.logo, width: 36, height: 36 }}>
-        <SchoolIcon sx={{ fontSize: 20, color: '#fff' }} />
-      </Avatar>
-      <Typography sx={{ fontWeight: 800, fontSize: '20px', color: authColors.brand, letterSpacing: '-0.2px' }}>
-        SchoolBricks
-      </Typography>
+      <BrandMark size={36} gap={authColors.page} />
+      <Wordmark fontSize={20} />
     </Stack>
   )
 }
@@ -154,7 +150,7 @@ export const primaryButtonSx = {
 /** Turns an API or network failure into a message a user can act on. */
 export function describeError(err: any, fallback: string): string {
   if (!err?.response) {
-    return "Couldn't reach SchoolBricks. Check your internet connection and try again."
+    return "Couldn't reach School Precis. Check your internet connection and try again."
   }
   const message = err.response.data?.message
   if (Array.isArray(message)) return message.join('. ')

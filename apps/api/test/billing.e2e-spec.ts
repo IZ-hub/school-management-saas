@@ -28,7 +28,7 @@ class FakePaystack {
   async checkKey() {}
 }
 
-describe('SchoolBricks billing (e2e)', () => {
+describe('School Precis billing (e2e)', () => {
   let app: INestApplication;
   let db: FakeFirestore;
   let http: ReturnType<typeof request>;
@@ -130,7 +130,7 @@ describe('SchoolBricks billing (e2e)', () => {
     expect((await as(owner).get('/api/v1/billing/status')).body.data.status).toBe('ACTIVE');
   });
 
-  it('never locks a school when SchoolBricks payments are not set up, or when there is nothing to pay', async () => {
+  it('never locks a school when School Precis payments are not set up, or when there is nothing to pay', async () => {
     delete process.env.PLATFORM_PAYSTACK_SECRET_KEY;
     await boot('2026-01-01');
     expect((await as(owner).get('/api/v1/billing/status')).body.data).toMatchObject({ status: 'READ_ONLY', enforced: false, paymentsEnabled: false });

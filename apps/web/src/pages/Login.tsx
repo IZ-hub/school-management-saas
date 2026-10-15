@@ -58,8 +58,8 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Log in to SchoolBricks"
-      subtitle="Log in to your SchoolBricks school."
+      title="Log in to School Precis"
+      subtitle="Log in to your School Precis school."
       topLinkPrompt="Need an account?"
       topLinkLabel="Start free trial"
       topLinkTo="/register"

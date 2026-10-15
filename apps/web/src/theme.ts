@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles'
 
-/** SchoolBricks brand tokens shared by the app shell and dashboard. */
+/** School Precis brand tokens shared by the app shell and dashboard. */
 export const brand = {
   green: '#0d3b2e',
   greenHover: '#14523f',

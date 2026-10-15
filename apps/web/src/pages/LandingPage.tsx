@@ -31,10 +31,10 @@ import {
   MenuBookOutlined as GuideIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
-  School as LogoIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
+import { BrandMark, Wordmark } from '../components/Brand'
 
 /* ─── Palette: deep green, fresh mint and a warm gold on a cream page ─── */
 // Mint carries dark text (6:1), deep green carries white (8:1), gold carries dark text (7.6:1).
@@ -112,15 +112,10 @@ const navLinks = [
 
 /* ─── Building blocks ─── */
 function Logo({ dark = false, size = 'md' }: { dark?: boolean; size?: 'md' | 'lg' }) {
-  const box = size === 'lg' ? 36 : 30
   return (
     <Stack direction="row" spacing={1} alignItems="center">
-      <Box sx={{ width: box, height: box, borderRadius: '9px', bgcolor: dark ? C.lemon : C.green, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <LogoIcon sx={{ fontSize: box * 0.56, color: dark ? C.green : '#fff' }} />
-      </Box>
-      <Typography sx={{ fontWeight: 800, fontSize: size === 'lg' ? '22px' : { xs: '16px', sm: '17px' }, letterSpacing: '-0.3px', color: dark ? '#fff' : C.ink, whiteSpace: 'nowrap' }}>
-        School{' '}<Box component="span" sx={{ color: dark ? C.lemon : C.link }}>Precis</Box>
-      </Typography>
+      <BrandMark size={size === 'lg' ? 38 : 32} variant={dark ? 'reversed' : 'default'} />
+      <Wordmark fontSize={size === 'lg' ? '22px' : { xs: '16px', sm: '17px' }} first={dark ? '#ffffff' : C.ink} second={dark ? C.lemon : C.link} />
     </Stack>
   )
 }

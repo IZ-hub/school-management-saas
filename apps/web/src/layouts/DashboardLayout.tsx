@@ -31,7 +31,6 @@ import {
   HelpOutlineOutlined as HelpIcon,
   LogoutOutlined as LogoutIcon,
   Menu as MenuIcon,
-  School as LogoIcon,
   ManageAccountsOutlined as StaffIcon,
   UpgradeOutlined as PromotionIcon,
   SettingsOutlined as SettingsIcon,
@@ -44,6 +43,7 @@ import { signOut } from '../lib/api'
 import { Area, areas, brand } from '../theme'
 import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
 import BillingBanner from '../components/BillingBanner'
+import { BrandMark, Wordmark } from '../components/Brand'
 
 const DRAWER_WIDTH = 248
 
@@ -115,10 +115,8 @@ const roleLabel = (role?: string) => (role ? role.charAt(0) + role.slice(1).toLo
 function Logo() {
   return (
     <Stack direction="row" spacing={1} alignItems="center">
-      <Avatar sx={{ bgcolor: '#1b5e20', width: 32, height: 32 }}>
-        <LogoIcon sx={{ fontSize: 18, color: '#fff' }} />
-      </Avatar>
-      <Typography sx={{ fontWeight: 800, fontSize: '17px', color: brand.green, letterSpacing: '-0.2px' }}>School Precis</Typography>
+      <BrandMark size={32} />
+      <Wordmark fontSize={17} />
     </Stack>
   )
 }

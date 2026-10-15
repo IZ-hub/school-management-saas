@@ -4,7 +4,7 @@ import { Alert, Avatar, Box, Button, ButtonBase, CircularProgress, Paper, Stack,
 import { ArrowBack as BackIcon, FamilyRestroomOutlined as ParentIcon, PaymentsOutlined as PayIcon, ArticleOutlined as CardIcon, ReceiptLongOutlined as StatementIcon } from '@mui/icons-material'
 import { toDate } from '../lib/attendanceApi'
 import { TERM_LABEL } from '../lib/examsApi'
-import { METHOD_LABEL, Receipt, naira } from '../lib/feesApi'
+import { METHOD_LABEL, Receipt, getReceipt, naira } from '../lib/feesApi'
 import { GRADE_STYLE } from '../lib/resultsApi'
 import { StudentProfile as Profile, getStudentProfile } from '../lib/profileApi'
 import { ReceiptDialog, RecordPaymentDialog, StatementDialog, StatusBadge, longDate } from '../components/FeesKit'
@@ -51,6 +51,22 @@ function Row({ k, v }: { k: string; v: ReactNode }) {
   )
 }
 
+type Pay = NonNullable<Profile['fees']>['payments'][number]
+
+/** Payments grouped by term, newest term first; the total leaves out voided payments. */
+function paymentGroups(payments: Pay[]) {
+  const groups: { key: string; term: Pay['term']; session: string; total: number; items: Pay[] }[] = []
+  for (const pay of payments) {
+    const key = `${pay.session}|${pay.term}`
+    let g = groups.find((x) => x.key === key)
+    if (!g) { g = { key, term: pay.term, session: pay.session, total: 0, items: [] }; groups.push(g) }
+    g.items.push(pay)
+    if (!pay.voided) g.total += pay.amount
+  }
+  const order = { FIRST: 1, SECOND: 2, THIRD: 3 } as Record<string, number>
+  return groups.sort((a, b) => b.session.localeCompare(a.session) || order[b.term] - order[a.term])
+}
+
 export default function StudentProfile() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -60,6 +76,7 @@ export default function StudentProfile() {
   const [statementOpen, setStatementOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const openReceipt = (id: string) => { getReceipt(id).then(setReceipt).catch(() => {}) }
 
   const load = useCallback(() => {
     getStudentProfile(id).then(setP).catch((err) => setError(err.response?.status === 404 ? 'This student was not found.' : err.response?.data?.message || 'Failed to load the student'))
@@ -152,17 +169,7 @@ export default function StudentProfile() {
               </>
             )}
             {p.fees.payments.length > 0 && (
-              <>
-                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: brand.subtle, mb: 0.5 }}>Payments ({naira(p.fees.totalPaid)} in total)</Typography>
-                {p.fees.payments.slice(0, 6).map((pay) => (
-                  <Stack key={pay.id} direction="row" justifyContent="space-between" sx={{ py: 0.4, opacity: pay.voided ? 0.5 : 1 }}>
-                    <Typography sx={{ fontSize: '13px', textDecoration: pay.voided ? 'line-through' : 'none' }}>
-                      {longDate(pay.paidOn)} · {METHOD_LABEL[pay.method]} <Box component="span" sx={{ color: brand.subtle }}>· {TERM_LABEL[pay.term]} {pay.session} · {pay.receiptNumber}</Box>
-                    </Typography>
-                    <Typography sx={{ fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{naira(pay.amount)}</Typography>
-                  </Stack>
-                ))}
-              </>
+              <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>Every payment is listed under Payment record in Details.</Typography>
             )}
           </Section>
         )}
@@ -215,6 +222,34 @@ export default function StudentProfile() {
           <Row k="Address" v={s.address} />
           <Row k="Parent's phone" v={s.parentPhone} />
           <Row k="Parent's email" v={s.parentEmail} />
+          {p.fees && (
+            <Box sx={{ mt: 1.75 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: brand.subtle }}>Payment record</Typography>
+                {p.fees.payments.length > 0 && <Typography sx={{ fontSize: '12px', color: brand.subtle }}>{naira(p.fees.totalPaid)} paid in total</Typography>}
+              </Stack>
+              {p.fees.payments.length === 0 ? (
+                <Typography sx={{ fontSize: '13px', color: brand.muted }}>No payments recorded yet.</Typography>
+              ) : paymentGroups(p.fees.payments).map((g) => (
+                <Box key={g.key} sx={{ mb: 1 }}>
+                  <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5, borderBottom: `1px solid ${brand.border}` }}>
+                    <Typography sx={{ fontSize: '12.5px', fontWeight: 700 }}>{TERM_LABEL[g.term]} {g.session}</Typography>
+                    <Typography sx={{ fontSize: '12.5px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{naira(g.total)}</Typography>
+                  </Stack>
+                  {g.items.map((pay) => (
+                    <ButtonBase key={pay.id} onClick={() => openReceipt(pay.id)} aria-label={`Receipt ${pay.receiptNumber}`}
+                      sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, py: 0.6, px: 0.5, mx: -0.5, borderRadius: '6px', textAlign: 'left', opacity: pay.voided ? 0.55 : 1, '&:hover': { bgcolor: '#f7f6f1' } }}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '13px', textDecoration: pay.voided ? 'line-through' : 'none' }}>{longDate(pay.paidOn)} · {METHOD_LABEL[pay.method]}</Typography>
+                        <Typography sx={{ fontSize: '12px', color: brand.subtle }}>{pay.receiptNumber}{pay.voided ? ' · Voided' : ''}</Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums', textDecoration: pay.voided ? 'line-through' : 'none', flexShrink: 0 }}>{naira(pay.amount)}</Typography>
+                    </ButtonBase>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          )}
           {p.classHistory.length > 0 && (
             <Box sx={{ mt: 1.5 }}>
               <Typography sx={{ fontSize: '12px', fontWeight: 600, color: brand.subtle, mb: 0.5 }}>Class history</Typography>

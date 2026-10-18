@@ -31,6 +31,8 @@ async function getServer() {
       origin: [
         'https://school-management-1f070.web.app',
         'https://school-management-1f070.firebaseapp.com',
+        'https://schoolprecise.com',
+        'https://www.schoolprecise.com',
         ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o: string) => o.trim()) : []),
       ],
       credentials: true,

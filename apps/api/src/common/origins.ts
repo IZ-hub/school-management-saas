@@ -1,5 +1,8 @@
 /** Our own web addresses: where links in emails and payment returns may point. */
+// The first entry is the main address, used when a request doesn't say where it came from.
 export const APP_ORIGINS = [
+  'https://schoolprecise.com',
+  'https://www.schoolprecise.com',
   'https://school-management-1f070.web.app',
   'https://school-management-1f070.firebaseapp.com',
   'http://localhost:5173',

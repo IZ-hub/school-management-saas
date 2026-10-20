@@ -583,7 +583,7 @@ export default function LandingPage() {
             {[
               { title: 'Product', links: [{ label: 'Features', href: '#features' }, { label: 'How it works', href: '#how-it-works' }, { label: 'Pricing', href: '#pricing' }, { label: 'FAQ', href: '#faq' }] },
               { title: 'Buyer’s guide', links: [{ label: 'What to look for', href: '#criteria' }, { label: 'Questions to ask', href: '#questions' }, { label: 'Where School Precise fits', href: '#where-school-precise-fits' }] },
-              { title: 'Company', links: [{ label: 'Contact', href: '#contact' }, { label: 'Sign in', href: '/login' }, { label: 'Register your school', href: '/register' }] },
+              { title: 'Company', links: [{ label: 'Contact', href: '#contact' }, { label: 'Sign in', href: '/login' }, { label: 'Register your school', href: '/register' }, { label: 'Privacy Policy', href: '/privacy' }, { label: 'Terms of Use', href: '/terms' }] },
             ].map((col) => (
               <Grid item xs={6} sm={4} md={2.5} key={col.title}>
                 <Typography sx={{ fontWeight: 800, color: '#fff', mb: 1.75, fontSize: '0.82rem', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{col.title}</Typography>

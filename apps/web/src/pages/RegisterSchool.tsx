@@ -247,11 +247,16 @@ export default function RegisterSchool() {
               {step < steps.length - 1 ? 'Continue' : loading ? 'Creating your school…' : 'Create school account'}
             </Button>
           </Stack>
+          {step === steps.length - 1 && (
+            <Typography sx={{ fontSize: '13px', color: authColors.muted, mt: 1.5, textAlign: 'center', '& a': { color: authColors.brand, fontWeight: 600 } }}>
+              By creating an account, you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
+            </Typography>
+          )}
         </Box>
       </AuthCard>
 
       <Typography variant="body2" sx={{ color: authColors.muted, textAlign: 'center', mt: 3 }}>
-        Free 30-day pilot. No card required.
+        14 days free. No card required.
       </Typography>
     </AuthShell>
   )

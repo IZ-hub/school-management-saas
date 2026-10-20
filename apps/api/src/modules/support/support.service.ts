@@ -1,6 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { CreateSupportMessageDto } from './dto/create-support-message.dto';
+import { mailEnabled, sendMail } from '../../common/mailer';
+
+/** Where website and chat messages are emailed. Replies go straight to the visitor. */
+const supportInbox = () => process.env.SUPPORT_INBOX || 'hello@schoolprecise.com';
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 8;
@@ -44,6 +49,22 @@ export class SupportService {
       status: 'NEW',
       createdAt: now,
     });
+
+    // Email it to the team; the message is already saved, so a failed email never fails the visitor.
+    if (mailEnabled()) {
+      const name = dto.name.trim();
+      const email = dto.email.trim().toLowerCase();
+      const body = dto.message.trim();
+      const where = dto.page ? `Sent from ${dto.page}` : 'Sent from the website';
+      await sendMail(
+        supportInbox(),
+        // One subject per visitor, so Gmail keeps a conversation in one thread.
+        `School Precis message from ${name}`,
+        `${body}\n\n— ${name} <${email}>\n${where}. Reply to this email to answer them.`,
+        `<p style="white-space:pre-wrap">${esc(body)}</p><p style="color:#5f6a63">— ${esc(name)} &lt;${esc(email)}&gt;<br>${esc(where)}. Reply to this email to answer them.</p>`,
+        { replyTo: email },
+      );
+    }
     return { received: true };
   }
 }

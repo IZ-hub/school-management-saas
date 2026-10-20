@@ -78,13 +78,14 @@ export default function SupportWidget() {
     save({ conversationId, name, email, bubbles })
   }, [conversationId, name, email, bubbles])
 
-  // Inside the app the sidebar's "Help & support" opens the chat instead of a floating button.
+  // The sidebar's "Help & support" also opens the chat.
   useEffect(() => {
     const openChat = () => setOpen(true)
     window.addEventListener('schoolful:open-support', openChat)
     return () => window.removeEventListener('schoolful:open-support', openChat)
   }, [])
-  const showLauncher = PUBLIC_PAGES.includes(location.pathname)
+  // Public pages get the labelled "Chat" pill; inside the app a smaller round button keeps clear of page content.
+  const compact = !PUBLIC_PAGES.includes(location.pathname)
 
   useEffect(() => {
     if (open) {
@@ -158,13 +159,14 @@ export default function SupportWidget() {
   return (
     <>
       {/* Launcher */}
-      {!open && showLauncher && (
+      {!open && (
         <ButtonBase
           onClick={() => setOpen(true)}
           aria-label="Open School Precis support chat"
+          title={compact ? 'Help & support' : undefined}
           sx={{
-            position: 'fixed', right: 20, bottom: { xs: 16, sm: 12 }, zIndex: 1250,
-            height: 50, px: 2.5, borderRadius: 999, bgcolor: BRAND, color: '#fff',
+            position: 'fixed', right: compact ? 16 : 20, bottom: compact ? 16 : { xs: 16, sm: 12 }, zIndex: 1250,
+            height: compact ? 48 : 50, width: compact ? 48 : 'auto', px: compact ? 0 : 2.5, justifyContent: 'center', borderRadius: 999, bgcolor: BRAND, color: '#fff',
             display: 'flex', alignItems: 'center', gap: 1,
             boxShadow: '0 4px 14px rgba(13,59,46,0.35)', transition: 'transform 0.15s, box-shadow 0.15s',
             '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(13,59,46,0.4)' },
@@ -172,7 +174,7 @@ export default function SupportWidget() {
           }}
         >
           <ChatIcon sx={{ fontSize: 22 }} />
-          <Typography sx={{ fontWeight: 700, fontSize: '16px' }}>Chat</Typography>
+          {!compact && <Typography sx={{ fontWeight: 700, fontSize: '16px' }}>Chat</Typography>}
         </ButtonBase>
       )}
 
@@ -224,7 +226,7 @@ export default function SupportWidget() {
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Live Support</Typography>
-              <Typography sx={{ fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Ask us anything.</Typography>
+              <Typography sx={{ fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Ask us anything, or email <Box component="a" href="mailto:hello@schoolprecise.com" sx={{ color: 'inherit', fontWeight: 600 }}>hello@schoolprecise.com</Box></Typography>
             </Box>
           </Stack>
 

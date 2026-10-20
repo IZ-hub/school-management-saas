@@ -25,6 +25,7 @@ import {
   ArrowForward as ArrowIcon,
   Send as SendIcon,
   WhatsApp as WhatsAppIcon,
+  MailOutline as EmailIcon,
   PhoneOutlined as PhoneIcon,
   LocationOnOutlined as LocationIcon,
   Add as PlusIcon,
@@ -58,6 +59,7 @@ const C = {
 }
 
 const WHATSAPP = '2347061102797'
+const CONTACT_EMAIL = 'hello@schoolprecise.com'
 
 const btn = { textTransform: 'none', fontWeight: 700, borderRadius: '999px', boxShadow: 'none', '&:hover': { boxShadow: 'none' } } as const
 const lemonBtn = { ...btn, bgcolor: C.lemon, color: C.night, '&:hover': { bgcolor: C.lemonHover, boxShadow: 'none' } }
@@ -484,7 +486,7 @@ export default function LandingPage() {
             </Stack>
 
             <H2 id="contact">Talk to us</H2>
-            <P>Questions, or want a free 30-minute walkthrough on Google Meet? Send us a message and we'll reply by email within one working day, or chat with us on WhatsApp.</P>
+            <P>Questions, or want a free 30-minute walkthrough on Google Meet? Send us a message and we'll reply by email within one working day, write to <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A>, or chat with us on WhatsApp.</P>
             <Box sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: '20px', border: `1px solid ${C.line}`, bgcolor: '#fff' }}>
               {contactState === 'sent' && <Alert severity="success" sx={{ mb: 2, borderRadius: '12px' }}>Thank you! Your message has reached our team, and we'll reply to your email within one working day.</Alert>}
               {contactState === 'error' && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>We couldn't send that just now. Please try again, or message us on WhatsApp.</Alert>}
@@ -562,6 +564,7 @@ export default function LandingPage() {
               </Typography>
               <Stack spacing={1.25} sx={{ mt: 3 }}>
                 {[
+                  { icon: <EmailIcon />, text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
                   { icon: <WhatsAppIcon />, text: 'Chat on WhatsApp', href: `https://wa.me/${WHATSAPP}` },
                   { icon: <PhoneIcon />, text: '0706 110 2797', href: 'tel:+2347061102797' },
                   { icon: <LocationIcon />, text: 'Lagos, Nigeria' },

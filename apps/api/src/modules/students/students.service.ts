@@ -5,6 +5,55 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { countOf } from '../../common/aggregate';
 
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const pad = (n: number) => String(n).padStart(2, '0');
+const validDate = (y: number, m: number, d: number) => {
+  if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1) return null;
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return d <= last ? `${y}-${pad(m)}-${pad(d)}` : null;
+};
+
+/**
+ * Reads a date of birth the way Nigerian schools write it in Excel and returns YYYY-MM-DD.
+ * Day comes first (14/03/2015), as in Nigeria. Also accepts 2015-03-14, "14 March 2015",
+ * "14-Mar-2015" and Excel's own date numbers. Returns null if it can't be read.
+ */
+export function readDateOfBirth(raw: string): string | null {
+  const v = raw.trim();
+  let m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(v);
+  if (m) return validDate(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(v);
+  if (m) {
+    const y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+    return validDate(y, +m[2], +m[1]);
+  }
+  m = /^(\d{1,2})(?:st|nd|rd|th)?[\s\-/.]+([a-z]+)\.?[\s\-/.,]+(\d{4})$/i.exec(v);
+  if (m) {
+    const month = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase());
+    return month >= 0 ? validDate(+m[3], month + 1, +m[1]) : null;
+  }
+  m = /^([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/i.exec(v);
+  if (m) {
+    const month = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
+    return month >= 0 ? validDate(+m[3], month + 1, +m[2]) : null;
+  }
+  // Excel stores dates as days since 30 Dec 1899; 1900–2100 is roughly 1 to 73,000.
+  if (/^\d{4,5}$/.test(v) && +v > 365 && +v < 73100) {
+    const d = new Date(Date.UTC(1899, 11, 30) + +v * 86_400_000);
+    return validDate(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+  }
+  return null;
+}
+
+/** "Male", "M", "boy" → MALE; "Female", "F", "girl" → FEMALE. Returns null if it can't be read. */
+export function readGender(raw: string): 'MALE' | 'FEMALE' | 'OTHER' | null {
+  const v = raw.trim().toLowerCase();
+  if (['m', 'male', 'boy', 'b'].includes(v)) return 'MALE';
+  if (['f', 'female', 'girl', 'g'].includes(v)) return 'FEMALE';
+  if (v === 'other') return 'OTHER';
+  return null;
+}
+
 @Injectable()
 export class StudentsService {
   constructor(private readonly firebase: FirebaseService) {}
@@ -133,6 +182,18 @@ export class StudentsService {
         errors.push({ row: i + 1, message: `Admission number ${r.admissionNumber} is also on row ${seenInFile.get(key)} of this file, so this row was skipped.` });
         continue;
       }
+      const rawDob = (r.dateOfBirth ?? '').toString().trim();
+      const dateOfBirth = rawDob ? readDateOfBirth(rawDob) : '';
+      if (dateOfBirth === null) {
+        errors.push({ row: i + 1, message: `Date of birth "${rawDob}" wasn't understood. Write it day first, like 14/03/2015.` });
+        continue;
+      }
+      const rawGender = (r.gender ?? '').toString().trim();
+      const gender = rawGender ? readGender(rawGender) : '';
+      if (gender === null) {
+        errors.push({ row: i + 1, message: `Gender "${rawGender}" wasn't understood. Write Male or Female.` });
+        continue;
+      }
       let classId: string | null = null;
       const wantedClass = (r.className || r.classId || '').toString();
       if (wantedClass.trim()) {
@@ -148,8 +209,8 @@ export class StudentsService {
         schoolId,
         firstName: r.firstName,
         lastName: r.lastName,
-        dateOfBirth: r.dateOfBirth || '',
-        gender: r.gender || '',
+        dateOfBirth,
+        gender,
         admissionNumber: r.admissionNumber,
         classId,
         section: r.section || null,

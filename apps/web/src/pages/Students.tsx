@@ -538,6 +538,7 @@ export default function Students() {
         title="Import Students"
         endpoint="/students/bulk-import"
         columns={studentColumns}
+        excelTemplate="/templates/school-precise-student-template.xlsx"
       />
 
       {parentFor && <ParentAccessDialog student={parentFor} onClose={() => setParentFor(null)} />}

@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/authStore'
 const BRAND = '#0d3b2e'
 const WHATSAPP_NUMBER = '2347061102797'
 const STORAGE_KEY = 'schoolful-support-chat'
-const PUBLIC_PAGES = ['/', '/login', '/register', '/privacy', '/terms']
+const PUBLIC_PAGES = ['/', '/login', '/register', '/privacy', '/terms', '/install']
 
 type Bubble = {
   id: string

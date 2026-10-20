@@ -36,6 +36,7 @@ import {
 import { api } from '../lib/api'
 import { brand } from '../theme'
 import { BrandMark, Wordmark } from '../components/Brand'
+import InstallAppButton from '../components/InstallAppButton'
 
 /* ─── Palette: deep green, fresh mint and a warm gold on a cream page ─── */
 // Mint carries dark text (6:1), deep green carries white (8:1), gold carries dark text (7.6:1).
@@ -349,6 +350,11 @@ export default function LandingPage() {
         </List>
         <Stack spacing={1.25} sx={{ p: 2.5, borderTop: `1px solid ${C.line}` }}>
           <Button fullWidth variant="contained" size="large" onClick={() => { setMenuOpen(false); navigate('/register') }} sx={{ ...lemonBtn, py: 1.4 }}>Start 14-day free trial</Button>
+          <InstallAppButton>
+            {(install) => (
+              <Button fullWidth variant="outlined" size="large" onClick={() => { setMenuOpen(false); install() }} sx={{ ...btn, borderColor: C.line, color: C.green, py: 1.4, bgcolor: '#fff' }}>Install the app</Button>
+            )}
+          </InstallAppButton>
           <Button fullWidth variant="outlined" size="large" onClick={() => { setMenuOpen(false); navigate('/login') }} sx={{ ...btn, borderColor: C.line, color: C.green, py: 1.4, bgcolor: '#fff' }}>Sign in</Button>
         </Stack>
       </Drawer>
@@ -583,7 +589,7 @@ export default function LandingPage() {
             {[
               { title: 'Product', links: [{ label: 'Features', href: '#features' }, { label: 'How it works', href: '#how-it-works' }, { label: 'Pricing', href: '#pricing' }, { label: 'FAQ', href: '#faq' }] },
               { title: 'Buyer’s guide', links: [{ label: 'What to look for', href: '#criteria' }, { label: 'Questions to ask', href: '#questions' }, { label: 'Where School Precise fits', href: '#where-school-precise-fits' }] },
-              { title: 'Company', links: [{ label: 'Contact', href: '#contact' }, { label: 'Sign in', href: '/login' }, { label: 'Register your school', href: '/register' }, { label: 'Privacy Policy', href: '/privacy' }, { label: 'Terms of Use', href: '/terms' }] },
+              { title: 'Company', links: [{ label: 'Contact', href: '#contact' }, { label: 'Sign in', href: '/login' }, { label: 'Register your school', href: '/register' }, { label: 'Install the app', href: '/install' }, { label: 'Privacy Policy', href: '/privacy' }, { label: 'Terms of Use', href: '/terms' }] },
             ].map((col) => (
               <Grid item xs={6} sm={4} md={2.5} key={col.title}>
                 <Typography sx={{ fontWeight: 800, color: '#fff', mb: 1.75, fontSize: '0.82rem', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{col.title}</Typography>

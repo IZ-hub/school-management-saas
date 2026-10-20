@@ -21,6 +21,7 @@ import ParentHome from './pages/ParentHome'
 import ParentSetup from './pages/ParentSetup'
 import ForgotPassword from './pages/ForgotPassword'
 import LegalPage from './pages/LegalPage'
+import InstallPage from './pages/InstallPage'
 import Staff from './pages/Staff'
 import Promotion from './pages/Promotion'
 import Settings from './pages/Settings'
@@ -64,6 +65,7 @@ function App() {
         <Route path="/parent-setup" element={<ParentSetup />} />
         <Route path="/setup" element={<ParentSetup />} />
         <Route path="/reset" element={<ParentSetup />} />
+        <Route path="/install" element={<InstallPage />} />
         <Route path="/privacy" element={<LegalPage doc="privacy" />} />
         <Route path="/terms" element={<LegalPage doc="terms" />} />
         <Route path="/forgot-password" element={isAuthenticated ? <AfterSignIn /> : <ForgotPassword />} />

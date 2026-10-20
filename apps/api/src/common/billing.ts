@@ -35,6 +35,8 @@ export interface BillingState {
   enforced: boolean;
   /** Set by School Precise (school.billing.complimentary): never billed or locked. */
   complimentary: boolean;
+  /** A demo school (school.billing.demo): complimentary, and labelled as a demo. */
+  demo: boolean;
 }
 
 /**
@@ -47,14 +49,15 @@ export function billingState(school: Record<string, any>, calendar: TermCalendar
   const trialEndsOn = school.billing?.trialEndsOn ?? addDays(created > launch ? created : launch, TRIAL_DAYS);
   const term = calendar.current(today);
   const enforced = platformPaymentsEnabled();
-  const complimentary = school.billing?.complimentary === true;
-  if (complimentary) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary };
-  if (today < trialEndsOn) return { status: 'TRIAL', trialEndsOn, term, dueOn: trialEndsOn, readOnlyFrom: addDays(trialEndsOn, GRACE_DAYS), paid: false, enforced, complimentary };
-  if (paidThisTerm) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary };
+  const demo = school.billing?.demo === true;
+  const complimentary = demo || school.billing?.complimentary === true;
+  if (complimentary) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary, demo };
+  if (today < trialEndsOn) return { status: 'TRIAL', trialEndsOn, term, dueOn: trialEndsOn, readOnlyFrom: addDays(trialEndsOn, GRACE_DAYS), paid: false, enforced, complimentary, demo };
+  if (paidThisTerm) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary, demo };
   const termStart = calendar.range(term.term, term.session).from;
   const dueOn = termStart > trialEndsOn ? termStart : trialEndsOn;
   const readOnlyFrom = addDays(dueOn, GRACE_DAYS);
-  return { status: today >= readOnlyFrom ? 'READ_ONLY' : 'DUE', trialEndsOn, term, dueOn, readOnlyFrom, paid: false, enforced, complimentary };
+  return { status: today >= readOnlyFrom ? 'READ_ONLY' : 'DUE', trialEndsOn, term, dueOn, readOnlyFrom, paid: false, enforced, complimentary, demo };
 }
 
 export const invoiceId = (schoolId: string, term: string, session: string) => `${schoolId}__${session.replace('/', '-')}__${term}`;

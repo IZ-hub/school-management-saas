@@ -51,7 +51,7 @@ export default function Billing() {
 
   if (!b) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>{error ? <Alert severity="error">{error}</Alert> : <CircularProgress size={28} />}</Box>
 
-  const st = b.complimentary ? { label: 'Free', bg: '#e3f1e6', fg: '#1d5f36' } : STATUS[b.status]
+  const st = b.demo ? { label: 'Demo', bg: '#e6eefa', fg: '#1a569e' } : b.complimentary ? { label: 'Free', bg: '#e3f1e6', fg: '#1d5f36' } : STATUS[b.status]
   const amount = b.invoice?.amount ?? b.estimate
   const students = b.invoice?.students ?? b.students
   const termName = `${TERM_LABEL[b.term.term]} ${b.term.session}`
@@ -59,13 +59,13 @@ export default function Billing() {
 
   const headline = {
     TRIAL: `${Math.max(0, daysUntil(b.trialEndsOn))} days left in your free trial`,
-    ACTIVE: b.complimentary ? 'Your school uses School Precise free of charge' : `${termName} is paid`,
+    ACTIVE: b.demo ? 'This is a demo school' : b.complimentary ? 'Your school uses School Precise free of charge' : `${termName} is paid`,
     DUE: `${naira(amount)} due for ${termName}`,
     READ_ONLY: 'Your school is read-only',
   }[b.status]
   const detail = {
     TRIAL: `Your trial ends on ${prettyDate(b.trialEndsOn)}. After that, ${termName} costs ${naira(b.estimate)} for your ${b.students} active ${b.students === 1 ? 'student' : 'students'}. You can pay early at any time.`,
-    ACTIVE: b.complimentary ? 'Everyone has full access, with nothing to pay.' : 'Everyone has full access. The next invoice comes at the start of next term.',
+    ACTIVE: b.demo ? 'Demo schools show how School Precise works. They are never billed or locked, so you can try everything freely.' : b.complimentary ? 'Everyone has full access, with nothing to pay.' : 'Everyone has full access. The next invoice comes at the start of next term.',
     DUE: b.readOnlyFrom ? `Please pay by ${prettyDate(b.readOnlyFrom)}. After that, your school becomes read-only until payment: staff can still view and print, but not add or change anything.` : '',
     READ_ONLY: 'Staff can still view and print everything, and parents can still see their children. Pay now to add and change records again. Nothing has been deleted.',
   }[b.status]

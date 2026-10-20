@@ -81,6 +81,8 @@ describe('School Precise billing (e2e)', () => {
     expect(billingState({ createdAt: new Date('2025-05-01') }, cal, false, '2026-10-06')).toMatchObject({ status: 'TRIAL', trialEndsOn: '2026-10-19' });
     // Complimentary schools are never due, even long after their trial.
     expect(billingState({ billing: { trialEndsOn: '2026-01-01', complimentary: true } }, cal, false, '2027-01-20')).toMatchObject({ status: 'ACTIVE', paid: true, complimentary: true });
+    // A demo school is complimentary too, and says so.
+    expect(billingState({ billing: { trialEndsOn: '2026-01-01', demo: true } }, cal, false, '2027-01-20')).toMatchObject({ status: 'ACTIVE', complimentary: true, demo: true });
     // The launch date can move to the day online billing goes live.
     process.env.BILLING_LAUNCH = '2026-11-02';
     try {

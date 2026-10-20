@@ -29,6 +29,7 @@ import {
   RequestQuoteOutlined as FeesIcon,
   ReceiptLongOutlined as PaymentsIcon,
   HelpOutlineOutlined as HelpIcon,
+  InstallMobileOutlined as InstallIcon,
   LogoutOutlined as LogoutIcon,
   Menu as MenuIcon,
   ManageAccountsOutlined as StaffIcon,
@@ -44,6 +45,7 @@ import { Area, areas, brand } from '../theme'
 import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
 import BillingBanner from '../components/BillingBanner'
 import { BrandMark, Wordmark } from '../components/Brand'
+import InstallAppButton from '../components/InstallAppButton'
 
 const DRAWER_WIDTH = 248
 
@@ -181,6 +183,14 @@ export default function DashboardLayout() {
       </Box>
 
       <Box sx={{ px: 1.5, pt: 1, pb: 1.5, borderTop: `1px solid ${brand.border}`, flexShrink: 0 }}>
+        <InstallAppButton>
+          {(install) => (
+            <ListItemButton onClick={() => { if (isMobile) setMobileOpen(false); install() }} sx={itemSx}>
+              <ListItemIcon><InstallIcon /></ListItemIcon>
+              <ListItemText primary="Install the app" primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
+            </ListItemButton>
+          )}
+        </InstallAppButton>
         <ListItemButton onClick={openSupport} sx={itemSx}>
           <ListItemIcon><HelpIcon /></ListItemIcon>
           <ListItemText primary="Help & support" primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />

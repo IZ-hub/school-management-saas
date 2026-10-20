@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import theme from './theme'
 import './lib/firebase'
+import { setUpInstall } from './lib/install'
+
+setUpInstall()
 
 const queryClient = new QueryClient({
   defaultOptions: {

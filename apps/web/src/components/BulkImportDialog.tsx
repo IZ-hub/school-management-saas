@@ -40,6 +40,8 @@ interface BulkImportDialogProps {
   title: string
   endpoint: string
   columns: ColumnDef[]
+  /** A ready-made Excel template with instructions, offered alongside the plain CSV one. */
+  excelTemplate?: string
 }
 
 /** "Class Name", "className", "class_name" and "CLASS NAME" all compare equal. */
@@ -71,6 +73,7 @@ export default function BulkImportDialog({
   title,
   endpoint,
   columns,
+  excelTemplate,
 }: BulkImportDialogProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<Record<string, string>[]>([])
@@ -246,9 +249,21 @@ export default function BulkImportDialog({
                   ))}
                 </Stack>
               </Box>
-              <Link component="button" variant="body2" onClick={downloadTemplate} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <DownloadIcon sx={{ fontSize: 16 }} /> Download CSV template
-              </Link>
+              <Stack direction="row" spacing={2.5} flexWrap="wrap" useFlexGap>
+                {excelTemplate && (
+                  <Link href={excelTemplate} download variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
+                    <DownloadIcon sx={{ fontSize: 16 }} /> Download Excel template (with instructions)
+                  </Link>
+                )}
+                <Link component="button" variant="body2" onClick={downloadTemplate} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <DownloadIcon sx={{ fontSize: 16 }} /> Download CSV template
+                </Link>
+              </Stack>
+              {excelTemplate && (
+                <Typography variant="body2" color="text.secondary">
+                  Filled in the Excel template? Save it as <b>CSV UTF-8</b> (File › Save As) and upload that file here.
+                </Typography>
+              )}
             </Stack>
 
             {/* File upload area */}

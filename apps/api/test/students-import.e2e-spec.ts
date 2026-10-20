@@ -125,4 +125,31 @@ describe('Student CSV import with class names (e2e)', () => {
     expect(classOf('A/1')).toBeUndefined();
     expect(classOf('A/4')).toBe('jss1a');
   });
+
+  it('reads dates of birth and genders the way schools type them in Excel', async () => {
+    const res = await importRows([
+      student(1, { dateOfBirth: '14/03/2015', gender: 'Male' }),
+      student(2, { dateOfBirth: '2015-03-14', gender: 'F' }),
+      student(3, { dateOfBirth: '4-9-2014', gender: 'girl' }),
+      student(4, { dateOfBirth: '14 March 2015', gender: 'MALE' }),
+      student(5, { dateOfBirth: '42077' }), // Excel's own number for 14/03/2015
+      student(6),
+      student(7, { dateOfBirth: '31/02/2015' }), // no such day
+      student(8, { dateOfBirth: '03/14/2015' }), // month first: not Nigerian order
+      student(9, { gender: 'unknown' }),
+    ]);
+    const saved = (adm: string) => [...(db.store.get('students')?.values() ?? [])].find((x) => x.admissionNumber === adm);
+    expect(res.body.data.imported).toBe(6);
+    expect(saved('A/1')).toMatchObject({ dateOfBirth: '2015-03-14', gender: 'MALE' });
+    expect(saved('A/2')).toMatchObject({ dateOfBirth: '2015-03-14', gender: 'FEMALE' });
+    expect(saved('A/3')).toMatchObject({ dateOfBirth: '2014-09-04', gender: 'FEMALE' });
+    expect(saved('A/4')).toMatchObject({ dateOfBirth: '2015-03-14', gender: 'MALE' });
+    expect(saved('A/5')).toMatchObject({ dateOfBirth: '2015-03-14' });
+    expect(saved('A/6')).toMatchObject({ dateOfBirth: '', gender: '' });
+    expect(res.body.data.errors).toEqual([
+      { row: 7, message: 'Date of birth "31/02/2015" wasn\'t understood. Write it day first, like 14/03/2015.' },
+      { row: 8, message: 'Date of birth "03/14/2015" wasn\'t understood. Write it day first, like 14/03/2015.' },
+      { row: 9, message: 'Gender "unknown" wasn\'t understood. Write Male or Female.' },
+    ]);
+  });
 });

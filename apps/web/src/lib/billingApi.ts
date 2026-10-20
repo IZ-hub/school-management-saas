@@ -11,6 +11,7 @@ export interface BillingInfo {
   paid: boolean
   enforced: boolean
   complimentary: boolean
+  demo: boolean
   students: number
   pricePerStudent: number
   estimate: number

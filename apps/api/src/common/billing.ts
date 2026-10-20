@@ -1,7 +1,7 @@
 import { TermCalendar } from './term-calendar';
 import { schoolToday } from './school-date';
 
-/** School Precis pricing: per active student, per term. */
+/** School Precise pricing: per active student, per term. */
 export const PRICE_PER_STUDENT = 1500;
 export const TRIAL_DAYS = 14;
 export const GRACE_DAYS = 7;

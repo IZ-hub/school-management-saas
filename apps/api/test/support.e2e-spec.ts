@@ -76,7 +76,7 @@ describe('Support chat messages (e2e)', () => {
       delete process.env.RESEND_API_KEY;
     }
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({ to: ['hello@schoolprecise.com'], reply_to: 'ada@zafiri.ng', subject: 'School Precis message from Ada Obi' });
+    expect(sent[0]).toMatchObject({ to: ['hello@schoolprecise.com'], reply_to: 'ada@zafiri.ng', subject: 'School Precise message from Ada Obi' });
     expect(sent[0].text).toContain('Hi <b>there</b>');
     expect(sent[0].html).toContain('Hi &lt;b&gt;there&lt;/b&gt;');
     expect(saved()).toHaveLength(1);

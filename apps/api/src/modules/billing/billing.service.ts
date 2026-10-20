@@ -76,9 +76,9 @@ export class BillingService {
     return { id: ref.id, ...invoice };
   }
 
-  /** Starts a Paystack payment (into the School Precis account) for this term's invoice. */
+  /** Starts a Paystack payment (into the School Precise account) for this term's invoice. */
   async pay(schoolId: string, user: JwtPayload, origin?: string) {
-    if (!platformPaymentsEnabled()) throw new BadRequestException("Online payment for School Precis isn't set up yet. Please contact School Precis.");
+    if (!platformPaymentsEnabled()) throw new BadRequestException("Online payment for School Precise isn't set up yet. Please contact School Precise.");
     const invoice = await this.ensureInvoice(schoolId);
     if (invoice.status === 'PAID') throw new BadRequestException('This term is already paid. Thank you!');
     const me = await this.db.collection('users').doc(user.sub).get();
@@ -91,7 +91,7 @@ export class BillingService {
       amount: invoice.amount * 100,
       reference,
       callback_url: `${appOrigin(origin)}/billing`,
-      metadata: { schoolId, invoiceId: invoice.id, purpose: 'schoolprecis-subscription' },
+      metadata: { schoolId, invoiceId: invoice.id, purpose: 'schoolprecise-subscription' },
     });
     return { reference, authorizationUrl };
   }
@@ -102,7 +102,7 @@ export class BillingService {
     return this.settle(reference);
   }
 
-  /** Paystack's notice, signed with the School Precis secret key. */
+  /** Paystack's notice, signed with the School Precise secret key. */
   async webhook(rawBody: Buffer | string, signature: string | undefined, event: any) {
     const key = platformKey();
     if (!key || !signature) return { ok: false };

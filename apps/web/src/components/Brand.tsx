@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 
-/** School Precis colours, from the brand board. */
+/** School Precise colours, from the brand board. */
 export const brandColors = {
   night: '#0f2a24',
   forest: '#0e5c43',
@@ -52,15 +52,15 @@ export function BrandMark({ size = 32, variant = 'default', gap, title }: MarkPr
 
 interface WordmarkProps {
   fontSize?: number | string | Record<string, string>
-  /** Colour of "School" and of "Precis". */
+  /** Colour of "School" and of "Precise". */
   first?: string
   second?: string
 }
 
-/** "School Precis", with the gold point dotting the i. */
+/** "School Precise", with the gold point dotting the i. */
 export function Wordmark({ fontSize = 17, first = brandColors.night, second = brandColors.forest }: WordmarkProps) {
   return (
-    <Box component="span" aria-label="School Precis" sx={{ fontSize, lineHeight: 1, letterSpacing: '-0.035em', whiteSpace: 'nowrap', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <Box component="span" aria-label="School Precise" sx={{ fontSize, lineHeight: 1, letterSpacing: '-0.035em', whiteSpace: 'nowrap', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Box component="span" aria-hidden sx={{ fontWeight: 600, color: first }}>School</Box>{' '}
       <Box component="span" aria-hidden sx={{ fontWeight: 800, color: second }}>
         Prec
@@ -68,7 +68,7 @@ export function Wordmark({ fontSize = 17, first = brandColors.night, second = br
           ı
           <Box component="span" sx={{ position: 'absolute', left: '50%', top: '0.12em', width: '0.17em', height: '0.17em', ml: '-0.085em', borderRadius: '50%', bgcolor: brandColors.gold }} />
         </Box>
-        s
+        se
       </Box>
     </Box>
   )

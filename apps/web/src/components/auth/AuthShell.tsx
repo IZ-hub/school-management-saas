@@ -17,7 +17,7 @@ export const authColors = {
 
 const authFont = '"Plus Jakarta Sans", "Inter", "Helvetica", "Arial", sans-serif'
 
-/** School Precis logo mark and name. */
+/** School Precise logo mark and name. */
 export function BrandLogo() {
   return (
     <Stack component={Link} to="/" direction="row" spacing={1} alignItems="center" sx={{ textDecoration: 'none' }}>
@@ -150,7 +150,7 @@ export const primaryButtonSx = {
 /** Turns an API or network failure into a message a user can act on. */
 export function describeError(err: any, fallback: string): string {
   if (!err?.response) {
-    return "Couldn't reach School Precis. Check your internet connection and try again."
+    return "Couldn't reach School Precise. Check your internet connection and try again."
   }
   const message = err.response.data?.message
   if (Array.isArray(message)) return message.join('. ')

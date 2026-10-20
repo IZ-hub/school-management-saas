@@ -155,7 +155,7 @@ describe('Online payments with Paystack (e2e)', () => {
     await owner.post('/api/v1/parent/children/s1/pay', { amount: 1000 }).expect(403);
     // Unknown origins are sent back to the live site, never somewhere else.
     await parent.post('/api/v1/parent/children/s1/pay', { amount: 1000 }).set('Origin', 'https://evil.example').expect(201);
-    expect(paystack.initialized.at(-1).callback_url).toMatch(/^https:\/\/school-management-1f070\.web\.app\/parent/);
+    expect(paystack.initialized.at(-1).callback_url).toMatch(/^https:\/\/schoolprecise\.com\/parent/);
     const list = (await owner.get('/api/v1/online-payments').expect(200)).body.data;
     expect(list.map((x: any) => x.status)).toEqual(['PENDING', 'PENDING']);
   });

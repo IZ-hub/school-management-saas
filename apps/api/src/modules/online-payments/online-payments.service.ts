@@ -10,7 +10,8 @@ import { PaymentsService } from '../payments/payments.service';
 import { PaystackClient, PaystackTransaction } from './paystack.client';
 import { appOrigin } from '../../common/origins';
 
-const API_BASE = 'https://school-management-1f070.web.app/api/v1';
+// Shown to schools to paste into Paystack. Webhooks already set to the old web.app address keep working.
+const API_BASE = 'https://schoolprecise.com/api/v1';
 
 @Injectable()
 export class OnlinePaymentsService {

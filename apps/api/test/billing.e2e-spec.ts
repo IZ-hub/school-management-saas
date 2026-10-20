@@ -79,6 +79,15 @@ describe('School Precise billing (e2e)', () => {
     expect(billingState(school, cal, false, '2027-01-13')).toMatchObject({ status: 'DUE', dueOn: '2027-01-11', readOnlyFrom: '2027-01-18' });
     // Schools that existed before billing began get 14 days from launch.
     expect(billingState({ createdAt: new Date('2025-05-01') }, cal, false, '2026-10-06')).toMatchObject({ status: 'TRIAL', trialEndsOn: '2026-10-19' });
+    // Complimentary schools are never due, even long after their trial.
+    expect(billingState({ billing: { trialEndsOn: '2026-01-01', complimentary: true } }, cal, false, '2027-01-20')).toMatchObject({ status: 'ACTIVE', paid: true, complimentary: true });
+    // The launch date can move to the day online billing goes live.
+    process.env.BILLING_LAUNCH = '2026-11-02';
+    try {
+      expect(billingState({ createdAt: new Date('2025-05-01') }, cal, false, '2026-11-10')).toMatchObject({ status: 'TRIAL', trialEndsOn: '2026-11-16' });
+    } finally {
+      delete process.env.BILLING_LAUNCH;
+    }
   });
 
   it('gives new schools a 14-day trial', async () => {
@@ -114,6 +123,15 @@ describe('School Precise billing (e2e)', () => {
     await as(owner).post('/api/v1/billing/pay').expect(400); // already paid
     const history = (await as(owner).get('/api/v1/billing').expect(200)).body.data.history;
     expect(history).toEqual([expect.objectContaining({ amount: 4500, status: 'PAID' })]);
+  });
+
+  it('never bills or locks a complimentary school', async () => {
+    await boot('2026-01-01');
+    await db.collection('schools').doc('school-a').update({ billing: { trialEndsOn: '2026-01-01', complimentary: true } });
+    forgetBilling('school-a');
+    expect((await as(owner).get('/api/v1/billing/status').expect(200)).body.data).toMatchObject({ status: 'ACTIVE', complimentary: true, paid: true });
+    await addStudent().expect(201);
+    await as(owner).post('/api/v1/billing/pay').expect(400);
   });
 
   it('records a payment once from the signed webhook, and ignores forged ones', async () => {

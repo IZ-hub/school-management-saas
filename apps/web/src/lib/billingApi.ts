@@ -10,6 +10,7 @@ export interface BillingInfo {
   readOnlyFrom: string | null
   paid: boolean
   enforced: boolean
+  complimentary: boolean
   students: number
   pricePerStudent: number
   estimate: number

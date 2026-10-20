@@ -5,8 +5,11 @@ import { schoolToday } from './school-date';
 export const PRICE_PER_STUDENT = 1500;
 export const TRIAL_DAYS = 14;
 export const GRACE_DAYS = 7;
-/** Schools that existed before billing began get a full trial counted from this date. */
-export const BILLING_LAUNCH = '2026-10-05';
+/**
+ * Trials count from this date for schools created before it. Set BILLING_LAUNCH in the API's .env
+ * to the day online billing goes live, so every school gets its full trial from then.
+ */
+export const billingLaunch = () => process.env.BILLING_LAUNCH || '2026-10-05';
 
 export type BillingStatus = 'TRIAL' | 'ACTIVE' | 'DUE' | 'READ_ONLY';
 
@@ -30,6 +33,8 @@ export interface BillingState {
   paid: boolean;
   /** Read-only is only enforced when schools can actually pay. */
   enforced: boolean;
+  /** Set by School Precise (school.billing.complimentary): never billed or locked. */
+  complimentary: boolean;
 }
 
 /**
@@ -37,16 +42,19 @@ export interface BillingState {
  * Pure: no writes, so the sign-in check can call it cheaply on every change request.
  */
 export function billingState(school: Record<string, any>, calendar: TermCalendar, paidThisTerm: boolean, today = schoolToday()): BillingState {
-  const created = isoOf(school.createdAt) ?? BILLING_LAUNCH;
-  const trialEndsOn = school.billing?.trialEndsOn ?? addDays(created > BILLING_LAUNCH ? created : BILLING_LAUNCH, TRIAL_DAYS);
+  const launch = billingLaunch();
+  const created = isoOf(school.createdAt) ?? launch;
+  const trialEndsOn = school.billing?.trialEndsOn ?? addDays(created > launch ? created : launch, TRIAL_DAYS);
   const term = calendar.current(today);
   const enforced = platformPaymentsEnabled();
-  if (today < trialEndsOn) return { status: 'TRIAL', trialEndsOn, term, dueOn: trialEndsOn, readOnlyFrom: addDays(trialEndsOn, GRACE_DAYS), paid: false, enforced };
-  if (paidThisTerm) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced };
+  const complimentary = school.billing?.complimentary === true;
+  if (complimentary) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary };
+  if (today < trialEndsOn) return { status: 'TRIAL', trialEndsOn, term, dueOn: trialEndsOn, readOnlyFrom: addDays(trialEndsOn, GRACE_DAYS), paid: false, enforced, complimentary };
+  if (paidThisTerm) return { status: 'ACTIVE', trialEndsOn, term, dueOn: null, readOnlyFrom: null, paid: true, enforced, complimentary };
   const termStart = calendar.range(term.term, term.session).from;
   const dueOn = termStart > trialEndsOn ? termStart : trialEndsOn;
   const readOnlyFrom = addDays(dueOn, GRACE_DAYS);
-  return { status: today >= readOnlyFrom ? 'READ_ONLY' : 'DUE', trialEndsOn, term, dueOn, readOnlyFrom, paid: false, enforced };
+  return { status: today >= readOnlyFrom ? 'READ_ONLY' : 'DUE', trialEndsOn, term, dueOn, readOnlyFrom, paid: false, enforced, complimentary };
 }
 
 export const invoiceId = (schoolId: string, term: string, session: string) => `${schoolId}__${session.replace('/', '-')}__${term}`;

@@ -51,7 +51,7 @@ export default function Billing() {
 
   if (!b) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>{error ? <Alert severity="error">{error}</Alert> : <CircularProgress size={28} />}</Box>
 
-  const st = STATUS[b.status]
+  const st = b.complimentary ? { label: 'Free', bg: '#e3f1e6', fg: '#1d5f36' } : STATUS[b.status]
   const amount = b.invoice?.amount ?? b.estimate
   const students = b.invoice?.students ?? b.students
   const termName = `${TERM_LABEL[b.term.term]} ${b.term.session}`
@@ -59,13 +59,13 @@ export default function Billing() {
 
   const headline = {
     TRIAL: `${Math.max(0, daysUntil(b.trialEndsOn))} days left in your free trial`,
-    ACTIVE: `${termName} is paid`,
+    ACTIVE: b.complimentary ? 'Your school uses School Precise free of charge' : `${termName} is paid`,
     DUE: `${naira(amount)} due for ${termName}`,
     READ_ONLY: 'Your school is read-only',
   }[b.status]
   const detail = {
     TRIAL: `Your trial ends on ${prettyDate(b.trialEndsOn)}. After that, ${termName} costs ${naira(b.estimate)} for your ${b.students} active ${b.students === 1 ? 'student' : 'students'}. You can pay early at any time.`,
-    ACTIVE: 'Everyone has full access. The next invoice comes at the start of next term.',
+    ACTIVE: b.complimentary ? 'Everyone has full access, with nothing to pay.' : 'Everyone has full access. The next invoice comes at the start of next term.',
     DUE: b.readOnlyFrom ? `Please pay by ${prettyDate(b.readOnlyFrom)}. After that, your school becomes read-only until payment: staff can still view and print, but not add or change anything.` : '',
     READ_ONLY: 'Staff can still view and print everything, and parents can still see their children. Pay now to add and change records again. Nothing has been deleted.',
   }[b.status]
@@ -100,7 +100,7 @@ export default function Billing() {
               {paying ? 'Opening Paystack…' : `Pay ${naira(amount)} with Paystack`}
             </Button>
           )}
-          {b.paid && <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#1d5f36' }}><OkIcon /><Typography sx={{ fontWeight: 600 }}>Thank you for paying</Typography></Stack>}
+          {b.paid && !b.complimentary && <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#1d5f36' }}><OkIcon /><Typography sx={{ fontWeight: 600 }}>Thank you for paying</Typography></Stack>}
         </Stack>
         {!b.paymentsEnabled && !b.paid && (
           <Alert severity="info" sx={{ mt: 2 }}>Online payment for School Precise isn't switched on yet, so nothing is locked. School Precise will contact you about payment.</Alert>

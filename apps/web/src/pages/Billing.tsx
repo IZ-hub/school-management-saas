@@ -13,7 +13,7 @@ const STATUS = {
   READ_ONLY: { label: 'Read-only', bg: '#fbe4e2', fg: '#9b2a22' },
 }
 
-/** The school's School Precis subscription: ₦1,500 per active student per term. */
+/** The school's School Precise subscription: ₦1,500 per active student per term. */
 export default function Billing() {
   const [b, setB] = useState<(BillingInfo & { invoice: Invoice | null; history: Invoice[] }) | null>(null)
   const [error, setError] = useState('')
@@ -32,7 +32,7 @@ export default function Billing() {
         SUCCESS: { severity: 'success' as const, text: 'Payment received, thank you. Your school has full access for this term.' },
         PENDING: { severity: 'warning' as const, text: 'Your payment is still being confirmed by the bank. Check back in a few minutes.' },
         FAILED: { severity: 'error' as const, text: "The payment didn't go through, so nothing was charged. You can try again." },
-        REVIEW: { severity: 'warning' as const, text: 'We received your payment but need to check it. School Precis will confirm shortly.' },
+        REVIEW: { severity: 'warning' as const, text: 'We received your payment but need to check it. School Precise will confirm shortly.' },
       }[r.status]))
       .catch((err) => setNotice({ severity: 'error', text: err.response?.data?.message || "We couldn't confirm the payment." }))
       .finally(load)
@@ -73,7 +73,7 @@ export default function Billing() {
   return (
     <Box sx={{ flexGrow: 1, maxWidth: 880, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
       <Typography variant="h4">Billing</Typography>
-      <Typography sx={{ color: brand.muted, fontSize: '14.5px', mb: 3 }}>School Precis costs {naira(b.pricePerStudent)} per active student, per term.</Typography>
+      <Typography sx={{ color: brand.muted, fontSize: '14.5px', mb: 3 }}>School Precise costs {naira(b.pricePerStudent)} per active student, per term.</Typography>
 
       {notice && <Alert severity={notice.severity} sx={{ mb: 2 }} onClose={() => setNotice(null)}>{notice.text}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -103,7 +103,7 @@ export default function Billing() {
           {b.paid && <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#1d5f36' }}><OkIcon /><Typography sx={{ fontWeight: 600 }}>Thank you for paying</Typography></Stack>}
         </Stack>
         {!b.paymentsEnabled && !b.paid && (
-          <Alert severity="info" sx={{ mt: 2 }}>Online payment for School Precis isn't switched on yet, so nothing is locked. School Precis will contact you about payment.</Alert>
+          <Alert severity="info" sx={{ mt: 2 }}>Online payment for School Precise isn't switched on yet, so nothing is locked. School Precise will contact you about payment.</Alert>
         )}
       </Paper>
 

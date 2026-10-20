@@ -94,8 +94,8 @@ const steps = [
 ]
 
 const faqs = [
-  { q: 'What is the best school management software in Nigeria?', a: 'The best one is the one your staff will actually use every day. Judge any option against the checklist above: online fees in Naira into your own account, results and report cards in your format, ease of use on a phone, clear pricing, privacy and support. School Precis is built around exactly those points, and you can try it free for 14 days to see if it fits.' },
-  { q: 'How much does School Precis cost?', a: '₦1,500 per active student, per term, with every feature included. A school with 300 students pays ₦450,000 a term. Students who have left or graduated are not counted.' },
+  { q: 'What is the best school management software in Nigeria?', a: 'The best one is the one your staff will actually use every day. Judge any option against the checklist above: online fees in Naira into your own account, results and report cards in your format, ease of use on a phone, clear pricing, privacy and support. School Precise is built around exactly those points, and you can try it free for 14 days to see if it fits.' },
+  { q: 'How much does School Precise cost?', a: '₦1,500 per active student, per term, with every feature included. A school with 300 students pays ₦450,000 a term. Students who have left or graduated are not counted.' },
   { q: 'What happens after the 14-day free trial?', a: 'You get an invoice for the current term, paid online with Paystack. There is then a 7-day grace period. If it is still unpaid after that, your school becomes read-only until payment: you can view and print everything, but not make changes. Nothing is ever deleted.' },
   { q: 'Do parents need to download an app?', a: 'No. Each family gets a parent page that opens in any phone browser, showing attendance, fees, payments and report cards. You can also send SMS through your own Termii account if you want.' },
   { q: 'How do parents pay fees?', a: "By card, bank transfer or USSD through Paystack, straight into your school's own Paystack account. Each payment is recorded and a receipt is issued." },
@@ -273,7 +273,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     const previous = document.title
-    document.title = 'School Precis · School management software for Nigerian schools'
+    document.title = 'School Precise · School management software for Nigerian schools'
     return () => { document.title = previous }
   }, [])
 
@@ -307,7 +307,7 @@ export default function LandingPage() {
       {/* ══════════════ Floating navbar ══════════════ */}
       <Box component="header" sx={{ position: 'fixed', top: { xs: 10, md: 14 }, left: 0, right: 0, zIndex: 1100, px: { xs: 1.5, md: 5 }, pointerEvents: 'none' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5} sx={{ '& > *': { pointerEvents: 'auto' } }}>
-          <Box component="button" aria-label="School Precis, back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          <Box component="button" aria-label="School Precise, back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             sx={{ all: 'unset', cursor: 'pointer', ...pill, px: { xs: 1.1, sm: 1.5 }, flexShrink: 0, height: { xs: 46, md: 48 }, display: 'flex', alignItems: 'center', '&:focus-visible': { outline: `2px solid ${C.lemon}`, outlineOffset: 3 } }}>
             <Logo />
           </Box>
@@ -365,7 +365,7 @@ export default function LandingPage() {
       }}>
         <Container maxWidth="md" sx={{ pt: { xs: 13, md: 16 }, pb: { xs: 7, md: 9 } }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2.5, display: { xs: 'none', sm: 'flex' } }}>
-            <Typography sx={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>School Precis</Typography>
+            <Typography sx={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>School Precise</Typography>
             <Typography sx={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>/</Typography>
             <Typography sx={{ fontSize: '14px', color: '#fff' }}>School management software in Nigeria</Typography>
           </Stack>
@@ -398,7 +398,7 @@ export default function LandingPage() {
         <Container maxWidth="md" sx={{ pt: { xs: 5, md: 7 } }}>
           <Box sx={{ maxWidth: 770 }}>
             <P>
-              Nigeria has a fast-growing choice of school management platforms, and they are not all built for the same kind of school. Instead of ranking vendors, this guide gives you a checklist to judge any option, including <A href="#where-school-precis-fits">School Precis</A>, so you can choose what genuinely fits your school.
+              Nigeria has a fast-growing choice of school management platforms, and they are not all built for the same kind of school. Instead of ranking vendors, this guide gives you a checklist to judge any option, including <A href="#where-school-precise-fits">School Precise</A>, so you can choose what genuinely fits your school.
             </P>
 
             <H2 id="features">What school management software should do</H2>
@@ -406,7 +406,7 @@ export default function LandingPage() {
               At the very least, it should replace the notebooks, spreadsheets and broadcast groups with one connected system. That means <A href="#criteria">students and classes</A>, <A href="#criteria">attendance</A>, <A href="#criteria">fees and payments</A>, <A href="#criteria">results and report cards</A> and <A href="#criteria">parent communication</A>, all working from the same records, so you enter something once and it shows up everywhere.
             </P>
             <P>
-              In School Precis that includes daily registers with absence alerts, exam timetables and score entry with positions, printable report cards with remarks, fees and receipts, online payment with Paystack into your own account, a parent page for each family, class timetables with clash checks, and staff accounts where every teacher sees only their own classes.
+              In School Precise that includes daily registers with absence alerts, exam timetables and score entry with positions, printable report cards with remarks, fees and receipts, online payment with Paystack into your own account, a parent page for each family, class timetables with clash checks, and staff accounts where every teacher sees only their own classes.
             </P>
 
             <H2 id="criteria">What to look for (the criteria that matter in Nigeria)</H2>
@@ -434,7 +434,7 @@ export default function LandingPage() {
             </Stack>
 
             <H2 id="how-it-works">How to switch without the stress</H2>
-            <P>Most schools move across in an afternoon. With School Precis the steps are:</P>
+            <P>Most schools move across in an afternoon. With School Precise the steps are:</P>
             <Box component="ol" sx={{ listStyle: 'none', p: 0, m: 0, borderRadius: '18px', bgcolor: '#fff', border: `1px solid ${C.line}`, overflow: 'hidden' }}>
               {steps.map((s, i) => (
                 <Stack component="li" key={s.title} direction="row" spacing={2} alignItems="flex-start" sx={{ p: { xs: 2, md: 2.5 }, borderTop: i ? `1px solid ${C.line}` : 'none' }}>
@@ -456,13 +456,13 @@ export default function LandingPage() {
 
         <Container maxWidth="md" sx={{ pb: { xs: 8, md: 11 } }}>
           <Box sx={{ maxWidth: 770 }}>
-            <H2 id="where-school-precis-fits">Where School Precis fits</H2>
+            <H2 id="where-school-precise-fits">Where School Precise fits</H2>
             <P>
-              We build School Precis around exactly the checklist above: online fees in Naira straight into your own Paystack account, report cards worked out for you, a design that works on everyday phones, a clear per-student price, and records kept private and backed up daily. If that matches what your school needs, start free and decide for yourself. If your priorities are different, use this guide to judge whichever option you consider.
+              We build School Precise around exactly the checklist above: online fees in Naira straight into your own Paystack account, report cards worked out for you, a design that works on everyday phones, a clear per-student price, and records kept private and backed up daily. If that matches what your school needs, start free and decide for yourself. If your priorities are different, use this guide to judge whichever option you consider.
             </P>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 3 }} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mt: 3 }}>
               <Button variant="contained" size="large" onClick={() => navigate('/register')} endIcon={<ArrowIcon />} sx={{ ...greenBtn, height: 52, px: 3.25, fontSize: '1rem' }}>
-                Start free with School Precis
+                Start free with School Precise
               </Button>
               <Box component="a" href="#contact" sx={{ color: C.body, fontWeight: 600, textDecoration: 'none', textAlign: { xs: 'center', sm: 'left' }, '&:hover': { color: C.green } }}>
                 Talk to us →
@@ -515,7 +515,7 @@ export default function LandingPage() {
                         sx={{ ...lemonBtn, px: 3.5, height: 50, '&.Mui-disabled': { bgcolor: C.lemonSoft, color: C.green } }}>
                         {contactState === 'sending' ? 'Sending…' : 'Send message'}
                       </Button>
-                      <Button size="large" startIcon={<WhatsAppIcon />} href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hi School Precis, I have a question.')}`} target="_blank" rel="noopener noreferrer"
+                      <Button size="large" startIcon={<WhatsAppIcon />} href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hi School Precise, I have a question.')}`} target="_blank" rel="noopener noreferrer"
                         sx={{ ...btn, height: 50, px: 3, color: C.green, border: `1px solid ${C.line}`, '&:hover': { bgcolor: C.lemonSoft } }}>
                         Chat on WhatsApp
                       </Button>
@@ -582,7 +582,7 @@ export default function LandingPage() {
             </Grid>
             {[
               { title: 'Product', links: [{ label: 'Features', href: '#features' }, { label: 'How it works', href: '#how-it-works' }, { label: 'Pricing', href: '#pricing' }, { label: 'FAQ', href: '#faq' }] },
-              { title: 'Buyer’s guide', links: [{ label: 'What to look for', href: '#criteria' }, { label: 'Questions to ask', href: '#questions' }, { label: 'Where School Precis fits', href: '#where-school-precis-fits' }] },
+              { title: 'Buyer’s guide', links: [{ label: 'What to look for', href: '#criteria' }, { label: 'Questions to ask', href: '#questions' }, { label: 'Where School Precise fits', href: '#where-school-precise-fits' }] },
               { title: 'Company', links: [{ label: 'Contact', href: '#contact' }, { label: 'Sign in', href: '/login' }, { label: 'Register your school', href: '/register' }] },
             ].map((col) => (
               <Grid item xs={6} sm={4} md={2.5} key={col.title}>
@@ -599,7 +599,7 @@ export default function LandingPage() {
         <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', mt: { xs: 5, md: 7 } }}>
           <Container maxWidth="lg">
             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1} sx={{ py: 3 }}>
-              <Typography sx={{ fontSize: '0.88rem' }}>&copy; {new Date().getFullYear()} School Precis. All rights reserved.</Typography>
+              <Typography sx={{ fontSize: '0.88rem' }}>&copy; {new Date().getFullYear()} School Precise. All rights reserved.</Typography>
               <Typography sx={{ fontSize: '0.88rem' }}>Built for the people who run Nigerian schools.</Typography>
             </Stack>
           </Container>

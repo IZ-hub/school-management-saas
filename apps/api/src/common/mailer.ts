@@ -16,7 +16,7 @@ export async function sendMail(to: string, subject: string, text: string, html: 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: process.env.MAIL_FROM || 'School Precis <onboarding@resend.dev>', to: [to], subject, text, html, ...(options.replyTo ? { reply_to: options.replyTo } : {}) }),
+      body: JSON.stringify({ from: process.env.MAIL_FROM || 'School Precise <onboarding@resend.dev>', to: [to], subject, text, html, ...(options.replyTo ? { reply_to: options.replyTo } : {}) }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {

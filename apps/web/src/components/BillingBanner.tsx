@@ -22,7 +22,7 @@ export default function BillingBanner() {
   let tone: 'info' | 'warn' | 'stop' = 'info'
   if (b.status === 'TRIAL' && left <= 5) text = `Your free trial ends in ${left} ${left === 1 ? 'day' : 'days'} (${prettyDate(b.trialEndsOn)}).`
   else if (b.status === 'DUE') { text = `${naira(b.estimate)} is due for this term. Please pay by ${prettyDate(b.readOnlyFrom!)} to avoid read-only.`; tone = 'warn' }
-  else if (b.status === 'READ_ONLY') { text = 'Your School Precis subscription is overdue, so your school is read-only. You can view and print, but not make changes.'; tone = 'stop' }
+  else if (b.status === 'READ_ONLY') { text = 'Your School Precise subscription is overdue, so your school is read-only. You can view and print, but not make changes.'; tone = 'stop' }
   if (!text) return null
 
   const colours = { info: { bg: '#e6ebf2', fg: '#36485e' }, warn: { bg: '#fdf0d5', fg: '#7a4c00' }, stop: { bg: '#fbe4e2', fg: '#9b2a22' } }[tone]

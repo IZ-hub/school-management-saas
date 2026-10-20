@@ -48,9 +48,9 @@ function save(data: Saved) {
 }
 
 const whatsappLink = (text?: string) =>
-  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text ? `Hi School Precis, ${text}` : 'Hi School Precis, I have a question.')}`
+  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text ? `Hi School Precise, ${text}` : 'Hi School Precise, I have a question.')}`
 
-/** "School Precis Support" chat launcher and panel, fixed to the bottom-right corner. */
+/** "School Precise Support" chat launcher and panel, fixed to the bottom-right corner. */
 export default function SupportWidget() {
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
@@ -162,7 +162,7 @@ export default function SupportWidget() {
       {!open && (
         <ButtonBase
           onClick={() => setOpen(true)}
-          aria-label="Open School Precis support chat"
+          aria-label="Open School Precise support chat"
           title={compact ? 'Help & support' : undefined}
           sx={{
             position: 'fixed', right: compact ? 16 : 20, bottom: compact ? 16 : { xs: 16, sm: 12 }, zIndex: 1250,
@@ -182,7 +182,7 @@ export default function SupportWidget() {
       {open && (
         <Box
           role="dialog"
-          aria-label="School Precis Support"
+          aria-label="School Precise Support"
           onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
           sx={{
             position: 'fixed', zIndex: 1250, bottom: 16,
@@ -198,7 +198,7 @@ export default function SupportWidget() {
           {/* Header */}
           <Box sx={{ bgcolor: BRAND, color: '#fff', height: 44, display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
             <Typography sx={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: '15px', px: 9 }}>
-              School Precis Support
+              School Precise Support
             </Typography>
             <Stack direction="row" sx={{ position: 'absolute', right: 6 }}>
               <IconButton

@@ -71,8 +71,8 @@ export class JwtAuthGuard implements CanActivate {
       if (b.readOnly) {
         throw new HttpException(
           decoded.role === 'PARENT'
-            ? "The school's School Precis subscription is overdue, so changes are paused. You can still view everything."
-            : 'Your School Precis subscription is overdue, so your school is read-only. An admin can pay on the Billing page to continue.',
+            ? "The school's School Precise subscription is overdue, so changes are paused. You can still view everything."
+            : 'Your School Precise subscription is overdue, so your school is read-only. An admin can pay on the Billing page to continue.',
           HttpStatus.PAYMENT_REQUIRED,
         );
       }

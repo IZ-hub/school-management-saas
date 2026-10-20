@@ -59,7 +59,7 @@ export class SupportService {
       await sendMail(
         supportInbox(),
         // One subject per visitor, so Gmail keeps a conversation in one thread.
-        `School Precis message from ${name}`,
+        `School Precise message from ${name}`,
         `${body}\n\n— ${name} <${email}>\n${where}. Reply to this email to answer them.`,
         `<p style="white-space:pre-wrap">${esc(body)}</p><p style="color:#5f6a63">— ${esc(name)} &lt;${esc(email)}&gt;<br>${esc(where)}. Reply to this email to answer them.</p>`,
         { replyTo: email },

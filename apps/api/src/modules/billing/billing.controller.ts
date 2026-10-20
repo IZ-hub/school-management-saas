@@ -11,7 +11,7 @@ class VerifyDto {
   @IsNotEmpty() @IsString() @MaxLength(100) reference: string;
 }
 
-/** The school's School Precis subscription: ₦1,500 per active student per term. */
+/** The school's School Precise subscription: ₦1,500 per active student per term. */
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('billing')
 export class BillingController {
@@ -43,7 +43,7 @@ export class BillingController {
   }
 }
 
-/** Public: Paystack calls this for subscription payments (signed with the School Precis key). */
+/** Public: Paystack calls this for subscription payments (signed with the School Precise key). */
 @Controller('billing-webhook')
 export class BillingWebhookController {
   constructor(private readonly service: BillingService) {}

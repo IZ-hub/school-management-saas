@@ -23,7 +23,7 @@ const Icon = ({ children }: { children: ReactNode }) => (
 
 /** "Install School Precise": one tap where the browser allows it, otherwise clear steps for the visitor's phone. */
 export default function InstallPage() {
-  const { installed, canPrompt, prompt } = useInstall()
+  const { installed, alreadyOnDevice, canPrompt, prompt } = useInstall()
   const [device, setDevice] = useState<Device>(isIos() ? 'iphone' : isAndroid() ? 'android' : 'computer')
   const [justInstalled, setJustInstalled] = useState(false)
 
@@ -59,11 +59,11 @@ export default function InstallPage() {
           </Typography>
         </Stack>
 
-        {installed || justInstalled ? (
+        {installed || justInstalled || alreadyOnDevice ? (
           <Stack alignItems="center" spacing={2} sx={{ p: 3, borderRadius: '18px', bgcolor: '#e3f4ec', textAlign: 'center' }}>
             <DoneIcon sx={{ fontSize: 40, color: C.green }} />
-            <Typography sx={{ fontWeight: 800, color: C.ink }}>School Precise is installed</Typography>
-            <Typography sx={{ color: C.body }}>Open it from your home screen or app list.</Typography>
+            <Typography sx={{ fontWeight: 800, color: C.ink }}>{alreadyOnDevice ? 'School Precise is already installed on this device' : 'School Precise is installed'}</Typography>
+            <Typography sx={{ color: C.body }}>Open it from your home screen or app list. In Chrome you can also tap the menu ⋮ and choose <b>Open app</b>.</Typography>
             <Button component={Link} to="/login" variant="contained" sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700, bgcolor: C.green, '&:hover': { bgcolor: '#0b4a36' } }}>Sign in</Button>
           </Stack>
         ) : (
@@ -93,8 +93,13 @@ export default function InstallPage() {
               {device === 'android' && (
                 <>
                   <Step n={1}>Open <b>schoolprecise.com</b> in <b>Chrome</b>.</Step>
-                  <Step n={2}>Tap <b>Install now</b> above, or tap the menu <Icon><MenuIcon /></Icon> (top right) and choose <b>Install app</b> or <b>Add to Home screen</b>.</Step>
+                  <Step n={2}>{canPrompt ? <>Tap <b>Install now</b> above. Or tap</> : <>Tap</>} Chrome’s menu <Icon><MenuIcon /></Icon> at the top right and choose <b>Install app</b> (on some phones: <b>Add to Home screen</b>).</Step>
                   <Step n={3}>Tap <b>Install</b>. School Precise appears on your home screen and in your apps.</Step>
+                  {!canPrompt && (
+                    <Typography sx={{ fontSize: '0.9rem', color: C.muted, lineHeight: 1.6 }}>
+                      Don’t see <b>Install app</b> in the menu? It may already be installed: look for the School Precise icon on your home screen, or choose <b>Open app</b> in the menu.
+                    </Typography>
+                  )}
                 </>
               )}
               {device === 'iphone' && (
@@ -107,7 +112,7 @@ export default function InstallPage() {
               {device === 'computer' && (
                 <>
                   <Step n={1}>Open <b>schoolprecise.com</b> in <b>Chrome</b> or <b>Microsoft Edge</b>.</Step>
-                  <Step n={2}>Click <b>Install now</b> above, or the install icon <Icon><DesktopIcon /></Icon> at the right of the address bar.</Step>
+                  <Step n={2}>{canPrompt ? <>Click <b>Install now</b> above, or</> : <>Click</>} the install icon <Icon><DesktopIcon /></Icon> at the right of the address bar (or the menu ⋮ › <b>Install School Precise</b>).</Step>
                   <Step n={3}>Click <b>Install</b>. School Precise opens in its own window and is added to your apps.</Step>
                 </>
               )}

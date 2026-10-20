@@ -34,16 +34,33 @@ export const isIos = () =>
 
 export const isAndroid = () => /android/i.test(navigator.userAgent)
 
+/** Chrome on Android can tell whether this app is already installed, even from a browser tab. */
+let installedElsewhere: boolean | null = null
+const checkInstalledElsewhere = async () => {
+  if (installedElsewhere !== null) return
+  try {
+    const apps = (await (navigator as any).getInstalledRelatedApps?.()) ?? []
+    installedElsewhere = apps.length > 0
+  } catch {
+    installedElsewhere = false
+  }
+  notify()
+}
+
 /** Whether the app can be installed with one tap, and a function that shows the browser's prompt. */
 export function useInstall() {
   const [, rerender] = useState(0)
   useEffect(() => {
     const l = () => rerender((n) => n + 1)
     listeners.add(l)
+    checkInstalledElsewhere()
     return () => { listeners.delete(l) }
   }, [])
   return {
+    /** Running as the installed app right now. */
     installed: isInstalled(),
+    /** Viewed in a browser tab, but the app is already installed on this device. */
+    alreadyOnDevice: !isInstalled() && installedElsewhere === true,
     canPrompt: !!deferred,
     prompt: async () => {
       if (!deferred) return false

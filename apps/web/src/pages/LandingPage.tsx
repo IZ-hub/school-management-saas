@@ -32,6 +32,7 @@ import {
   MenuBookOutlined as GuideIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
+  InstallMobileOutlined as InstallIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
@@ -396,6 +397,15 @@ export default function LandingPage() {
               Read the guide
             </Button>
           </Stack>
+          {/* Phones: a visible way to put School Precise on the home screen. */}
+          <InstallAppButton>
+            {(install) => (
+              <Box component="button" type="button" onClick={install}
+                sx={{ all: 'unset', cursor: 'pointer', display: { xs: 'flex', md: 'none' }, alignItems: 'center', justifyContent: 'center', gap: 1, width: '100%', mt: 2.5, color: C.lemon, fontWeight: 700, fontSize: '0.98rem', '&:focus-visible': { outline: `2px solid ${C.lemon}`, outlineOffset: 4, borderRadius: '8px' } }}>
+                <InstallIcon sx={{ fontSize: 20 }} /> Install the app on your phone
+              </Box>
+            )}
+          </InstallAppButton>
         </Container>
       </Box>
 

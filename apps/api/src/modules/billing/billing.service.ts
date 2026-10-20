@@ -79,6 +79,7 @@ export class BillingService {
   /** Starts a Paystack payment (into the School Precise account) for this term's invoice. */
   async pay(schoolId: string, user: JwtPayload, origin?: string) {
     if (!platformPaymentsEnabled()) throw new BadRequestException("Online payment for School Precise isn't set up yet. Please contact School Precise.");
+    if ((await this.status(schoolId)).complimentary) throw new BadRequestException('Your school uses School Precise free of charge. There is nothing to pay.');
     const invoice = await this.ensureInvoice(schoolId);
     if (invoice.status === 'PAID') throw new BadRequestException('This term is already paid. Thank you!');
     const me = await this.db.collection('users').doc(user.sub).get();

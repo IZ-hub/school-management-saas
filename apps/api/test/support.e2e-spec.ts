@@ -59,4 +59,26 @@ describe('Support chat messages (e2e)', () => {
     await send('198.51.100.2').expect(201);
     expect(saved()).toHaveLength(9);
   });
+
+  it('emails each message to the team inbox, with replies going to the visitor', async () => {
+    const sent: any[] = [];
+    const realFetch = global.fetch;
+    process.env.RESEND_API_KEY = 're_test_key';
+    global.fetch = (async (url: any, init: any) => {
+      if (String(url).includes('api.resend.com')) { sent.push(JSON.parse(init.body)); return new Response('{"id":"x"}', { status: 200 }); }
+      return realFetch(url, init);
+    }) as typeof fetch;
+    try {
+      await http.post('/api/v1/support/messages').send({ ...message, message: 'Hi <b>there</b>' }).expect(201);
+      await http.post('/api/v1/support/messages').send({ ...message, website: 'bot' }).expect(201);
+    } finally {
+      global.fetch = realFetch;
+      delete process.env.RESEND_API_KEY;
+    }
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ to: ['hello@schoolprecise.com'], reply_to: 'ada@zafiri.ng', subject: 'School Precis message from Ada Obi' });
+    expect(sent[0].text).toContain('Hi <b>there</b>');
+    expect(sent[0].html).toContain('Hi &lt;b&gt;there&lt;/b&gt;');
+    expect(saved()).toHaveLength(1);
+  });
 });

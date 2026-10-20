@@ -224,7 +224,7 @@ export default function SupportWidget() {
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Live Support</Typography>
-              <Typography sx={{ fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Ask us anything.</Typography>
+              <Typography sx={{ fontSize: '14px', color: '#2f3941', lineHeight: 1.3 }}>Ask us anything, or email <Box component="a" href="mailto:hello@schoolprecise.com" sx={{ color: 'inherit', fontWeight: 600 }}>hello@schoolprecise.com</Box></Typography>
             </Box>
           </Stack>
 

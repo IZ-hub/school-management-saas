@@ -115,7 +115,7 @@ export default function Billing() {
           <Stack key={i.id} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1, borderTop: k ? `1px solid ${brand.border}` : 'none' }}>
             <Box>
               <Typography sx={{ fontSize: '14px', fontWeight: 600 }}>{TERM_LABEL[i.term]} {i.session}</Typography>
-              <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{i.students} students × {naira(1500)}</Typography>
+              <Typography sx={{ fontSize: '12.5px', color: brand.subtle }}>{i.students} {i.students === 1 ? 'student' : 'students'} × {naira(i.students ? i.amount / i.students : 1500)}</Typography>
             </Box>
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Typography sx={{ fontSize: '14px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{naira(i.amount)}</Typography>

@@ -1,19 +1,14 @@
 import { useState } from 'react'
-import { Alert, Box, Button, Grid, IconButton, InputAdornment, LinearProgress, Stack, Typography } from '@mui/material'
+import { Alert, Autocomplete, Box, Button, Grid, IconButton, InputAdornment, LinearProgress, Stack, Typography } from '@mui/material'
 import { ArrowBack, VisibilityOutlined as Visibility, VisibilityOffOutlined as VisibilityOff } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { api, clearReturnTo } from '../lib/api'
 import { AuthCard, AuthField, AuthShell, authColors, describeError, primaryButtonSx } from '../components/auth/AuthShell'
+import { nigeriaCities, nigeriaStates } from '../lib/nigeriaPlaces'
 
 const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United Kingdom', 'United States']
 
-const nigeriaStates = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
-  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa',
-  'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
-]
 
 const schoolTypes = ['Nursery', 'Primary', 'Secondary', 'Primary & Secondary', 'Nursery to Secondary', 'Tertiary']
 
@@ -60,7 +55,8 @@ export default function RegisterSchool() {
 
   const set = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value
-    setForm((f) => ({ ...f, [key]: value, ...(key === 'country' ? { state: '' } : {}) }))
+    // A new country or state makes the old town wrong, so start it again.
+    setForm((f) => ({ ...f, [key]: value, ...(key === 'country' ? { state: '', city: '' } : key === 'state' ? { city: '' } : {}) }))
     if (errors[key]) setErrors((errs) => ({ ...errs, [key]: undefined }))
   }
 
@@ -211,7 +207,27 @@ export default function RegisterSchool() {
               ) : (
                 <AuthField id="state" label="State / region" placeholder="e.g. Greater Accra" required autoComplete="address-level1" value={form.state} onChange={set('state')} error={errors.state} />
               )}
-              <AuthField id="city" label="City / town" required autoComplete="address-level2" value={form.city} onChange={set('city')} error={errors.city} placeholder="e.g. Lekki" />
+              {form.country === 'Nigeria' && nigeriaCities[form.state] ? (
+                // Suggestions for the chosen state; any other town can still be typed.
+                <Autocomplete
+                  id="city"
+                  freeSolo
+                  autoHighlight
+                  options={nigeriaCities[form.state]}
+                  inputValue={form.city}
+                  onInputChange={(_, value) => {
+                    setForm((f) => ({ ...f, city: value }))
+                    if (errors.city) setErrors((errs) => ({ ...errs, city: undefined }))
+                  }}
+                  ListboxProps={{ style: { maxHeight: 260 } }}
+                  renderInput={(params) => (
+                    <AuthField {...params} id="city" label="City / town" required error={errors.city} autoComplete="address-level2"
+                      placeholder={`e.g. ${nigeriaCities[form.state][0]}`} helperText="Choose from the list or type your town" />
+                  )}
+                />
+              ) : (
+                <AuthField id="city" label="City / town" required autoComplete="address-level2" value={form.city} onChange={set('city')} error={errors.city} placeholder="e.g. Lekki" />
+              )}
               <AuthField id="address" label="Street address" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="e.g. 12 Admiralty Way" helperText="Optional" />
             </>
           )}

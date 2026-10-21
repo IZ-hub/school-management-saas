@@ -214,6 +214,15 @@ export default function RegisterSchool() {
                   freeSolo
                   autoHighlight
                   options={nigeriaCities[form.state]}
+                  filterOptions={(options, { inputValue }) => {
+                    // Match the start of any word ("Ago" finds Ago Palace, not Lagos Island); names that begin with it come first.
+                    const q = inputValue.trim().toLowerCase()
+                    if (!q) return options
+                    const words = (o: string) => o.toLowerCase().split(/[\s-]+/)
+                    const starts = options.filter((o) => o.toLowerCase().startsWith(q))
+                    const wordStarts = options.filter((o) => !o.toLowerCase().startsWith(q) && words(o).some((w) => w.startsWith(q)))
+                    return [...starts, ...wordStarts]
+                  }}
                   inputValue={form.city}
                   onInputChange={(_, value) => {
                     setForm((f) => ({ ...f, city: value }))

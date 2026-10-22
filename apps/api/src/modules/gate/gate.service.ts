@@ -101,7 +101,8 @@ export class GateService {
 
     return {
       action: result.action,
-      student,
+      // The face lets the gate check the card belongs to the child holding it.
+      student: { ...student, photo: (st.photoThumb as string | undefined) ?? null },
       time,
       clockIn: result.inAt ? timeAt(result.inAt) : null,
       clockOut: result.outAt ? timeAt(result.outAt) : null,
@@ -181,6 +182,7 @@ export class GateService {
       return {
         studentId: d.id, firstName: s.firstName ?? '', lastName: s.lastName ?? '', admissionNumber: s.admissionNumber ?? '',
         className: s.classId ? classNames.get(s.classId) ?? '' : '', qr: `${QR_PREFIX}${code}`,
+        photo: (s.photoThumb as string | undefined) ?? null,
       };
     });
     if (added) await batch.commit();

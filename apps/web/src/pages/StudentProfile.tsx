@@ -1,7 +1,7 @@
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { ChangeEvent, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Alert, Avatar, Box, Button, ButtonBase, CircularProgress, Paper, Stack, Typography } from '@mui/material'
-import { ArrowBack as BackIcon, FamilyRestroomOutlined as ParentIcon, PaymentsOutlined as PayIcon, ArticleOutlined as CardIcon, ReceiptLongOutlined as StatementIcon, BadgeOutlined as IdIcon } from '@mui/icons-material'
+import { Alert, Box, Button, ButtonBase, CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { ArrowBack as BackIcon, FamilyRestroomOutlined as ParentIcon, PaymentsOutlined as PayIcon, ArticleOutlined as CardIcon, ReceiptLongOutlined as StatementIcon, BadgeOutlined as IdIcon, PhotoCameraOutlined as CameraIcon } from '@mui/icons-material'
 import { reissueCard } from '../lib/gateApi'
 import { toDate } from '../lib/attendanceApi'
 import { TERM_LABEL } from '../lib/examsApi'
@@ -10,6 +10,8 @@ import { GRADE_STYLE } from '../lib/resultsApi'
 import { StudentProfile as Profile, getStudentProfile } from '../lib/profileApi'
 import { ReceiptDialog, RecordPaymentDialog, StatementDialog, StatusBadge, longDate } from '../components/FeesKit'
 import ParentAccessDialog from '../components/ParentAccessDialog'
+import StudentAvatar from '../components/StudentAvatar'
+import { makeStudentPhoto, setStudentPhoto } from '../lib/studentPhoto'
 import { brand } from '../theme'
 
 const DAY_STYLE = {
@@ -78,6 +80,25 @@ export default function StudentProfile() {
   const [payOpen, setPayOpen] = useState(false)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const openReceipt = (id: string) => { getReceipt(id).then(setReceipt).catch(() => {}) }
+  const photoInput = useRef<HTMLInputElement>(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+  const pickPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !p) return
+    setPhotoBusy(true)
+    setPhotoError('')
+    try {
+      const made = await makeStudentPhoto(file)
+      await setStudentPhoto(p.student.id, made)
+      setP({ ...p, student: { ...p.student, photo: made.photo } })
+    } catch (err: any) {
+      setPhotoError(err.response?.data?.message || err.message || "The photo couldn't be saved.")
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
 
   const load = useCallback(() => {
     getStudentProfile(id).then(setP).catch((err) => setError(err.response?.status === 404 ? 'This student was not found.' : err.response?.data?.message || 'Failed to load the student'))
@@ -107,9 +128,16 @@ export default function StudentProfile() {
       <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ md: 'center' }}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar sx={{ width: 64, height: 64, bgcolor: brand.greenSoft, color: brand.green, fontSize: '22px', fontWeight: 700 }}>
-              {(s.firstName[0] ?? '') + (s.lastName[0] ?? '')}
-            </Avatar>
+            <Box sx={{ position: 'relative', flexShrink: 0 }}>
+              <StudentAvatar src={s.photo} firstName={s.firstName} lastName={s.lastName} size={88} />
+              {p.can.admin && !left && (
+                <ButtonBase aria-label={s.photo ? 'Change photo' : 'Add photo'} onClick={() => photoInput.current?.click()} disabled={photoBusy}
+                  sx={{ position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: '50%', bgcolor: brand.green, color: '#fff', border: '2px solid #fff' }}>
+                  {photoBusy ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <CameraIcon sx={{ fontSize: 17 }} />}
+                </ButtonBase>
+              )}
+              <input ref={photoInput} type="file" accept="image/*" hidden onChange={pickPhoto} />
+            </Box>
             <Box>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Typography variant="h4" sx={{ fontSize: { xs: '22px', sm: '26px' } }}>{s.firstName} {s.lastName}</Typography>
@@ -136,6 +164,7 @@ export default function StudentProfile() {
             {p.can.finance && f?.feesSet && f.balance > 0 && <Button variant="contained" startIcon={<PayIcon />} onClick={() => setPayOpen(true)}>Record payment</Button>}
           </Stack>
         </Stack>
+        {photoError && <Alert severity="error" sx={{ mt: 2 }}>{photoError}</Alert>}
       </Paper>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, alignItems: 'start' }}>
@@ -228,6 +257,7 @@ export default function StudentProfile() {
         <Section title="Details">
           <Row k="Admission no." v={s.admissionNumber} />
           <Row k="Date of birth" v={s.dateOfBirth ? `${longDate(s.dateOfBirth)}${years !== null ? ` (${years})` : ''}` : null} />
+          <Row k="Admission date" v={s.admissionDate ? longDate(s.admissionDate) : null} />
           <Row k="Address" v={s.address} />
           <Row k="Parent's phone" v={s.parentPhone} />
           <Row k="Parent's email" v={s.parentEmail} />

@@ -26,8 +26,13 @@ function Card({ card, school, qr }: { card: IdCard; school: CardSheet['school'];
         <Typography sx={{ ml: 'auto', fontSize: '2.2mm', fontWeight: 800, letterSpacing: '0.3mm', color: '#3fb68b', flexShrink: 0 }}>STUDENT ID</Typography>
       </Box>
       <Box sx={{ flex: 1, display: 'flex', gap: '2.5mm', px: '3mm', py: '2.2mm', minHeight: 0 }}>
+        <Box sx={{ width: '17mm', height: '21mm', flexShrink: 0, borderRadius: '1.5mm', overflow: 'hidden', bgcolor: '#eef3ec', border: '0.25mm solid #d9d6cc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {card.photo
+            ? <Box component="img" src={card.photo} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <Typography sx={{ fontSize: '6mm', fontWeight: 800, color: GREEN }}>{(card.firstName[0] ?? '') + (card.lastName[0] ?? '')}</Typography>}
+        </Box>
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <Typography sx={{ fontSize: '4.2mm', fontWeight: 800, color: NIGHT, lineHeight: 1.1, wordBreak: 'break-word' }}>{card.firstName} {card.lastName}</Typography>
+          <Typography sx={{ fontSize: '3.6mm', fontWeight: 800, color: NIGHT, lineHeight: 1.1, wordBreak: 'break-word' }}>{card.firstName} {card.lastName}</Typography>
           <Box sx={{ mt: '1.5mm', display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: '1.5mm', rowGap: '0.6mm', fontSize: '2.6mm' }}>
             <Box component="span" sx={{ color: '#5f6a63' }}>Class</Box>
             <Box component="span" sx={{ fontWeight: 700, color: NIGHT }}>{card.className || '—'}</Box>
@@ -38,8 +43,8 @@ function Card({ card, school, qr }: { card: IdCard; school: CardSheet['school'];
             Scan at the gate on arrival and when leaving.{school.phone ? ` If found, call ${school.phone}.` : ''}
           </Typography>
         </Box>
-        <Box sx={{ width: '25mm', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {qr ? <Box component="img" src={qr} alt={`QR code for ${card.firstName} ${card.lastName}`} sx={{ width: '25mm', height: '25mm' }} /> : <Box sx={{ width: '25mm', height: '25mm', bgcolor: '#f4f3ee' }} />}
+        <Box sx={{ width: '23mm', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {qr ? <Box component="img" src={qr} alt={`QR code for ${card.firstName} ${card.lastName}`} sx={{ width: '23mm', height: '23mm' }} /> : <Box sx={{ width: '23mm', height: '23mm', bgcolor: '#f4f3ee' }} />}
           <Typography sx={{ fontSize: '2mm', fontFamily: 'ui-monospace, Menlo, monospace', color: '#3f4a44', mt: '0.5mm', letterSpacing: '0.1mm' }}>{card.qr}</Typography>
         </Box>
       </Box>

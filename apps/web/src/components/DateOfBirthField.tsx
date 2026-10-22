@@ -15,13 +15,15 @@ interface Props {
   minAge?: number
   maxAge?: number
   required?: boolean
+  /** The faded example in the empty Year list. */
+  yearExample?: string
 }
 
 /**
  * Day / Month / Year dropdowns instead of a calendar, so a birth year is one pick away
  * rather than many taps back through a date picker. Reports a date only once all three are chosen.
  */
-export default function DateOfBirthField({ label = 'Date of Birth', value, onChange, minAge = 1, maxAge = 30, required }: Props) {
+export default function DateOfBirthField({ label = 'Date of Birth', value, onChange, minAge = 1, maxAge = 30, required, yearExample = '2015' }: Props) {
   const parse = (v: string) => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
     return m ? { y: m[1], mo: String(Number(m[2])), d: String(Number(m[3])) } : { y: '', mo: '', d: '' }
@@ -68,7 +70,7 @@ export default function DateOfBirthField({ label = 'Date of Birth', value, onCha
         <TextField select label="Month" value={parts.mo} onChange={(e) => update({ ...parts, mo: e.target.value })} SelectProps={menu('e.g. March', (v) => MONTHS[Number(v) - 1])} sx={{ flex: 1, minWidth: 0 }}>
           {MONTHS.map((m, i) => <MenuItem key={m} value={String(i + 1)}>{m}</MenuItem>)}
         </TextField>
-        <TextField select label="Year" value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} SelectProps={menu('e.g. 2015')} sx={{ flex: '0 0 30%' }}>
+        <TextField select label="Year" value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} SelectProps={menu(`e.g. ${yearExample}`)} sx={{ flex: '0 0 30%' }}>
           {years.map((y) => <MenuItem key={y} value={String(y)}>{y}</MenuItem>)}
         </TextField>
       </Stack>

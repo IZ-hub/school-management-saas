@@ -7,6 +7,7 @@ import { TeachersModule } from './modules/teachers/teachers.module';
 import { ClassesModule } from './modules/classes/classes.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { GateModule } from './modules/gate/gate.module';
 import { ExamsModule } from './modules/exams/exams.module';
 import { ResultsModule } from './modules/results/results.module';
 import { FeesModule } from './modules/fees/fees.module';
@@ -27,7 +28,8 @@ import { BillingModule } from './modules/billing/billing.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    // Tests set their own settings, so the real .env (live keys, billing dates) never leaks into them.
+    ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: process.env.NODE_ENV === 'test' }),
     FirebaseModule,
     AuthModule,
     StudentsModule,
@@ -35,6 +37,7 @@ import { BillingModule } from './modules/billing/billing.module';
     ClassesModule,
     SubjectsModule,
     AttendanceModule,
+    GateModule,
     ExamsModule,
     ResultsModule,
     FeesModule,

@@ -1,7 +1,8 @@
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Alert, Avatar, Box, Button, ButtonBase, CircularProgress, Paper, Stack, Typography } from '@mui/material'
-import { ArrowBack as BackIcon, FamilyRestroomOutlined as ParentIcon, PaymentsOutlined as PayIcon, ArticleOutlined as CardIcon, ReceiptLongOutlined as StatementIcon } from '@mui/icons-material'
+import { ArrowBack as BackIcon, FamilyRestroomOutlined as ParentIcon, PaymentsOutlined as PayIcon, ArticleOutlined as CardIcon, ReceiptLongOutlined as StatementIcon, BadgeOutlined as IdIcon } from '@mui/icons-material'
+import { reissueCard } from '../lib/gateApi'
 import { toDate } from '../lib/attendanceApi'
 import { TERM_LABEL } from '../lib/examsApi'
 import { METHOD_LABEL, Receipt, getReceipt, naira } from '../lib/feesApi'
@@ -124,6 +125,14 @@ export default function StudentProfile() {
           </Stack>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {p.can.admin && !left && <Button variant="outlined" startIcon={<ParentIcon />} onClick={() => setParentOpen(true)}>Parent access</Button>}
+            {p.can.admin && !left && <Button variant="outlined" startIcon={<IdIcon />} onClick={() => navigate(`/students/id-cards?student=${s.id}`)}>Print ID card</Button>}
+            {p.can.admin && !left && (
+              <Button color="inherit" sx={{ color: brand.muted }} onClick={async () => {
+                if (!window.confirm(`Replace ${s.firstName}'s ID card? The old card will stop working at the gate, and you'll print a new one.`)) return
+                await reissueCard(s.id)
+                navigate(`/students/id-cards?student=${s.id}`)
+              }}>Replace lost card</Button>
+            )}
             {p.can.finance && f?.feesSet && f.balance > 0 && <Button variant="contained" startIcon={<PayIcon />} onClick={() => setPayOpen(true)}>Record payment</Button>}
           </Stack>
         </Stack>

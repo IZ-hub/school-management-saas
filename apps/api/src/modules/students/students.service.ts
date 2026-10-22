@@ -54,6 +54,12 @@ export function readGender(raw: string): 'MALE' | 'FEMALE' | 'OTHER' | null {
   return null;
 }
 
+/** A student's ID card code stays on the server: it is only ever printed onto the card. */
+const withoutCard = (id: string, data: FirebaseFirestore.DocumentData) => {
+  const { cardCode: _code, cardIssuedAt: _issued, ...rest } = data;
+  return { id, ...rest };
+};
+
 @Injectable()
 export class StudentsService {
   constructor(private readonly firebase: FirebaseService) {}
@@ -76,7 +82,7 @@ export class StudentsService {
 
   async findAll(schoolId: string, search?: string) {
     const snapshot = await this.col.where('schoolId', '==', schoolId).get();
-    let results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let results = snapshot.docs.map((doc) => withoutCard(doc.id, doc.data()));
     results.sort((a: any, b: any) => {
       const aTime = a.createdAt?.toMillis?.() || a.createdAt?.getTime?.() || 0;
       const bTime = b.createdAt?.toMillis?.() || b.createdAt?.getTime?.() || 0;
@@ -97,13 +103,13 @@ export class StudentsService {
 
   async findOne(schoolId: string, id: string) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Student not found');
-    return { id: doc.id, ...doc.data() };
+    return withoutCard(doc.id, doc.data()!);
   }
 
   async update(schoolId: string, id: string, dto: UpdateStudentDto) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Student not found');
     await doc.ref.update({ ...dto, updatedAt: new Date() });
-    return { id, ...doc.data(), ...dto };
+    return { ...withoutCard(id, doc.data()!), ...dto };
   }
 
   async remove(schoolId: string, id: string) {

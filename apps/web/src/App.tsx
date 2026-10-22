@@ -11,6 +11,8 @@ import Classes from './pages/Classes'
 import Subjects from './pages/Subjects'
 import ClassSubjects from './pages/ClassSubjects'
 import Attendance from './pages/Attendance'
+import Gate from './pages/Gate'
+import IdCards from './pages/IdCards'
 import Exams from './pages/Exams'
 import ExamSeriesPage from './pages/ExamSeries'
 import Results from './pages/Results'
@@ -77,12 +79,14 @@ function App() {
         <Route element={!isAuthenticated ? <RedirectToLogin /> : isParent ? <Navigate to="/parent" replace /> : <DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/students" element={<Students />} />
+          <Route path="/students/id-cards" element={<IdCards />} />
           <Route path="/students/:id" element={<StudentProfile />} />
           <Route path="/teachers" element={<Teachers />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/class-subjects" element={<ClassSubjects />} />
           <Route path="/attendance" element={<Attendance />} />
+          <Route path="/gate" element={<Gate />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/exams/:seriesId" element={<ExamSeriesPage />} />
           <Route path="/results" element={<Results />} />

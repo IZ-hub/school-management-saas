@@ -35,7 +35,7 @@ export class AttendanceService {
     return this.db.collection('attendanceRegisters');
   }
 
-  private markId = (schoolId: string, date: string, studentId: string) => `${schoolId}__${date}__${studentId}`;
+  markId = (schoolId: string, date: string, studentId: string) => `${schoolId}__${date}__${studentId}`;
   private registerId = (schoolId: string, classId: string, date: string) => `${schoolId}__${classId}__${date}`;
 
   private checkDate(date: string) {
@@ -59,12 +59,14 @@ export class AttendanceService {
     this.checkDate(date);
     const cls = await getOwnedDoc(this.db.collection('classes'), classId, schoolId, 'Class not found');
     if (user) (await TeachingScope.load(this.db as any, user)).requireClass(classId, cls.data()!.name);
-    const [students, marksSnap, summary] = await Promise.all([
+    const [students, marksSnap, summary, clockSnap] = await Promise.all([
       this.classStudents(schoolId, classId),
       this.marks.where('schoolId', '==', schoolId).where('classId', '==', classId).where('date', '==', date).get(),
       this.registers.doc(this.registerId(schoolId, classId, date)).get(),
+      this.db.collection('gateClock').where('schoolId', '==', schoolId).where('classId', '==', classId).where('date', '==', date).get(),
     ]);
     const statusOf = new Map(marksSnap.docs.map((d) => [d.data().studentId, d.data().status as AttendanceStatus]));
+    const clockOf = new Map(clockSnap.docs.map((d) => [d.data().studentId, d.data()]));
     const s = summary.exists ? summary.data()! : null;
     return {
       classId,
@@ -72,7 +74,14 @@ export class AttendanceService {
       date,
       takenAt: s?.takenAt ?? null,
       takenByName: s?.takenByName ?? null,
-      students: students.map((st) => ({ ...st, status: statusOf.get(st.id) ?? null })),
+      /** True once anyone in this class has been scanned at the gate today. */
+      gateUsed: clockSnap.size > 0,
+      students: students.map((st) => ({
+        ...st,
+        status: statusOf.get(st.id) ?? null,
+        clockIn: clockOf.get(st.id)?.clockInAt ?? null,
+        clockOut: clockOf.get(st.id)?.clockOutAt ?? null,
+      })),
     };
   }
 
@@ -133,6 +142,23 @@ export class AttendanceService {
 
     await this.refreshDay(schoolId, dto.date);
     return this.getRegister(schoolId, dto.classId, dto.date, user);
+  }
+
+  /**
+   * After a mark changes outside the register (a gate scan), keeps an already-saved register's
+   * counts and the day's totals right. A register that hasn't been taken yet stays untaken.
+   */
+  async recountIfTaken(schoolId: string, classId: string, date: string) {
+    const ref = this.registers.doc(this.registerId(schoolId, classId, date));
+    const summary = await ref.get();
+    if (!summary.exists) return;
+    const students = await this.classStudents(schoolId, classId);
+    const inClass = new Set(students.map((s) => s.id));
+    const marks = await this.marks.where('schoolId', '==', schoolId).where('classId', '==', classId).where('date', '==', date).get();
+    const counts = emptyCounts();
+    for (const d of marks.docs) if (inClass.has(d.data().studentId)) counts[d.data().status as AttendanceStatus]++;
+    await ref.update({ counts });
+    await this.refreshDay(schoolId, date);
   }
 
   /** Which classes have taken the register on a date (today by default), with counts and rates. */

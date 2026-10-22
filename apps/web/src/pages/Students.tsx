@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link as RouterLink, useSearchParams } from 'react-router-dom'
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -33,6 +33,7 @@ import {
   Delete as DeleteIcon,
   FileUpload as ImportIcon,
   FamilyRestroomOutlined as ParentIcon,
+  BadgeOutlined as BadgeIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
@@ -111,6 +112,7 @@ export default function Students() {
   const [importOpen, setImportOpen] = useState(false)
   const [classes, setClasses] = useState<ClassOption[]>([])
   const [parentFor, setParentFor] = useState<Student | null>(null)
+  const navigate = useNavigate()
   const canManageParents = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PRINCIPAL'].includes(useAuthStore((s) => s.user?.role) ?? '')
   const theme = useTheme()
   const isPhone = useMediaQuery(theme.breakpoints.down('sm'))
@@ -260,6 +262,12 @@ export default function Students() {
           Students
         </Typography>
         <Stack direction="row" spacing={1}>
+          {canManageParents && (
+            <Button variant="outlined" startIcon={<BadgeIcon />} onClick={() => navigate(`/students/id-cards${classFilter && classFilter !== NO_CLASS ? `?class=${classFilter}` : ''}`)} size="small"
+              sx={{ borderColor: brand.border, color: brand.text, bgcolor: brand.surface, '&:hover': { borderColor: '#d6d3c9', bgcolor: brand.surface }, whiteSpace: 'nowrap' }}>
+              ID cards
+            </Button>
+          )}
           <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)} size="small"
             sx={{ borderColor: brand.border, color: brand.text, bgcolor: brand.surface, '&:hover': { borderColor: '#d6d3c9', bgcolor: brand.surface }, whiteSpace: 'nowrap' }}>
             Import CSV

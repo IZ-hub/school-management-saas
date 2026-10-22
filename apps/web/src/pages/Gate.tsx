@@ -11,6 +11,7 @@ import {
 } from '@mui/icons-material'
 import QrScanner from 'qr-scanner'
 import { brand } from '../theme'
+import StudentAvatar from '../components/StudentAvatar'
 import { useAuthStore } from '../store/authStore'
 import { ADMIN_ROLES } from '../lib/roles'
 import { GateToday, ScanMode, ScanResult, getGateSettings, getGateToday, saveGateSettings, scanCard } from '../lib/gateApi'
@@ -240,9 +241,15 @@ export default function Gate() {
                     </Typography>
                     {r.late && <Box component="span" sx={{ ml: 'auto', px: 1, py: 0.25, borderRadius: 999, bgcolor: '#7d5300', color: '#fff', fontSize: '12px', fontWeight: 700 }}>Late</Box>}
                   </Stack>
-                  <Typography sx={{ fontWeight: 800, fontSize: { xs: '24px', sm: '28px' }, color: brand.text, mt: 1, lineHeight: 1.15 }}>{r.student.name}</Typography>
-                  <Typography sx={{ color: brand.muted }}>{[r.student.className, r.student.admissionNumber].filter(Boolean).join(' · ')}</Typography>
-                  <Typography sx={{ fontSize: '13px', color: brand.muted, mt: 1 }}>In {r.clockIn ?? '—'} · Out {r.clockOut ?? '—'}</Typography>
+                  <Stack direction="row" spacing={1.75} alignItems="center" sx={{ mt: 1.25 }}>
+                    {/* The face lets the gate check that the card belongs to the child holding it. */}
+                    <StudentAvatar src={r.student.photo} firstName={r.student.name.split(' ')[0]} lastName={r.student.name.split(' ').slice(-1)[0]} size={76} />
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: { xs: '22px', sm: '26px' }, color: brand.text, lineHeight: 1.15 }}>{r.student.name}</Typography>
+                      <Typography sx={{ color: brand.muted }}>{[r.student.className, r.student.admissionNumber].filter(Boolean).join(' · ')}</Typography>
+                      <Typography sx={{ fontSize: '13px', color: brand.muted, mt: 0.5 }}>In {r.clockIn ?? '—'} · Out {r.clockOut ?? '—'}</Typography>
+                    </Box>
+                  </Stack>
                 </Box>
               )
             })()}

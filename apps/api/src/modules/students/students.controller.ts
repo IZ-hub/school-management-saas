@@ -1,10 +1,11 @@
 import {
-  Controller, Get, Post, Patch, Delete,
+  Controller, Get, Post, Patch, Put, Delete,
   Body, Param, Query, UseGuards,
 } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentPhotoDto } from './dto/student-photo.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles, ADMIN_ROLES, STAFF_ROLES } from '../../common/roles';
@@ -47,6 +48,18 @@ export class StudentsController {
   async update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateStudentDto) {
     const data = await this.service.update(user.schoolId, id, dto);
     return { data };
+  }
+
+  @Roles(...ADMIN_ROLES)
+  @Put(':id/photo')
+  async setPhoto(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: StudentPhotoDto) {
+    return { data: await this.service.setPhoto(user.schoolId, id, dto) };
+  }
+
+  @Roles(...ADMIN_ROLES)
+  @Delete(':id/photo')
+  async removePhoto(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return { data: await this.service.removePhoto(user.schoolId, id) };
   }
 
   @Roles(...ADMIN_ROLES)

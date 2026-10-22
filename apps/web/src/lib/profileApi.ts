@@ -10,6 +10,8 @@ export interface StudentProfile {
     admissionNumber: string
     gender: string | null
     dateOfBirth: string | null
+    admissionDate: string | null
+    photo: string | null
     address: string | null
     parentEmail: string | null
     parentPhone: string | null

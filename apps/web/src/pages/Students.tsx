@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Box,
@@ -34,6 +34,7 @@ import {
   FileUpload as ImportIcon,
   FamilyRestroomOutlined as ParentIcon,
   BadgeOutlined as BadgeIcon,
+  PhotoCameraOutlined as CameraIcon,
 } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { brand } from '../theme'
@@ -41,6 +42,8 @@ import { classLabels } from '../lib/classLabels'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 import DateOfBirthField from '../components/DateOfBirthField'
 import ParentAccessDialog from '../components/ParentAccessDialog'
+import StudentAvatar from '../components/StudentAvatar'
+import { makeStudentPhoto, removeStudentPhoto, setStudentPhoto } from '../lib/studentPhoto'
 import { useAuthStore } from '../store/authStore'
 
 interface Student {
@@ -50,6 +53,8 @@ interface Student {
   dateOfBirth: string
   gender: string
   admissionNumber: string
+  admissionDate?: string | null
+  photoThumb?: string | null
   classId?: string | null
   section?: string | null
   parentEmail?: string | null
@@ -86,12 +91,18 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+const todayIso = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+
+/** The photo in the form: what is on file, a new one picked, or removed. */
+type PhotoState = { kind: 'keep'; thumb: string | null } | { kind: 'new'; photo: string; thumb: string } | { kind: 'remove' }
+
 const emptyForm = {
   firstName: '',
   lastName: '',
   dateOfBirth: '',
   gender: 'MALE',
   admissionNumber: '',
+  admissionDate: '',
   classId: '',
   section: '',
   parentEmail: '',
@@ -112,6 +123,10 @@ export default function Students() {
   const [importOpen, setImportOpen] = useState(false)
   const [classes, setClasses] = useState<ClassOption[]>([])
   const [parentFor, setParentFor] = useState<Student | null>(null)
+  const [photo, setPhoto] = useState<PhotoState>({ kind: 'keep', thumb: null })
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const photoInput = useRef<HTMLInputElement>(null)
+  const photoShown = photo.kind === 'new' ? photo.thumb : photo.kind === 'keep' ? photo.thumb : null
   const navigate = useNavigate()
   const canManageParents = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PRINCIPAL'].includes(useAuthStore((s) => s.user?.role) ?? '')
   const theme = useTheme()
@@ -150,6 +165,7 @@ export default function Students() {
     { key: 'lastName', label: 'Last Name', required: true },
     { key: 'admissionNumber', label: 'Admission Number', required: true },
     { key: 'dateOfBirth', label: 'Date of Birth' },
+    { key: 'admissionDate', label: 'Admission Date' },
     { key: 'gender', label: 'Gender' },
     { key: 'className', label: 'Class' },
     { key: 'section', label: 'Section' },
@@ -196,7 +212,8 @@ export default function Students() {
 
   const openCreateDialog = () => {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, admissionDate: todayIso() })
+    setPhoto({ kind: 'keep', thumb: null })
     setFormError('')
     setDialogOpen(true)
   }
@@ -209,12 +226,14 @@ export default function Students() {
       dateOfBirth: student.dateOfBirth,
       gender: student.gender,
       admissionNumber: student.admissionNumber,
+      admissionDate: student.admissionDate || '',
       classId: student.classId || '',
       section: student.section || '',
       parentEmail: student.parentEmail || '',
       parentPhone: student.parentPhone || '',
       address: student.address || '',
     })
+    setPhoto({ kind: 'keep', thumb: student.photoThumb ?? null })
     setFormError('')
     setDialogOpen(true)
   }
@@ -230,11 +249,23 @@ export default function Students() {
         parentEmail: form.parentEmail || undefined,
         parentPhone: form.parentPhone || undefined,
         address: form.address || undefined,
+        admissionDate: form.admissionDate || undefined,
       }
-      if (editingId) {
-        await api.patch(`/students/${editingId}`, payload)
-      } else {
-        await api.post('/students', payload)
+      const id: string = editingId
+        ? (await api.patch(`/students/${editingId}`, payload), editingId)
+        : (await api.post('/students', payload)).data.data.id
+      if (photo.kind === 'new') {
+        try {
+          await setStudentPhoto(id, photo)
+        } catch (err: any) {
+          // The student is saved; only the photo failed, so keep the dialog open on the edit view.
+          setEditingId(id)
+          setFormError(`The student was saved, but the photo wasn't: ${err.response?.data?.message || 'try again'}.`)
+          fetchStudents(search)
+          return
+        }
+      } else if (photo.kind === 'remove') {
+        await removeStudentPhoto(id)
       }
       setDialogOpen(false)
       fetchStudents(search)
@@ -242,6 +273,21 @@ export default function Students() {
       setFormError(err.response?.data?.message || 'Failed to save student')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const pickPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setPhotoBusy(true)
+    try {
+      setPhoto({ kind: 'new', ...(await makeStudentPhoto(file)) })
+      setFormError('')
+    } catch (err: any) {
+      setFormError(err.message)
+    } finally {
+      setPhotoBusy(false)
     }
   }
 
@@ -340,7 +386,8 @@ export default function Students() {
           <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
             {shown.map((student, i) => (
               <Box component="li" key={student.id}
-                sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, px: 2, py: 1.75, borderTop: i === 0 ? 'none' : `1px solid ${brand.border}` }}>
+                sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 2, py: 1.75, borderTop: i === 0 ? 'none' : `1px solid ${brand.border}` }}>
+                <StudentAvatar src={student.photoThumb} firstName={student.firstName} lastName={student.lastName} size={44} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography component={RouterLink} to={`/students/${student.id}`} sx={{ display: 'block', fontWeight: 600, fontSize: '15px', color: brand.text, textDecoration: 'none' }} noWrap>
                     {student.firstName} {student.lastName}
@@ -378,6 +425,7 @@ export default function Students() {
                 <TableCell>Name</TableCell>
                 <TableCell>Gender</TableCell>
                 <TableCell>Date of Birth</TableCell>
+                <TableCell>Admitted</TableCell>
                 <TableCell>Class</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -388,12 +436,16 @@ export default function Students() {
                 <TableRow key={student.id} hover>
                   <TableCell sx={{ color: brand.muted }}>{student.admissionNumber}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>
-                    <Box component={RouterLink} to={`/students/${student.id}`} sx={{ color: brand.text, textDecoration: 'none', '&:hover': { color: brand.green, textDecoration: 'underline' } }}>
-                      {student.firstName} {student.lastName}
-                    </Box>
+                    <Stack direction="row" spacing={1.25} alignItems="center">
+                      <StudentAvatar src={student.photoThumb} firstName={student.firstName} lastName={student.lastName} />
+                      <Box component={RouterLink} to={`/students/${student.id}`} sx={{ color: brand.text, textDecoration: 'none', '&:hover': { color: brand.green, textDecoration: 'underline' } }}>
+                        {student.firstName} {student.lastName}
+                      </Box>
+                    </Stack>
                   </TableCell>
                   <TableCell>{titleCase(student.gender)}</TableCell>
                   <TableCell>{formatDate(student.dateOfBirth)}</TableCell>
+                  <TableCell>{student.admissionDate ? formatDate(student.admissionDate) : '—'}</TableCell>
                   <TableCell>{classLabel(student)}</TableCell>
                   <TableCell>
                     <StatusBadge status={student.status} />
@@ -433,6 +485,20 @@ export default function Students() {
               {formError}
             </Alert>
           )}
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1, mb: 1 }}>
+            <StudentAvatar src={photoShown} firstName={form.firstName} lastName={form.lastName} size={84} />
+            <Box>
+              <Typography sx={{ fontSize: '0.85rem', color: brand.muted, mb: 0.75 }}>Student Photo</Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Button size="small" variant="outlined" startIcon={photoBusy ? <CircularProgress size={14} /> : <CameraIcon />} disabled={photoBusy} onClick={() => photoInput.current?.click()}>
+                  {photoShown ? 'Change photo' : 'Take or upload photo'}
+                </Button>
+                {photoShown && <Button size="small" color="error" onClick={() => setPhoto({ kind: 'remove' })}>Remove</Button>}
+              </Stack>
+              <Typography sx={{ fontSize: '12px', color: brand.subtle, mt: 0.5 }}>A clear, front-facing photo. It shows on the ID card and at the gate.</Typography>
+            </Box>
+            <input ref={photoInput} type="file" accept="image/*" hidden onChange={pickPhoto} />
+          </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1 }}>
             <TextField
               fullWidth
@@ -474,6 +540,7 @@ export default function Students() {
             required
             margin="dense"
           />
+          <DateOfBirthField label="Admission Date" value={form.admissionDate} onChange={(v) => setForm({ ...form, admissionDate: v })} minAge={-1} maxAge={25} yearExample={String(new Date().getFullYear())} required />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: activeClasses.length === 0 ? 1.5 : 0 }}>
             <TextField
               fullWidth
@@ -532,7 +599,7 @@ export default function Students() {
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={saving || !form.firstName || !form.lastName || !form.dateOfBirth || !form.admissionNumber}
+            disabled={saving || photoBusy || !form.firstName || !form.lastName || !form.dateOfBirth || !form.admissionNumber || !form.admissionDate}
           >
             {saving ? 'Saving...' : 'Save'}
           </Button>

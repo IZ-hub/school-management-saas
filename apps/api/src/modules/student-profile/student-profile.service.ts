@@ -39,13 +39,14 @@ export class StudentProfileService {
     const formTeacherId = cls?.exists ? cls.data()!.teacherId : null;
     const formTeacher = formTeacherId ? await this.db.collection('teachers').doc(formTeacherId).get() : null;
 
-    const [attendance, results, feeData, parents, inbox, history] = await Promise.all([
+    const [attendance, results, feeData, parents, inbox, history, photo] = await Promise.all([
       academic ? this.attendance(schoolId, studentId, calendar, ts) : null,
       academic ? this.results(schoolId, studentId) : null,
       finance ? this.feeSection(schoolId, studentId, ts) : null,
       admin ? this.parents(schoolId, studentId) : null,
       messages ? this.messages(schoolId, studentId) : null,
       this.classHistory(schoolId, studentId),
+      s.photoAt ? this.db.collection('studentPhotos').doc(studentId).get() : null,
     ]);
 
     return {
@@ -56,6 +57,8 @@ export class StudentProfileService {
         admissionNumber: s.admissionNumber ?? '',
         gender: s.gender ?? null,
         dateOfBirth: s.dateOfBirth ?? null,
+        admissionDate: s.admissionDate ?? null,
+        photo: photo?.exists && photo.data()!.schoolId === schoolId ? photo.data()!.photo : null,
         address: s.address ?? null,
         parentEmail: s.parentEmail ?? null,
         parentPhone: s.parentPhone ?? null,

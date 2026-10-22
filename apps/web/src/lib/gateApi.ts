@@ -6,7 +6,7 @@ export type ScanAction = 'IN' | 'OUT' | 'ALREADY_IN' | 'ALREADY_OUT'
 
 export interface ScanResult {
   action: ScanAction
-  student: { id: string; name: string; admissionNumber: string; className: string }
+  student: { id: string; name: string; admissionNumber: string; className: string; photo: string | null }
   time: string
   clockIn: string | null
   clockOut: string | null
@@ -22,7 +22,7 @@ export interface GateToday {
   recent: { action: 'IN' | 'OUT'; time: string; studentId: string; name: string; className: string }[]
 }
 
-export interface IdCard { studentId: string; firstName: string; lastName: string; admissionNumber: string; className: string; qr: string }
+export interface IdCard { studentId: string; firstName: string; lastName: string; admissionNumber: string; className: string; qr: string; photo: string | null }
 export interface CardSheet { school: { name: string; logo: string | null; motto: string; phone: string }; cards: IdCard[] }
 
 export const scanCard = async (code: string, mode: ScanMode): Promise<ScanResult> => (await api.post('/gate/scan', { code, mode })).data.data

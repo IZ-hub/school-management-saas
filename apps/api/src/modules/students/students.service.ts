@@ -3,6 +3,7 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentPhotoDto } from './dto/student-photo.dto';
 import { countOf } from '../../common/aggregate';
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
@@ -112,6 +113,29 @@ export class StudentsService {
     return { ...withoutCard(id, doc.data()!), ...dto };
   }
 
+  /**
+   * A student's photo. The small thumbnail rides on the student record so lists show faces
+   * without extra reads; the full photo has its own document, read only by the profile and ID cards.
+   */
+  async setPhoto(schoolId: string, id: string, dto: StudentPhotoDto) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Student not found');
+    const now = new Date();
+    await this.photos.doc(id).set({ schoolId, photo: dto.photo, updatedAt: now });
+    await doc.ref.update({ photoThumb: dto.thumb, photoAt: now, updatedAt: now });
+    return { photo: dto.photo, photoThumb: dto.thumb };
+  }
+
+  async removePhoto(schoolId: string, id: string) {
+    const doc = await getOwnedDoc(this.col, id, schoolId, 'Student not found');
+    await this.photos.doc(id).delete();
+    await doc.ref.update({ photoThumb: null, photoAt: null, updatedAt: new Date() });
+    return { photo: null, photoThumb: null };
+  }
+
+  private get photos() {
+    return this.firebase.firestore.collection('studentPhotos');
+  }
+
   async remove(schoolId: string, id: string) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Student not found');
     await doc.ref.update({ status: 'INACTIVE', updatedAt: new Date() });
@@ -200,6 +224,12 @@ export class StudentsService {
         errors.push({ row: i + 1, message: `Gender "${rawGender}" wasn't understood. Write Male or Female.` });
         continue;
       }
+      const rawAdmitted = (r.admissionDate ?? '').toString().trim();
+      const admissionDate = rawAdmitted ? readDateOfBirth(rawAdmitted) : null;
+      if (rawAdmitted && !admissionDate) {
+        errors.push({ row: i + 1, message: `Admission date "${rawAdmitted}" wasn't understood. Write it day first, like 14/09/2026.` });
+        continue;
+      }
       let classId: string | null = null;
       const wantedClass = (r.className || r.classId || '').toString();
       if (wantedClass.trim()) {
@@ -218,6 +248,7 @@ export class StudentsService {
         dateOfBirth,
         gender,
         admissionNumber: r.admissionNumber,
+        admissionDate,
         classId,
         section: r.section || null,
         parentEmail: r.parentEmail || null,

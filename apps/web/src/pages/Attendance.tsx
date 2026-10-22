@@ -35,6 +35,7 @@ import {
   toDate,
 } from '../lib/attendanceApi'
 import { brand } from '../theme'
+import { clockTime } from '../lib/gateApi'
 import { useAuthStore } from '../store/authStore'
 import { MyScope, UNLINKED_MESSAGE, getMyScope } from '../lib/scopeApi'
 
@@ -107,8 +108,10 @@ export default function Attendance() {
     getRegister(classId, date)
       .then((r) => {
         setRegister(r)
-        // Unmarked students start as Present: the teacher only taps the exceptions.
-        setMarks(Object.fromEntries(r.students.map((s) => [s.id, s.status ?? 'PRESENT'])))
+        // Unmarked students start as Present: the teacher only taps the exceptions. On a day the
+        // class was scanned at the gate, students who weren't scanned start as Absent instead.
+        const unmarked: AttendanceStatus = r.gateUsed && !r.takenAt ? 'ABSENT' : 'PRESENT'
+        setMarks(Object.fromEntries(r.students.map((s) => [s.id, s.status ?? unmarked])))
         setFocusIndex(0)
       })
       .catch((err) => {
@@ -198,6 +201,7 @@ export default function Attendance() {
       const day = register.date === today ? '' : ` on ${new Date(`${register.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
       return `Taken${day} at ${when}${register.takenByName ? ` by ${register.takenByName}` : ''}`
     }
+    if (register.gateUsed) return 'Not taken yet. Check the gate ticks below, then save.'
     return 'Not taken yet. Everyone starts as Present, so just mark who is absent, late or excused.'
   }
 
@@ -295,6 +299,12 @@ export default function Attendance() {
               </Stack>
             </Stack>
 
+            {register.gateUsed && !isTaken && (
+              <Alert severity="info" sx={{ mb: 1.5 }}>
+                {register.students.filter((st) => st.clockIn || st.clockOut).length} of {register.students.length} were scanned at the gate and are ticked.
+                Students who weren't scanned start as Absent: change any who are here, then save.
+              </Alert>
+            )}
             {!isPhone && (
               <Typography sx={{ fontSize: '12.5px', color: brand.subtle, mb: 1 }}>
                 Tip: click a name, then use ↑ ↓ to move and P, A, L or E to mark.
@@ -326,7 +336,14 @@ export default function Attendance() {
                         {s.firstName} {s.lastName}
                         {changed && isTaken && <Box component="span" sx={{ ml: 0.75, fontSize: '11.5px', fontWeight: 600, color: '#7a4c00' }}>• edited</Box>}
                       </Typography>
-                      <Typography noWrap sx={{ fontSize: '12px', color: brand.subtle }}>{s.admissionNumber}</Typography>
+                      <Typography noWrap sx={{ fontSize: '12px', color: brand.subtle }}>
+                        {s.admissionNumber}
+                        {!!(s.clockIn || s.clockOut) && (
+                          <Box component="span" sx={{ ml: 1, color: '#0b4a36', fontWeight: 600 }}>
+                            {s.clockIn ? `In ${clockTime(s.clockIn)}` : ''}{s.clockIn && s.clockOut ? ' · ' : ''}{s.clockOut ? `Out ${clockTime(s.clockOut)}` : ''}
+                          </Box>
+                        )}
+                      </Typography>
                     </Box>
                     <Stack direction="row" spacing={0.5} role="radiogroup" aria-label={`Mark ${s.firstName} ${s.lastName}`}>
                       {STATUSES.map((opt) => {

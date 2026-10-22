@@ -10,6 +10,9 @@ export interface RegisterStudent {
   lastName: string
   admissionNumber: string
   status: AttendanceStatus | null
+  /** Gate scan times, when the school uses ID cards at the gate. */
+  clockIn?: unknown
+  clockOut?: unknown
 }
 
 export interface Register {
@@ -18,6 +21,8 @@ export interface Register {
   date: string
   takenAt: unknown
   takenByName: string | null
+  /** Someone in this class was scanned at the gate on this date. */
+  gateUsed?: boolean
   students: RegisterStudent[]
 }
 

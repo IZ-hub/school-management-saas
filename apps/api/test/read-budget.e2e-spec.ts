@@ -113,7 +113,8 @@ describe('Read budget for a large school (e2e)', () => {
     'GET results/progress': 520,
     'GET results/sheet (1 paper)': 150,
     'PUT results/sheet (1 paper)': 280,
-    'GET report-cards (1 class)': 3300,
+    // Reads one class's attendance for the term, which grows with the calendar until the seeded 60 days are all past.
+    'GET report-cards (1 class)': 4100,
     'GET fees/overview': 4000,
     'GET fees/statement/:id': 20,
     'GET payments': 2000,

@@ -18,6 +18,12 @@ const readSalary = (raw: string) => {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
 };
 
+/** A teacher record as the caller may see it: the salary only for those who handle pay. */
+const view = (id: string, data: FirebaseFirestore.DocumentData, seesPay: boolean) => {
+  const { salary, ...rest } = data;
+  return seesPay ? { id, ...rest, salary: salary ?? null } : { id, ...rest };
+};
+
 @Injectable()
 export class TeachersService {
   constructor(private readonly firebase: FirebaseService) {}
@@ -26,8 +32,9 @@ export class TeachersService {
     return this.firebase.firestore.collection('teachers');
   }
 
-  async create(schoolId: string, dto: CreateTeacherDto) {
+  async create(schoolId: string, dto: CreateTeacherDto, seesPay = false) {
     const now = new Date();
+    if (!seesPay) delete dto.salary;
     const docRef = await this.col.add({
       schoolId,
       ...dto,
@@ -37,12 +44,12 @@ export class TeachersService {
       createdAt: now,
       updatedAt: now,
     });
-    return { id: docRef.id, schoolId, ...dto, status: 'ACTIVE' };
+    return view(docRef.id, { schoolId, ...dto, status: 'ACTIVE' }, seesPay);
   }
 
-  async findAll(schoolId: string, search?: string) {
+  async findAll(schoolId: string, search?: string, seesPay = false) {
     const snapshot = await this.col.where('schoolId', '==', schoolId).get();
-    let results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let results = snapshot.docs.map((doc) => view(doc.id, doc.data(), seesPay));
     results.sort((a: any, b: any) => {
       const aTime = a.createdAt?.toMillis?.() || a.createdAt?.getTime?.() || 0;
       const bTime = b.createdAt?.toMillis?.() || b.createdAt?.getTime?.() || 0;
@@ -62,15 +69,16 @@ export class TeachersService {
     return results;
   }
 
-  async findOne(schoolId: string, id: string) {
+  async findOne(schoolId: string, id: string, seesPay = false) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Teacher not found');
-    return { id: doc.id, ...doc.data() };
+    return view(doc.id, doc.data()!, seesPay);
   }
 
-  async update(schoolId: string, id: string, dto: UpdateTeacherDto) {
+  async update(schoolId: string, id: string, dto: UpdateTeacherDto, seesPay = false) {
     const doc = await getOwnedDoc(this.col, id, schoolId, 'Teacher not found');
+    if (!seesPay) delete dto.salary;
     await doc.ref.update({ ...dto, updatedAt: new Date() });
-    return { id, ...doc.data(), ...dto };
+    return view(id, { ...doc.data(), ...dto }, seesPay);
   }
 
   async remove(schoolId: string, id: string) {
@@ -84,7 +92,7 @@ export class TeachersService {
    * and skips anyone whose employee number is already in the school or earlier in the file, so the same
    * file can be uploaded again safely.
    */
-  async bulkCreate(schoolId: string, records: any[]) {
+  async bulkCreate(schoolId: string, records: any[], seesPay = false) {
     const now = new Date();
     const batch = this.firebase.firestore.batch();
     const created: any[] = [];
@@ -137,7 +145,8 @@ export class TeachersService {
         errors.push({ row, message: `Gender "${rawGender}" wasn't understood. Write Male or Female.` });
         continue;
       }
-      const rawSalary = text(r.salary);
+      // Only those who handle pay may set salaries; anyone else's Salary column is ignored.
+      const rawSalary = seesPay ? text(r.salary) : '';
       const salary = rawSalary ? readSalary(rawSalary) : null;
       if (rawSalary && salary === null) {
         errors.push({ row, message: `Salary "${rawSalary}" isn't an amount. Write it like 150000.` });
@@ -164,7 +173,7 @@ export class TeachersService {
         updatedAt: now,
       };
       batch.set(ref, teacher);
-      created.push({ id: ref.id, ...teacher });
+      created.push(view(ref.id, teacher, seesPay));
       seenInFile.set(key, row);
     }
 

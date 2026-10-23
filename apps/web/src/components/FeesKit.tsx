@@ -288,22 +288,34 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
     api.get('/classes').then((r) => setClassNames(new Map(r.data.data.map((c: { id: string; name: string }) => [c.id, c.name])))).catch(() => {})
   }, [open, presetStudent])
 
+  // Load the chosen student's fees. A reply for a student who is no longer chosen (for example the
+  // previous payment's student, or a quick change of mind) is ignored, so it can't show their balance.
   useEffect(() => {
-    if (!open || !studentId) { setStatement(null); return }
+    setStatement(null)
+    setError('')
+    if (!open || !studentId) { setLoadingStatement(false); return }
+    let current = true
     setLoadingStatement(true)
     getStatement(studentId, term, session)
-      .then(setStatement)
-      .catch((err) => setError(errorText(err, 'Failed to load fees')))
-      .finally(() => setLoadingStatement(false))
+      .then((s) => { if (current) setStatement(s) })
+      .catch((err) => { if (current) setError(errorText(err, 'Failed to load fees')) })
+      .finally(() => { if (current) setLoadingStatement(false) })
+    return () => { current = false }
   }, [open, studentId, term, session])
 
+  // Start clean next time: the dialog stays mounted between payments.
+  useEffect(() => {
+    if (!open) setStudentId('')
+  }, [open])
+
   const options = useMemo(() => [...students].sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)), [students])
+  const shown = statement && statement.student.id === studentId ? statement : null
   const value = parseNaira(amount)
-  const tooMuch = !!statement && value !== null && value > statement.balance
-  const canSave = !!statement && statement.feesSet && statement.balance > 0 && value !== null && value > 0 && !tooMuch && !!paidOn && !saving
+  const tooMuch = !!shown && value !== null && value > shown.balance
+  const canSave = !!shown && shown.feesSet && shown.balance > 0 && value !== null && value > 0 && !tooMuch && !!paidOn && !saving
 
   const save = async () => {
-    if (!statement || value === null) return
+    if (!shown || value === null) return
     setSaving(true)
     setError('')
     try {
@@ -342,12 +354,12 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
           />
 
           {loadingStatement && <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}><CircularProgress size={22} /></Box>}
-          {statement && !loadingStatement && (
-            !statement.feesSet ? (
-              <Alert severity="info">Fees for {statement.student.className ?? "this student's class"} haven't been set for this term. Set them on the Fees page first.</Alert>
+          {shown && !loadingStatement && (
+            !shown.feesSet ? (
+              <Alert severity="info">Fees for {shown.student.className ?? "this student's class"} haven't been set for this term. Set them on the Fees page first.</Alert>
             ) : (
               <Box sx={{ border: `1px solid ${brand.border}`, borderRadius: '10px', p: 1.5, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, bgcolor: '#fbfaf6' }}>
-                {[['Due', statement.due], ['Paid', statement.paid], ['Balance', statement.balance]].map(([k, v]) => (
+                {[['Due', shown.due], ['Paid', shown.paid], ['Balance', shown.balance]].map(([k, v]) => (
                   <Box key={k as string}>
                     <Typography sx={{ fontSize: '12px', color: brand.muted }}>{k}</Typography>
                     <Typography sx={{ fontSize: '16px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: k === 'Balance' && (v as number) > 0 ? '#9b2a22' : brand.text }}>{naira(v as number)}</Typography>
@@ -357,19 +369,19 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
             )
           )}
 
-          {statement?.feesSet && statement.balance > 0 && (
+          {shown?.feesSet && shown.balance > 0 && (
             <>
               <Stack direction="row" spacing={1.5}>
                 <TextField label="Amount (₦)" placeholder="e.g. 45,000" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))} inputProps={{ inputMode: 'numeric' }} fullWidth
                   error={tooMuch || (amount !== '' && value === null)}
-                  helperText={tooMuch ? `Balance is ${naira(statement.balance)}` : value ? naira(value) : ' '} />
+                  helperText={tooMuch ? `Balance is ${naira(shown.balance)}` : value ? naira(value) : ' '} />
                 <TextField select label="Method" value={method} onChange={(e) => setMethod(e.target.value as Method)} helperText=" " fullWidth>
                   {METHODS.map((m) => <MenuItem key={m} value={m}>{METHOD_LABEL[m]}</MenuItem>)}
                 </TextField>
               </Stack>
               <Stack direction="row" spacing={1}>
-                <Button size="small" variant="outlined" onClick={() => setAmount(statement.balance.toLocaleString('en-NG'))}>Pay full balance</Button>
-                {statement.balance >= 2 && <Button size="small" variant="outlined" onClick={() => setAmount(Math.ceil(statement.balance / 2).toLocaleString('en-NG'))}>Half</Button>}
+                <Button size="small" variant="outlined" onClick={() => setAmount(shown.balance.toLocaleString('en-NG'))}>Pay full balance</Button>
+                {shown.balance >= 2 && <Button size="small" variant="outlined" onClick={() => setAmount(Math.ceil(shown.balance / 2).toLocaleString('en-NG'))}>Half</Button>}
               </Stack>
               <Stack direction="row" spacing={1.5}>
                 <TextField type="date" label="Date paid" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ max: schoolToday() }} fullWidth />
@@ -377,7 +389,7 @@ export function RecordPaymentDialog({ open, onClose, onRecorded, term, session, 
               </Stack>
             </>
           )}
-          {statement?.feesSet && statement.balance <= 0 && <Alert severity="success">{statement.student.firstName} has paid in full for this term.</Alert>}
+          {shown?.feesSet && shown.balance <= 0 && <Alert severity="success">{shown.student.firstName} has paid in full for this term.</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>

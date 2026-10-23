@@ -77,6 +77,8 @@ export default function BulkImportDialog({
 }: BulkImportDialogProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<Record<string, string>[]>([])
+  /** Each row's line in the spreadsheet (headings are line 1), so messages point at the right row even with blank lines. */
+  const [lines, setLines] = useState<number[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [firstRow, setFirstRow] = useState<string[]>([])
   const [fileName, setFileName] = useState('')
@@ -86,6 +88,7 @@ export default function BulkImportDialog({
 
   const reset = () => {
     setRows([])
+    setLines([])
     setHeaders([])
     setFirstRow([])
     setFileName('')
@@ -111,7 +114,7 @@ export default function BulkImportDialog({
     // Read raw rows and build records ourselves, so the first row is shown exactly as written
     // (Papa's header mode renames repeated headings, e.g. "JSS 1" twice becomes "JSS 1_1").
     Papa.parse<string[]>(file, {
-      skipEmptyLines: 'greedy',
+      skipEmptyLines: false,
       complete: (results) => {
         // A one-column file can't have its delimiter detected; that's harmless.
         const fatal = results.errors.find((err) => err.code !== 'UndetectableDelimiter')
@@ -119,7 +122,12 @@ export default function BulkImportDialog({
           setParseError(`We couldn't read this file: ${fatal.message}. Make sure it was saved as CSV.`)
           return
         }
-        const [head = [], ...body] = results.data
+        const blank = (cells: string[]) => cells.every((c) => !(c ?? '').trim())
+        // Headings are the first non-blank line; blank lines before them are ignored.
+        const start = Math.max(0, results.data.findIndex((cells) => !blank(cells)))
+        const head = results.data[start] ?? []
+        const kept = results.data.slice(start + 1).map((cells, i) => ({ cells, line: start + i + 2 })).filter((r) => !blank(r.cells))
+        const body = kept.map((r) => r.cells)
         const fields = head.map((h) => (h ?? '').replace(/^﻿/, '').trim())
         if (body.length === 0) {
           setParseError('This file has no rows under the headings.')
@@ -140,6 +148,7 @@ export default function BulkImportDialog({
         setHeaders(named)
         setFirstRow(named)
         setRows(data)
+        setLines(kept.map((r) => r.line))
       },
       error: (err) => {
         setParseError(`Failed to read file: ${err.message}`)
@@ -176,6 +185,25 @@ export default function BulkImportDialog({
     'exam-series': ['paper', 'papers'],
   }
   const [singular, plural] = nouns[thisEntity] ?? ['record', 'records']
+  /** The spreadsheet row a server message refers to (the server counts the rows it was sent from 1). */
+  const lineOf = (row: number) => lines[row - 1] ?? row + 1
+  const problems = result ? result.errors.filter((e) => !isAlreadyThere(e.message)) : []
+  const alreadyThere = result ? result.errors.filter((e) => isAlreadyThere(e.message)) : []
+
+  /** The skipped rows as a CSV: the file's own columns plus the reason, ready to fix and upload again. */
+  const downloadSkipped = (errs: { row: number; message: string }[], name: string) => {
+    const withRows = errs.filter((e) => e.row > 0 && rows[e.row - 1])
+    const fields = [...headers, 'Problem', 'Row in your file']
+    const data = withRows.map((e) => [...headers.map((h) => rows[e.row - 1][h] ?? ''), e.message, String(lineOf(e.row))])
+    const csv = '\uFEFF' + Papa.unparse({ fields, data })
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${(fileName.replace(/\.[^.]+$/, '') || plural)}-${name}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const allAlreadyThere =
     !!result && result.imported === 0 && result.errors.length > 0 && result.errors.every((e) => isAlreadyThere(e.message))
 
@@ -388,18 +416,32 @@ export default function BulkImportDialog({
             )}
             {result.errors.length > 0 && !allAlreadyThere && (
               <Box sx={{ mt: 2, textAlign: 'left' }}>
-                <Alert severity="warning" sx={{ mb: 1 }}>
-                  {result.errors.length} {result.errors.length === 1 ? 'row was' : 'rows were'} skipped:
+                <Alert severity={problems.length ? 'warning' : 'info'} sx={{ mb: 1 }}>
+                  {problems.length > 0 && <>{problems.length} {problems.length === 1 ? 'row needs' : 'rows need'} fixing.</>}
+                  {problems.length > 0 && alreadyThere.length > 0 && ' '}
+                  {alreadyThere.length > 0 && <>{alreadyThere.length} {alreadyThere.length === 1 ? `${singular} was` : `${plural} were`} already in your list and {alreadyThere.length === 1 ? 'was' : 'were'} left as {alreadyThere.length === 1 ? 'it was' : 'they were'}.</>}
                 </Alert>
-                {result.errors.slice(0, 10).map((e, i) => (
-                  <Typography key={i} variant="body2" sx={{ color: isAlreadyThere(e.message) ? '#6b7064' : '#d32f2f', ml: 1 }}>
-                    Row {e.row}: {e.message}
-                  </Typography>
-                ))}
-                {result.errors.length > 10 && (
-                  <Typography variant="body2" sx={{ color: '#888', ml: 1, mt: 0.5 }}>
-                    ...and {result.errors.length - 10} more
-                  </Typography>
+                {problems.length > 0 && (
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1 }}>
+                    <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={() => downloadSkipped(problems, 'rows-to-fix')}>
+                      Download rows to fix
+                    </Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '12.5px' }}>
+                      Fix them in this file and upload it here. The Problem column is ignored.
+                    </Typography>
+                  </Stack>
+                )}
+                <Box sx={{ maxHeight: 300, overflowY: 'auto', border: '1px solid #ebe9e2', borderRadius: '8px', py: 0.5 }}>
+                  {[...problems, ...alreadyThere].map((e, i) => (
+                    <Typography key={i} variant="body2" sx={{ color: isAlreadyThere(e.message) ? '#6b7064' : '#c62828', px: 1.25, py: 0.4, borderTop: i ? '1px solid #f3f2ed' : 'none' }}>
+                      {e.row > 0 ? <b>Row {lineOf(e.row)}: </b> : null}{e.message}
+                    </Typography>
+                  ))}
+                </Box>
+                {alreadyThere.length > 0 && problems.length > 0 && (
+                  <Button size="small" sx={{ mt: 0.5 }} onClick={() => downloadSkipped([...problems, ...alreadyThere], 'all-skipped-rows')}>
+                    Download every skipped row
+                  </Button>
                 )}
               </Box>
             )}

@@ -13,6 +13,7 @@ import ClassSubjects from './pages/ClassSubjects'
 import Attendance from './pages/Attendance'
 import Gate from './pages/Gate'
 import IdCards from './pages/IdCards'
+import StaffAttendance from './pages/StaffAttendance'
 import Exams from './pages/Exams'
 import ExamSeriesPage from './pages/ExamSeries'
 import Results from './pages/Results'
@@ -87,6 +88,8 @@ function App() {
           <Route path="/class-subjects" element={<ClassSubjects />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/gate" element={<Gate />} />
+          <Route path="/staff-attendance" element={<StaffAttendance />} />
+          <Route path="/staff/id-cards" element={<IdCards staff />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/exams/:seriesId" element={<ExamSeriesPage />} />
           <Route path="/results" element={<Results />} />

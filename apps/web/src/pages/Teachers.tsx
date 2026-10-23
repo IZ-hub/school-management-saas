@@ -433,6 +433,7 @@ export default function Teachers() {
         title="Import Teachers"
         endpoint="/teachers/bulk-import"
         columns={teacherColumns}
+        excelTemplate="/templates/school-precise-teacher-template.xlsx"
       />
     </Box>
   )

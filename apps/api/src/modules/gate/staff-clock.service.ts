@@ -13,16 +13,21 @@ const ROLE_LABEL: Record<string, string> = {
   TEACHER: 'Teacher',
 };
 
-/** Someone who works at the school: a teacher record (T_<id>), or a staff account not linked to one (U_<id>). */
+/**
+ * Someone who works at the school: a teacher record (T_<id>), a staff account not linked to one (U_<id>),
+ * or other staff with no account, such as security, cleaners and drivers (O_<id>).
+ */
 export interface StaffMember {
   key: string;
   firstName: string;
   lastName: string;
   role: string;
   number: string;
+  email: string;
 }
 
-const isKey = (key: string) => /^[TU]_[A-Za-z0-9_-]{1,128}$/.test(key);
+export const isStaffKey = (key: string) => /^[TUO]_[A-Za-z0-9_-]{1,128}$/.test(key);
+const COLLECTION = { T: 'teachers', U: 'users', O: 'otherStaff' } as const;
 
 /**
  * Staff clock in and out at the gate with their own ID cards. Card codes live in their own
@@ -42,21 +47,27 @@ export class StaffClockService {
   private fromTeacher(id: string, t: FirebaseFirestore.DocumentData): StaffMember {
     return {
       key: `T_${id}`, firstName: t.firstName ?? '', lastName: t.lastName ?? '',
-      role: t.department ? `Teacher · ${t.department}` : 'Teacher', number: t.employeeNumber ?? '',
+      role: t.department ? `Teacher · ${t.department}` : 'Teacher', number: t.employeeNumber ?? '', email: t.email ?? '',
     };
   }
 
-  private fromUser(id: string, u: FirebaseFirestore.DocumentData): StaffMember {
-    return { key: `U_${id}`, firstName: u.firstName ?? '', lastName: u.lastName ?? '', role: ROLE_LABEL[u.role] ?? 'Staff', number: '' };
+  private fromOther(id: string, o: FirebaseFirestore.DocumentData): StaffMember {
+    return { key: `O_${id}`, firstName: o.firstName ?? '', lastName: o.lastName ?? '', role: o.role || 'Staff', number: o.staffNumber ?? '', email: o.email ?? '' };
   }
 
-  /** Everyone who clocks in: active teachers, plus staff accounts (principal, accountant…) that aren't a teacher's. */
+  private fromUser(id: string, u: FirebaseFirestore.DocumentData): StaffMember {
+    return { key: `U_${id}`, firstName: u.firstName ?? '', lastName: u.lastName ?? '', role: ROLE_LABEL[u.role] ?? 'Staff', number: '', email: u.email ?? '' };
+  }
+
+  /** Everyone who clocks in: active teachers, staff accounts (principal, accountant…) that aren't a teacher's, and other staff. */
   async roster(schoolId: string): Promise<StaffMember[]> {
-    const [teachers, users] = await Promise.all([
+    const [teachers, users, others] = await Promise.all([
       this.db.collection('teachers').where('schoolId', '==', schoolId).get(),
       this.db.collection('users').where('schoolId', '==', schoolId).get(),
+      this.db.collection('otherStaff').where('schoolId', '==', schoolId).get(),
     ]);
     const people = [
+      ...others.docs.filter((d) => d.data().status !== 'INACTIVE').map((d) => this.fromOther(d.id, d.data())),
       ...teachers.docs.filter((d) => d.data().status !== 'INACTIVE').map((d) => this.fromTeacher(d.id, d.data())),
       ...users.docs
         .filter((d) => { const u = d.data(); return u.role !== 'PARENT' && u.status !== 'DISABLED' && !u.teacherId; })
@@ -66,12 +77,14 @@ export class StaffClockService {
   }
 
   /** One staff member, or null if they have left or their account is switched off. */
-  private async member(schoolId: string, key: string): Promise<StaffMember | null> {
-    const [kind, id] = [key.slice(0, 1), key.slice(2)];
-    const doc = await this.db.collection(kind === 'T' ? 'teachers' : 'users').doc(id).get();
+  async member(schoolId: string, key: string): Promise<StaffMember | null> {
+    if (!isStaffKey(key)) return null;
+    const [kind, id] = [key.slice(0, 1) as keyof typeof COLLECTION, key.slice(2)];
+    const doc = await this.db.collection(COLLECTION[kind]).doc(id).get();
     const d = doc.data();
     if (!doc.exists || d!.schoolId !== schoolId) return null;
     if (kind === 'T') return d!.status === 'INACTIVE' ? null : this.fromTeacher(id, d!);
+    if (kind === 'O') return d!.status === 'INACTIVE' ? null : this.fromOther(id, d!);
     return d!.role === 'PARENT' || d!.status === 'DISABLED' ? null : this.fromUser(id, d!);
   }
 
@@ -101,7 +114,7 @@ export class StaffClockService {
 
   /** A lost card: a new code, so the old card stops working. */
   async reissue(schoolId: string, key: string) {
-    if (!isKey(key) || !(await this.member(schoolId, key))) throw new NotFoundException('Staff member not found');
+    if (!isStaffKey(key) || !(await this.member(schoolId, key))) throw new NotFoundException('Staff member not found');
     const code = newCode();
     await this.cardRef(schoolId, key).set({ schoolId, staffKey: key, code, issuedAt: new Date() });
     return { key, qr: `SP1-${code}` };
@@ -176,7 +189,7 @@ export class StaffClockService {
       const inAt = toDate(c.clockInAt);
       const outAt = toDate(c.clockOutAt);
       const [firstName, ...rest] = String(c.name ?? '').split(' ');
-      rows.push({ key, firstName, lastName: rest.join(' '), role: c.role ?? '', number: c.number ?? '', clockIn: inAt ? timeAt(inAt) : null, clockOut: outAt ? timeAt(outAt) : null, late: !!c.late });
+      rows.push({ key, firstName, lastName: rest.join(' '), role: c.role ?? '', number: c.number ?? '', email: '', clockIn: inAt ? timeAt(inAt) : null, clockOut: outAt ? timeAt(outAt) : null, late: !!c.late });
     }
     const arrived = rows.filter((r) => r.clockIn || r.clockOut);
     return {

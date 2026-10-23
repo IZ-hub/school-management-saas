@@ -38,6 +38,7 @@ import {
   ForumOutlined as MessagesIcon,
   CalendarViewWeekOutlined as TimetableIcon,
   QrCodeScannerOutlined as GateIcon,
+  AccessTimeOutlined as StaffClockIcon,
   CreditCardOutlined as BillingIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
@@ -71,6 +72,7 @@ const navSections: { heading: string | null; items: { label: string; path: strin
       { label: 'Class subjects', path: '/class-subjects', icon: <ClassSubjectsIcon />, roles: STAFF_ROLES, area: 'classes' },
       { label: 'Attendance', path: '/attendance', icon: <AttendanceIcon />, roles: ACADEMIC_ROLES, area: 'attendance' },
       { label: 'Gate', path: '/gate', icon: <GateIcon />, roles: ACADEMIC_ROLES, area: 'attendance' },
+      { label: 'Staff attendance', path: '/staff-attendance', icon: <StaffClockIcon />, roles: ADMIN_ROLES, area: 'attendance' },
       { label: 'Exams', path: '/exams', icon: <ExamsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },
       { label: 'Results', path: '/results', icon: <ResultsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },
       { label: 'Report cards', path: '/report-cards', icon: <ReportCardsIcon />, roles: ACADEMIC_ROLES, area: 'exams' },

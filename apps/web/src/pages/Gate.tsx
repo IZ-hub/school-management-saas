@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
 import {
   QrCodeScanner as ScanIcon,
@@ -43,7 +44,7 @@ function beep(ok: boolean) {
   navigator.vibrate?.(ok ? 80 : [60, 60, 60])
 }
 
-/** Clock students in and out at the gate by scanning their ID cards. */
+/** Clock students and staff in and out at the gate by scanning their ID cards. */
 export default function Gate() {
   const role = useAuthStore((s) => s.user?.role) ?? ''
   const isAdmin = ADMIN_ROLES.includes(role)
@@ -56,6 +57,7 @@ export default function Gate() {
   const [cameras, setCameras] = useState<QrScanner.Camera[]>([])
   const [cameraIndex, setCameraIndex] = useState(0)
   const [lateAfter, setLateAfter] = useState<string>('')
+  const [staffLateAfter, setStaffLateAfter] = useState<string>('')
   const [lateSaved, setLateSaved] = useState('')
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -69,7 +71,7 @@ export default function Gate() {
   const refresh = useCallback(() => { getGateToday().then(setToday).catch(() => {}) }, [])
   useEffect(() => {
     refresh()
-    getGateSettings().then((s) => setLateAfter(s.lateAfter ?? '')).catch(() => {})
+    getGateSettings().then((s) => { setLateAfter(s.lateAfter ?? ''); setStaffLateAfter(s.staffLateAfter ?? '') }).catch(() => {})
   }, [refresh])
 
   const handle = useCallback(async (raw: string) => {
@@ -131,8 +133,8 @@ export default function Gate() {
 
   const saveLate = async () => {
     try {
-      const s = await saveGateSettings(lateAfter || null)
-      setLateSaved(s.lateAfter ? `Arrivals after ${s.lateAfter} are marked Late.` : 'Late arrivals are not marked.')
+      const s = await saveGateSettings({ lateAfter: lateAfter || null, staffLateAfter: staffLateAfter || null })
+      setLateSaved(`Saved. Students: ${s.lateAfter ? `late after ${s.lateAfter}` : 'lateness not marked'}. Staff: ${s.staffLateAfter ? `late after ${s.staffLateAfter}` : 'lateness not marked'}.`)
     } catch (err: any) {
       setLateSaved(err.response?.data?.message || "Couldn't save.")
     }
@@ -148,22 +150,24 @@ export default function Gate() {
     <Box sx={{ flexGrow: 1, maxWidth: 1000, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4.5 } }}>
       <Typography variant="h4">Gate</Typography>
       <Typography sx={{ color: brand.muted, fontSize: '14.5px', mb: 2.5 }}>
-        Scan students' ID cards as they arrive and leave. Arrivals are ticked present in today's registers.
+        Scan students' and staff ID cards as they arrive and leave. Students who arrive are ticked present in today's registers.
+        {isAdmin && <> <Box component={RouterLink} to="/staff-attendance" sx={{ color: brand.green, fontWeight: 600 }}>Staff attendance</Box></>}
       </Typography>
 
       {/* Today's totals */}
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, minmax(0, 1fr))' }, gap: 1.5, mb: 2.5 }}>
         {[
-          { label: 'Clocked in today', value: today?.clockedIn ?? '–' },
-          { label: 'Still in school', value: today?.stillIn ?? '–' },
-          { label: 'Clocked out', value: today?.clockedOut ?? '–' },
+          { label: 'Students in today', value: today?.clockedIn ?? '–' },
+          { label: 'Students still in', value: today?.stillIn ?? '–' },
+          { label: 'Students out', value: today?.clockedOut ?? '–' },
+          { label: today?.staff.late ? `Staff in · ${today.staff.late} late` : 'Staff in today', value: today?.staff.clockedIn ?? '–' },
         ].map((t) => (
-          <Paper key={t.label} sx={{ flex: 1, p: { xs: 1.5, sm: 2 } }}>
+          <Paper key={t.label} sx={{ p: { xs: 1.5, sm: 2 } }}>
             <Typography sx={{ fontSize: { xs: '24px', sm: '28px' }, fontWeight: 800, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{t.value}</Typography>
             <Typography sx={{ fontSize: '12.5px', color: brand.muted }}>{t.label}</Typography>
           </Paper>
         ))}
-      </Stack>
+      </Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, gap: 2, alignItems: 'start' }}>
         <Paper sx={{ p: { xs: 2, sm: 2.5 } }}>
@@ -177,7 +181,7 @@ export default function Gate() {
             ))}
           </Box>
           <Typography sx={{ fontSize: '12.5px', color: brand.muted, mb: 2 }}>
-            {mode === 'AUTO' ? 'Auto: the first scan of the day clocks in, the next one clocks out.' : mode === 'IN' ? 'Arriving: every scan clocks the student in.' : 'Leaving: every scan clocks the student out.'}
+            {mode === 'AUTO' ? 'Auto: the first scan of the day clocks in, the next one clocks out.' : mode === 'IN' ? 'Arriving: every scan clocks the person in.' : 'Leaving: every scan clocks the person out.'}
           </Typography>
 
           {/* Camera */}
@@ -239,6 +243,7 @@ export default function Gate() {
                     <Typography sx={{ fontWeight: 800, fontSize: '18px' }}>
                       {look.title} {r.action === 'ALREADY_IN' ? `at ${r.clockIn}` : r.action === 'ALREADY_OUT' ? `at ${r.clockOut}` : `· ${r.time}`}
                     </Typography>
+                    {r.who === 'STAFF' && <Box component="span" sx={{ px: 1, py: 0.25, borderRadius: 999, bgcolor: brand.green, color: '#fff', fontSize: '12px', fontWeight: 700 }}>Staff</Box>}
                     {r.late && <Box component="span" sx={{ ml: 'auto', px: 1, py: 0.25, borderRadius: 999, bgcolor: '#7d5300', color: '#fff', fontSize: '12px', fontWeight: 700 }}>Late</Box>}
                   </Stack>
                   <Stack direction="row" spacing={1.75} alignItems="center" sx={{ mt: 1.25 }}>
@@ -266,7 +271,9 @@ export default function Gate() {
                   <Stack key={`${e.studentId}-${e.action}-${i}`} direction="row" alignItems="center" spacing={1.25} sx={{ py: 0.75, borderTop: i ? `1px solid ${brand.border}` : 'none' }}>
                     <Box component="span" sx={{ width: 40, fontSize: '12.5px', fontVariantNumeric: 'tabular-nums', color: brand.muted }}>{e.time}</Box>
                     <Box component="span" sx={{ px: 0.75, borderRadius: '6px', fontSize: '11.5px', fontWeight: 700, bgcolor: e.action === 'IN' ? '#e3f4ec' : '#e6eefa', color: e.action === 'IN' ? '#0b4a36' : '#1a569e' }}>{e.action === 'IN' ? 'In' : 'Out'}</Box>
-                    <Typography noWrap sx={{ fontSize: '14px', flex: 1, minWidth: 0 }}>{e.name}</Typography>
+                    <Typography noWrap sx={{ fontSize: '14px', flex: 1, minWidth: 0 }}>
+                      {e.name}{e.who === 'STAFF' && <Box component="span" sx={{ ml: 0.75, fontSize: '11px', fontWeight: 700, color: brand.green }}>STAFF</Box>}
+                    </Typography>
                     <Typography noWrap sx={{ fontSize: '12.5px', color: brand.subtle }}>{e.className}</Typography>
                   </Stack>
                 ))}
@@ -277,9 +284,10 @@ export default function Gate() {
           {isAdmin && (
             <Paper sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Late arrivals</Typography>
-              <Typography sx={{ fontSize: '13px', color: brand.muted, mb: 1.5 }}>Students clocked in after this time are marked Late. Leave empty to mark everyone Present.</Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TextField type="time" size="small" label="Late after" value={lateAfter} onChange={(e) => { setLateAfter(e.target.value); setLateSaved('') }} sx={{ width: 150 }} />
+              <Typography sx={{ fontSize: '13px', color: brand.muted, mb: 1.5 }}>Anyone clocked in after their time is marked Late. Leave a time empty to not mark lateness.</Typography>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <TextField type="time" size="small" label="Students late after" InputLabelProps={{ shrink: true }} value={lateAfter} onChange={(e) => { setLateAfter(e.target.value); setLateSaved('') }} sx={{ width: 160 }} />
+                <TextField type="time" size="small" label="Staff late after" InputLabelProps={{ shrink: true }} value={staffLateAfter} onChange={(e) => { setStaffLateAfter(e.target.value); setLateSaved('') }} sx={{ width: 160 }} />
                 <Button variant="outlined" onClick={saveLate}>Save</Button>
               </Stack>
               {lateSaved && <Typography sx={{ fontSize: '12.5px', color: brand.muted, mt: 1 }}>{lateSaved}</Typography>}

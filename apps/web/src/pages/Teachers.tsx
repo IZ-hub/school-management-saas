@@ -31,7 +31,11 @@ import {
   Delete as DeleteIcon,
   FileUpload as ImportIcon,
 } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
+import { BadgeOutlined as BadgeIcon } from '@mui/icons-material'
 import { api } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
+import { ADMIN_ROLES } from '../lib/roles'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 import DateOfBirthField from '../components/DateOfBirthField'
 
@@ -183,6 +187,9 @@ export default function Teachers() {
     }
   }
 
+  const navigate = useNavigate()
+  const isAdmin = ADMIN_ROLES.includes(useAuthStore((st) => st.user?.role) ?? '')
+
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
@@ -190,6 +197,12 @@ export default function Teachers() {
           Teachers
         </Typography>
         <Stack direction="row" spacing={1}>
+          {isAdmin && (
+            <Button variant="outlined" startIcon={<BadgeIcon />} onClick={() => navigate('/staff/id-cards')} size="small"
+              sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' }, whiteSpace: 'nowrap' }}>
+              ID cards
+            </Button>
+          )}
           <Button variant="outlined" startIcon={<ImportIcon />} onClick={() => setImportOpen(true)} size="small"
             sx={{ borderColor: '#111', color: '#111', '&:hover': { borderColor: '#333', bgcolor: '#f5f5f5' }, whiteSpace: 'nowrap' }}>
             Import CSV

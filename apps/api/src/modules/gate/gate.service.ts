@@ -1,34 +1,21 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import * as crypto from 'crypto';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { getOwnedDoc } from '../../common/tenant';
-import { SCHOOL_TIME_ZONE, schoolToday } from '../../common/school-date';
+import { schoolToday } from '../../common/school-date';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
 import { AttendanceService } from '../attendance/attendance.service';
 
-export type ScanMode = 'AUTO' | 'IN' | 'OUT';
-export type ScanAction = 'IN' | 'OUT' | 'ALREADY_IN' | 'ALREADY_OUT';
+import { StaffClockService } from './staff-clock.service';
+import { CODE_ALPHABET, CODE_LENGTH, QR_PREFIX, REPEAT_WINDOW_MS, ScanAction, ScanMode, isTime, newCode, readCode, timeAt, toDate } from './gate-shared';
 
-/** A second scan this soon after clocking in is treated as a repeat, not a departure. */
-const REPEAT_WINDOW_MS = 5 * 60_000;
-/** Card codes avoid letters and digits that are easy to confuse (0/O, 1/I/L). */
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const CODE_LENGTH = 10;
-/** What a card's QR code holds: a prefix plus the code, and nothing personal. */
-export const QR_PREFIX = 'SP1-';
-
-const newCode = () => Array.from(crypto.randomBytes(CODE_LENGTH), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
-/** "SP1-ABCD…", "abcd…" or a code typed with spaces all read the same. */
-const readCode = (raw: string) => raw.trim().toUpperCase().replace(/^SP1-/, '').replace(/[\s-]/g, '');
-const timeAt = (d: Date) => new Intl.DateTimeFormat('en-GB', { timeZone: SCHOOL_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
-const isTime = (v: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
-const toDate = (v: any): Date | null => (v ? (v.toDate?.() ?? (v instanceof Date ? v : new Date(v))) : null);
+export { QR_PREFIX, ScanMode };
 
 @Injectable()
 export class GateService {
   constructor(
     private readonly firebase: FirebaseService,
     private readonly attendance: AttendanceService,
+    private readonly staffClock: StaffClockService,
   ) {}
 
   private get db() {
@@ -39,16 +26,20 @@ export class GateService {
 
   /** The time after which an arrival counts as late (HH:MM), or null if the school doesn't mark lateness. */
   async settings(schoolId: string) {
-    const school = await this.db.collection('schools').doc(schoolId).get();
-    return { lateAfter: (school.data()?.gate?.lateAfter as string | null) ?? null };
+    const gate = (await this.db.collection('schools').doc(schoolId).get()).data()?.gate;
+    return { lateAfter: (gate?.lateAfter as string | null) ?? null, staffLateAfter: (gate?.staffLateAfter as string | null) ?? null };
   }
 
-  async saveSettings(schoolId: string, lateAfter: string | null) {
-    if (lateAfter !== null && !isTime(lateAfter)) throw new BadRequestException('Use a time like 08:00.');
+  /** Students' and staff's "late after" times; a field left out keeps its current value. */
+  async saveSettings(schoolId: string, changes: { lateAfter?: string | null; staffLateAfter?: string | null }) {
+    for (const v of [changes.lateAfter, changes.staffLateAfter]) {
+      if (v !== undefined && v !== null && !isTime(v)) throw new BadRequestException('Use a time like 08:00.');
+    }
     const ref = this.db.collection('schools').doc(schoolId);
     const gate = ((await ref.get()).data()?.gate as Record<string, unknown> | undefined) ?? {};
-    await ref.update({ gate: { ...gate, lateAfter } });
-    return { lateAfter };
+    const next = { ...gate, ...Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined)) };
+    await ref.update({ gate: next });
+    return { lateAfter: (next.lateAfter as string | null) ?? null, staffLateAfter: (next.staffLateAfter as string | null) ?? null };
   }
 
   /** Records a scan at the gate: clock in, clock out, or a friendly "already" for repeats. */
@@ -58,6 +49,10 @@ export class GateService {
       throw new BadRequestException("That isn't a School Precise ID card.");
     }
     const found = await this.db.collection('students').where('schoolId', '==', schoolId).where('cardCode', '==', code).limit(2).get();
+    if (found.empty) {
+      const staffKey = await this.staffClock.findByCode(schoolId, code);
+      if (staffKey) return this.staffClock.scan(schoolId, user, staffKey, mode, (await this.settings(schoolId)).staffLateAfter);
+    }
     if (found.empty) throw new NotFoundException("This card isn't recognised. It may be from another school, or it was replaced by a newer card.");
     const studentDoc = found.docs[0];
     const st = studentDoc.data();
@@ -100,6 +95,7 @@ export class GateService {
     }
 
     return {
+      who: 'STUDENT' as const,
       action: result.action,
       // The face lets the gate check the card belongs to the child holding it.
       student: { ...student, photo: (st.photoThumb as string | undefined) ?? null },
@@ -132,25 +128,37 @@ export class GateService {
     });
   }
 
-  /** Today at the gate: totals and the latest scans, newest first. */
+  /** Today at the gate: student and staff totals, and the latest scans, newest first. */
   async today(schoolId: string) {
     const date = schoolToday();
-    const snap = await this.db.collection('gateClock').where('schoolId', '==', schoolId).where('date', '==', date).get();
+    const [snap, staffRows] = await Promise.all([
+      this.db.collection('gateClock').where('schoolId', '==', schoolId).where('date', '==', date).get(),
+      this.staffClock.todayEvents(schoolId, date),
+    ]);
     const rows = snap.docs.map((d) => d.data());
-    const events = rows
-      .flatMap((r) => [
-        r.clockInAt ? { at: toDate(r.clockInAt)!, action: 'IN' as const, r } : null,
-        r.clockOutAt ? { at: toDate(r.clockOutAt)!, action: 'OUT' as const, r } : null,
+    const people = [
+      ...rows.map((r) => ({ who: 'STUDENT' as const, id: r.studentId as string, name: r.studentName as string, detail: r.className as string, r })),
+      ...staffRows.map((r) => ({ who: 'STAFF' as const, id: r.staffKey as string, name: r.name as string, detail: r.role as string, r })),
+    ];
+    const events = people
+      .flatMap((p) => [
+        p.r.clockInAt ? { at: toDate(p.r.clockInAt)!, action: 'IN' as const, p } : null,
+        p.r.clockOutAt ? { at: toDate(p.r.clockOutAt)!, action: 'OUT' as const, p } : null,
       ])
       .filter((e): e is NonNullable<typeof e> => !!e)
       .sort((a, b) => b.at.getTime() - a.at.getTime())
       .slice(0, 40)
-      .map((e) => ({ action: e.action, time: timeAt(e.at), studentId: e.r.studentId, name: e.r.studentName, className: e.r.className }));
+      .map((e) => ({ who: e.p.who, action: e.action, time: timeAt(e.at), studentId: e.p.id, name: e.p.name, className: e.p.detail }));
     return {
       date,
       clockedIn: rows.filter((r) => r.clockInAt).length,
       clockedOut: rows.filter((r) => r.clockOutAt).length,
       stillIn: rows.filter((r) => r.clockInAt && !r.clockOutAt).length,
+      staff: {
+        clockedIn: staffRows.filter((r) => r.clockInAt).length,
+        stillIn: staffRows.filter((r) => r.clockInAt && !r.clockOutAt).length,
+        late: staffRows.filter((r) => r.late).length,
+      },
       recent: events,
     };
   }

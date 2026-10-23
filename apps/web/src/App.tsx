@@ -14,6 +14,9 @@ import Attendance from './pages/Attendance'
 import Gate from './pages/Gate'
 import IdCards from './pages/IdCards'
 import StaffAttendance from './pages/StaffAttendance'
+import Payroll from './pages/Payroll'
+import PayrollRun from './pages/PayrollRun'
+import MyPayslips from './pages/MyPayslips'
 import Exams from './pages/Exams'
 import ExamSeriesPage from './pages/ExamSeries'
 import Results from './pages/Results'
@@ -90,6 +93,9 @@ function App() {
           <Route path="/gate" element={<Gate />} />
           <Route path="/staff-attendance" element={<StaffAttendance />} />
           <Route path="/staff/id-cards" element={<IdCards staff />} />
+          <Route path="/payroll" element={<Payroll />} />
+          <Route path="/payroll/:month" element={<PayrollRun />} />
+          <Route path="/my-payslips" element={<MyPayslips />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/exams/:seriesId" element={<ExamSeriesPage />} />
           <Route path="/results" element={<Results />} />

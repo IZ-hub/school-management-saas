@@ -39,12 +39,14 @@ import {
   CalendarViewWeekOutlined as TimetableIcon,
   QrCodeScannerOutlined as GateIcon,
   AccessTimeOutlined as StaffClockIcon,
+  AccountBalanceWalletOutlined as PayrollIcon,
+  ReceiptOutlined as PayslipIcon,
   CreditCardOutlined as BillingIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { signOut } from '../lib/api'
 import { Area, areas, brand } from '../theme'
-import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES } from '../lib/roles'
+import { ACADEMIC_ROLES, ADMIN_ROLES, FINANCE_ROLES, STAFF_ROLES, PAYROLL_ROLES } from '../lib/roles'
 import BillingBanner from '../components/BillingBanner'
 import { BrandMark, Wordmark } from '../components/Brand'
 import InstallAppButton from '../components/InstallAppButton'
@@ -85,6 +87,8 @@ const navSections: { heading: string | null; items: { label: string; path: strin
     items: [
       { label: 'Fees', path: '/fees', icon: <FeesIcon />, roles: FINANCE_ROLES, area: 'fees' },
       { label: 'Payments', path: '/payments', icon: <PaymentsIcon />, roles: FINANCE_ROLES, area: 'fees' },
+      { label: 'Payroll', path: '/payroll', icon: <PayrollIcon />, roles: PAYROLL_ROLES, area: 'fees' },
+      { label: 'My payslips', path: '/my-payslips', icon: <PayslipIcon />, roles: ['PRINCIPAL', 'VICE_PRINCIPAL', 'TEACHER', 'ACCOUNTANT'], area: 'fees' },
     ],
   },
   {

@@ -8,6 +8,7 @@ import { ClassesModule } from './modules/classes/classes.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { GateModule } from './modules/gate/gate.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
 import { ExamsModule } from './modules/exams/exams.module';
 import { ResultsModule } from './modules/results/results.module';
 import { FeesModule } from './modules/fees/fees.module';
@@ -38,6 +39,7 @@ import { BillingModule } from './modules/billing/billing.module';
     SubjectsModule,
     AttendanceModule,
     GateModule,
+    PayrollModule,
     ExamsModule,
     ResultsModule,
     FeesModule,

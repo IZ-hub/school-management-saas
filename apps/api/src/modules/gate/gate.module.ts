@@ -8,5 +8,6 @@ import { StaffClockService } from './staff-clock.service';
   imports: [AttendanceModule],
   controllers: [GateController],
   providers: [GateService, StaffClockService],
+  exports: [StaffClockService],
 })
 export class GateModule {}

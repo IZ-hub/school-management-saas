@@ -9,3 +9,5 @@ export const ADMIN_ROLES = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'VICE_PR
 export const ACADEMIC_ROLES = [...ADMIN_ROLES, 'TEACHER'];
 export const FINANCE_ROLES = [...ADMIN_ROLES, 'ACCOUNTANT'];
 export const STAFF_ROLES = [...ADMIN_ROLES, 'TEACHER', 'ACCOUNTANT'];
+/** Who may see and set pay: salaries, payroll and payslips. The vice principal and teachers may not. */
+export const PAYROLL_ROLES = ['SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'ACCOUNTANT'];

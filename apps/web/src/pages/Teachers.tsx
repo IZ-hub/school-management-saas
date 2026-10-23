@@ -35,7 +35,7 @@ import { useNavigate } from 'react-router-dom'
 import { BadgeOutlined as BadgeIcon } from '@mui/icons-material'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ADMIN_ROLES } from '../lib/roles'
+import { ADMIN_ROLES, PAYROLL_ROLES } from '../lib/roles'
 import BulkImportDialog, { ColumnDef } from '../components/BulkImportDialog'
 import DateOfBirthField from '../components/DateOfBirthField'
 
@@ -82,6 +82,8 @@ export default function Teachers() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [importOpen, setImportOpen] = useState(false)
+  const role = useAuthStore((st) => st.user?.role) ?? ''
+  const seesPay = PAYROLL_ROLES.includes(role)
 
   const teacherColumns: ColumnDef[] = [
     { key: 'firstName', label: 'First Name', required: true },
@@ -95,7 +97,7 @@ export default function Teachers() {
     { key: 'qualification', label: 'Qualification' },
     { key: 'department', label: 'Department' },
     { key: 'joiningDate', label: 'Joining Date' },
-    { key: 'salary', label: 'Salary' },
+    ...(seesPay ? [{ key: 'salary', label: 'Salary' }] : []),
   ]
 
   const fetchTeachers = async (searchTerm?: string) => {
@@ -188,7 +190,7 @@ export default function Teachers() {
   }
 
   const navigate = useNavigate()
-  const isAdmin = ADMIN_ROLES.includes(useAuthStore((st) => st.user?.role) ?? '')
+  const isAdmin = ADMIN_ROLES.includes(role)
 
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
@@ -389,14 +391,17 @@ export default function Teachers() {
               margin="dense"
               InputLabelProps={{ shrink: true }}
             />
-            <TextField
-              fullWidth
-              label="Salary" placeholder="e.g. 150000"
-              type="number"
-              value={form.salary}
-              onChange={(e) => setForm({ ...form, salary: e.target.value })}
-              margin="dense"
-            />
+            {seesPay && (
+              <TextField
+                fullWidth
+                label="Monthly salary" placeholder="e.g. 150000"
+                type="number"
+                value={form.salary}
+                onChange={(e) => setForm({ ...form, salary: e.target.value })}
+                margin="dense"
+                helperText="Only the owner, principal and accountant can see this."
+              />
+            )}
           </Stack>
           <TextField
             fullWidth
